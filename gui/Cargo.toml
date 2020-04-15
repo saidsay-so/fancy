@@ -1,0 +1,8 @@
+[package]
+authors = ["Musikid <musikid@outlook.com>"]
+edition = "2018"
+license = "MPL-2.0"
+name = "fancy-gui"
+version = "0.1.0"
+
+[dependencies]

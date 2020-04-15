@@ -1,0 +1,52 @@
+# This section is considered when running `cargo deny check advisories`
+# More documentation for the advisories section can be found here:
+# https://embarkstudios.github.io/cargo-deny/checks/advisories/cfg.html
+[advisories]
+db-path = "~/.cargo/advisory-db"
+db-url = "https://github.com/rustsec/advisory-db"
+vulnerability = "deny"
+unmaintained = "warn"
+yanked = "warn"
+notice = "deny"
+
+[licenses]
+unlicensed = "deny"
+deny = [
+    "GPL-2.0",
+    "GPL-3.0",
+]
+copyleft = "allow"
+
+# Blanket approval or denial for OSI-approved or FSF Free/Libre licenses
+# * both - The license will be approved if it is both OSI-approved *AND* FSF
+# * either - The license will be approved if it is either OSI-approved *OR* FSF
+# * osi-only - The license will be approved if is OSI-approved *AND NOT* FSF
+# * fsf-only - The license will be approved if is FSF *AND NOT* OSI-approved
+# * neither - This predicate is ignored and the default lint level is used
+allow-osi-fsf-free = "either"
+# Lint level used when no other predicates are matched
+# 1. License isn't in the allow or deny lists
+# 2. License isn't copyleft
+# 3. License isn't OSI/FSF, or allow-osi-fsf-free = "neither"
+default = "deny"
+# The confidence threshold for detecting a license from license text.
+# The higher the value, the more closely the license text must be to the
+# canonical license text of a valid SPDX license file.
+# [possible values: any between 0.0 and 1.0].
+confidence-threshold = 0.8
+
+# This section is considered when running `cargo deny check bans`.
+# More documentation about the 'bans' section can be found here:
+# https://embarkstudios.github.io/cargo-deny/checks/bans/cfg.html
+[bans]
+# Lint level for when multiple versions of the same crate are detected
+multiple-versions = "warn"
+# The graph highlighting used when creating dotgraphs for crates
+# with multiple versions
+# * lowest-version - The path to the lowest versioned duplicate is highlighted
+# * simplest-path - The path to the version with the fewest edges is highlighted
+# * all - Both lowest-version and simplest-path are used
+highlight = "all"
+
+[sources]
+allow-git = []

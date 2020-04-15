@@ -1,0 +1,59 @@
+[package]
+name = "fancy-service"
+version = "0.1.0"
+authors = ["Musikid <musikid@outlook.com>"]
+edition = "2018"
+description = """This package provides the service for Fancy, a set of software to control laptop fans."""
+license = "MPL-2.0"
+
+[dependencies]
+serde = { version = "^1.0.111", features = ["derive"] }
+toml = "^0.5.6"
+quick-xml = { version = "^0.18.1", features = ["serialize"] }
+snafu = "^0.6.8"
+psutil = { version = "^3.1.0", default-features = false, features = ["sensors"] }
+once_cell = "^1.4.0"
+dbus_crate = { package = "dbus", version = "^0.8.3" }
+signal-hook = "^0.1.15"
+log = "0.4.11"
+pretty_env_logger = "0.4.0"
+
+[dev-dependencies]
+rand = "^0.7.3"
+is_sorted = "^0.1.1"
+
+[build-dependencies]
+dbus-codegen = "~0.5.0"
+
+# All these metadatas are used for testing
+[package.metadata.deb]
+depends = "$auto, systemd, dbus"
+section = "utils"
+priority = "optional"
+assets = [
+    ["../target/release/fancy-service", "usr/sbin/fancyd", "744"],
+    [".rpm/fancy.service", "etc/systemd/system/", "644"],
+    [".rpm/fancy-sleep.service", "etc/systemd/system/", "644"],
+    ["fancy_dbus.service", "/usr/share/dbus-1/services/com.musikid.fancy.service", "644"],
+    [".rpm/configs/*", "etc/fancy/configs/", "644"],
+    [".rpm/com.musikid.fancy.conf", "/etc/dbus-1/system.d/", "644"]
+]
+
+[package.metadata.rpm]
+package = "fancy-service"
+
+[package.metadata.rpm.cargo]
+buildflags = ["--release"]
+
+[package.metadata.rpm.build_hooks]
+strip = ["--strip-all", "../target/release/fancy-service"]
+
+[package.metadata.rpm.targets]
+fancy-service = { path = "/usr/sbin/fancyd" }
+
+[package.metadata.rpm.files]
+"fancy.service" = { path = "/usr/lib/systemd/system/fancy.service" }
+"fancy-sleep.service" = { path = "/usr/lib/systemd/system/fancy-sleep.service" }
+"fancy_dbus.service" = { path = "/usr/share/dbus-1/services/com.musikid.fancy.service" }
+configs = { path = "/etc/fancy/configs" }
+"com.musikid.fancy.conf" = { path = "/etc/dbus-1/system.d/com.musikid.fancy.conf" }

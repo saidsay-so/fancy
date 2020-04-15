@@ -1,0 +1,6 @@
+[workspace]
+members = ["service", "cli", "gui"]
+
+[profile.release]
+lto = true
+# codegen-units = 1

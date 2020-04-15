@@ -1,0 +1,31 @@
+# Maintainer: Musikid <musikid@outlook.com>
+pkgname=fancy-service
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="This package provides the service daemon for Fancy, a set of software to control laptop fans."
+makedepends=('rust' 'cargo' 'dbus')
+depends=('systemd' 'dbus')
+arch=('i686' 'x86_64')
+url='https://github.com/MusiKid/fancy'
+license=('MPL2')
+
+pkgver() {
+   grep version ../Cargo.toml --max-count=1 | sed -e 's/[[:space:]]//g' -e 's/"//g' | cut -d= -f2
+}
+
+build() {
+   cargo build --release --locked
+}
+
+check() {
+   cargo test --release --locked
+}
+
+package() {
+   cd ..
+   [[ -e "../Cargo.toml" ]] && install -Dm744 -s ../target/release/"${pkgname}" "${pkgdir}/usr/bin/fancyd" || install -Dm744 -s target/release/"${pkgname}" "${pkgdir}/usr/bin/fancyd"
+   install -Dm644 .rpm/fancy.service "${pkgdir}/usr/lib/systemd/system/fancy.service"
+   install -Dm644 .rpm/fancy-sleep.service "${pkgdir}/usr/lib/systemd/system/fancy-sleep.service"
+   install -Dm644 .rpm/com.musikid.fancy.conf "${pkgdir}/etc/dbus-1/system.d/com.musikid.fancy.conf"
+   install -Dm644 .rpm/configs/* -t "${pkgdir}/etc/fancy/configs" 
+}

@@ -1,0 +1,22 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+[Unit]
+Description=Fancy Service Daemon
+StartLimitBurst=5
+StartLimitIntervalSec=10
+
+AssertPathExists=|/dev/ec
+AssertPathExists=|/sys/kernel/debug/ec/ec0/io
+
+[Service]
+Type=dbus
+BusName=com.musikid.fancy
+
+ExecStart=/usr/sbin/fancyd
+Restart=on-failure
+TimeoutStopSec=100
+
+[Install]
+WantedBy=multi-user.target
+Alias=dbus-com.musikid.fancy.service

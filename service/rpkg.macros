@@ -1,0 +1,17 @@
+# rpkg can't figure out that hyphens are part of the name
+function git_subpackage_version {
+	local last_tag=$(git describe --match="$(cached git_name)*")
+	output "${last_tag#$(cached git_name)-}"
+}
+
+function git_subpackage_name_version {
+	output "$(cached git_name)-$(git_subpackage_version)"
+}
+
+function git_subpackage_pack {
+	local name=$(git_subpackage_name_version)
+	local archive_dir_name="$(dirname "$INPUT_PATH")"
+	tar chaf "$name.tar.gz" --absolute-names --transform "s|^$archive_dir_name|$name|" --transform "s|^$name//*|$name/|" $archive_dir_name >/dev/null 2>&1
+	output "$name.tar.gz"
+}
+# vim: syntax=sh
