@@ -6,7 +6,7 @@
 
 ## Control your laptop fans with a fancy ( ͡° ͜ʖ ͡°) interface.  
 
-Fancy is a set of software which allows you to control your laptop fans. It includes a service daemon to allow accessing to the [EC](https://en.wikipedia.org/wiki/Embedded_controller#Tasks) and controlling it through D-Bus, a CLI to send commands, a GUI (WIP). It's Linux-only and Windows support is not planned<sup>[1](#linux-only)</sup>.
+Fancy is a set of software which allows you to control your laptop fans. It includes a service daemon to allow accessing to the [EC](https://en.wikipedia.org/wiki/Embedded_controller#Tasks) and controlling it through D-Bus, a CLI to send commands and a GUI (WIP). It works only on Linux and Windows support is not planned<sup>[1](#linux-only)</sup>.
 
 ## Compatibility
 You can check if your computer model is supported by checking if a configuration exists in `nbfc_configs` (or a similar model).
@@ -63,9 +63,6 @@ NBFC is a great software (also one of the cleanest codebase I ever seen). Howeve
 
 ### Linux ONLY?
 Well, [NBFC](https://github.com/hirschmann/nbfc) is already well integrated with the Windows "ecosystem", since C# is more common on Windows. It works very well, so go check it. If you want to provide Windows support, you are also welcome.
-
-### Did you really steal code to NBFC?
-For real, the only things that I pasted as-is are the "algorithm" to convert the fan speed to a percentage (and vice-versa) and the structures. I wrote the other parts of the code myself, inspired by the NBFC's code.
 
 ## License
 The project is licensed under MPL-2.0. You implicitly accept it when you send a pull request.

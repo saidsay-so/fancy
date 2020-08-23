@@ -1,0 +1,10 @@
+#!/usr/bin/make -f
+# See debhelper(7) (uncomment to enable)
+
+%:
+	dh --buildsystem cargo $@ --with systemd
+
+override_dh_auto_install:
+	dh_auto_install
+	dh_systemd_enable || true
+	dh_systemd_start || true
