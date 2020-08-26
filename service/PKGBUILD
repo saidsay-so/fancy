@@ -27,5 +27,5 @@ package() {
 	install -Dm644 .rpm/fancy.service "${pkgdir}/usr/lib/systemd/system/fancy.service"
 	install -Dm644 .rpm/fancy-sleep.service "${pkgdir}/usr/lib/systemd/system/fancy-sleep.service"
 	install -Dm644 .rpm/com.musikid.fancy.conf "${pkgdir}/etc/dbus-1/system.d/com.musikid.fancy.conf"
-	install -Dm644 .rpm/configs/* -t "${pkgdir}/etc/fancy/configs" 
+	install -Dm644 .rpm/configs/* -t "${pkgdir}/etc/fancy/configs"
 }

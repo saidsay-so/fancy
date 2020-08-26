@@ -4,7 +4,9 @@
 ![Logo](assets/logo-96.png)
 <!-- TODO: Really, add a good logo -->
 
-## Control your laptop fans with a fancy ( ͡° ͜ʖ ͡°) interface.  
+![test](https://github.com/MusiKid/fancy/workflows/test/badge.svg)
+
+## Control your laptop fans with a fancy ( ͡° ͜ʖ ͡°) interface.
 
 Fancy is a set of software which allows you to control your laptop fans. It includes a service daemon to allow accessing to the [EC](https://en.wikipedia.org/wiki/Embedded_controller#Tasks) and controlling it through D-Bus, a CLI to send commands and a GUI (WIP). It works only on Linux and Windows support is not planned<sup>[1](#linux-only)</sup>.
 
@@ -40,7 +42,7 @@ sudo dnf install fancy-service fancy-cli # fancy-gui
 sudo systemctl enable --now fancy fancy-sleep
 ```
 
-The service should be running. However, it's not active since there isn't any config loaded. 
+The service should be running. However, it's not active since there isn't any config loaded.
 You can see the recommended configurations for your computer:
 ```sh
 fancy list --recommended
@@ -59,7 +61,7 @@ fancy set -f 0
 ## FAQ
 
 ### Why? NBFC can also do it.
-NBFC is a great software (also one of the cleanest codebase I ever seen). However, it's written in C#, which means that it depends on `mono` runtime on Linux. `mono` is a pretty huge dependency, especiallly when NBFC is the only thing which needs it, and uses a lot of RAM. That's the reason why I started to write `fancy` (and also because I wanted to test my Rust (<sub>kind of</sub>) "skills"). 
+NBFC is a great software (also one of the cleanest codebase I ever seen). However, it's written in C#, which means that it depends on `mono` runtime on Linux. `mono` is a pretty huge dependency, especiallly when NBFC is the only thing which needs it, and uses a lot of RAM. That's the reason why I started to write `fancy` (and also because I wanted to test my Rust (<sub>kind of</sub>) "skills").
 
 ### Linux ONLY?
 Well, [NBFC](https://github.com/hirschmann/nbfc) is already well integrated with the Windows "ecosystem", since C# is more common on Windows. It works very well, so go check it. If you want to provide Windows support, you are also welcome.

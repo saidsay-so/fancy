@@ -16,12 +16,13 @@ Group: System Environment/Daemons
 
 # Upstream license specification: MPL-2.0
 License:        MPLv2.0
+URL: https://github.com/MusiKid/fancy.git
 Source:         {{{ git_subpackage_pack }}}
 VCS:        {{{ git_dir_vcs }}}
 
 ExclusiveArch:  %{rust_arches}
 
-BuildRequires:  systemd-rpm-macros
+BuildRequires:  systemd-rpm-macros rust-packaging
 
 %systemd_requires
 Requires: dbus
@@ -32,6 +33,7 @@ Service for Fancy, a set of software to control laptop fans.}
 %description -n %{name} %{_description}
 
 %files
+%license LICENSE
 %{_sbindir}/fancyd
 %{_unitdir}/fancy.service
 %{_unitdir}/fancy-sleep.service
@@ -45,7 +47,7 @@ Service for Fancy, a set of software to control laptop fans.}
 
 
 %build
-cargo build --release
+cargo build --release --locked
 
 %install
 %{__install} -Dm744 -s target/release/%{name} %{buildroot}%{_sbindir}/fancyd
