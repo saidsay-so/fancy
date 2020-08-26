@@ -1,4 +1,0 @@
-**/target
-pkg/
-*.tar.*
-interfaces.rs

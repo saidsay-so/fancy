@@ -1,14 +1,16 @@
 Source: fancy-service
-Section: admin
+Section: misc
 Priority: optional
 Maintainer: Musikid <musikid@outlook.com>
-Build-Depends: debhelper (>= 11), dh-cargo
+Build-Depends: debhelper (>= 11), dbus
+#FIXME: rust should be in the deps
 Standards-Version: 4.1.3
 Homepage: https://github.com/MusiKid/fancy
 Vcs-Browser: https://github.com/MusiKid/fancy
 Vcs-Git: https://github.com/MusiKid/fancy.git
 
 Package: fancy-service
-Depends: dbus
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, dbus
 Recommends: systemd
-Description: Service for Fancy, a set of software to control laptop fans.
+Description: Service for Fancy, a set of software to control laptop fans
