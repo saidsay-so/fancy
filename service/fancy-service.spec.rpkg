@@ -22,7 +22,7 @@ VCS:        {{{ git_dir_vcs }}}
 
 ExclusiveArch:  %{rust_arches}
 
-BuildRequires:  systemd-rpm-macros rust-packaging
+BuildRequires:  systemd-rpm-macros rustc cargo
 
 %systemd_requires
 Requires: dbus
@@ -44,10 +44,10 @@ Service for Fancy, a set of software to control laptop fans.}
 %prep
 {{{ git_setup_macro dir_name="$(git_subpackage_name_version)" }}}
 %autosetup -n %{name}-%{version_no_tilde} -p1
-
+cargo fetch
 
 %build
-cargo build --release --locked
+cargo build --release --frozen
 
 %install
 %{__install} -Dm744 -s target/release/%{name} %{buildroot}%{_sbindir}/fancyd
@@ -68,7 +68,7 @@ cargo build --release --locked
 
 %if %{with check}
 %check
-%cargo_test
+cargo test --release --frozen
 %endif
 
 %changelog

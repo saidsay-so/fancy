@@ -14,11 +14,11 @@ install:
 	install -Dm644 .rpm/fancy.service "$(UNITSDIR)/fancy.service"
 	install -Dm644 .rpm/fancy-sleep.service "$(UNITSDIR)/fancy-sleep.service"
 	install -Dm644 .rpm/com.musikid.fancy.conf "$(DBUSDIR)/com.musikid.fancy.conf"
-	install -Dm644 .rpm/configs/* -t "$(DESTDIR)/etc/fancy/configs" 
+	install -Dm644 .rpm/configs/* -t "$(DESTDIR)/etc/fancy/configs"
 
 uninstall:
 	rm "$(BINDIR)/fancyd"
 	rm "$(UNITSDIR)/fancy.service"
 	rm "$(UNITSDIR)/fancy-sleep.service"
 	rm "$(DBUSDIR)/com.musikid.fancy.conf"
-	rm -rf "$(DESTDIR)/etc/fancy/configs" 
+	rm -rf "$(DESTDIR)/etc/fancy/configs"

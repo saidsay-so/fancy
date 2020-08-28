@@ -6,7 +6,6 @@ interfaces.rs
 /*.dsc
 /*.changes
 /*.buildinfo
-/*/*
 !/*/debian
 /*/debian/files
 /*/debian/*.substvars

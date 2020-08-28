@@ -1,4 +1,4 @@
-name: Rust test workflow
+name: test
 on: [push, pull_request]
 
 jobs:

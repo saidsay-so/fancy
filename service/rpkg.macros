@@ -10,8 +10,8 @@ function git_subpackage_name_version {
 
 function git_subpackage_pack {
 	local name=$(git_subpackage_name_version)
-	local archive_dir_name="$(dirname "$INPUT_PATH")"
-	tar chaf "$name.tar.gz" --absolute-names --transform "s|^$archive_dir_name|$name|" --transform "s|^$name//*|$name/|" $archive_dir_name >/dev/null 2>&1
+	local dir_name="$(dirname "$INPUT_PATH")"
+	tar chaf "$name.tar.gz" --absolute-names --transform "s|^$dir_name|$name|" --transform "s|^$name//*|$name/|" --transform "s|^../|$name/|" $dir_name ../Cargo.lock >/dev/null 2>&1
 	output "$name.tar.gz"
 }
-# vim: syntax=sh
+# vim:syntax=sh
