@@ -1,0 +1,12 @@
+.section .title {
+  font-size: 200%;
+  font-weight: 400;
+}
+.fan .name {
+  font-size: 150%;
+}
+.fan .speed {
+  padding: 1rem;
+  font-size: 125%;
+  font-weight: 600;
+}
