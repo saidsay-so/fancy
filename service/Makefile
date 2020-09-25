@@ -14,7 +14,7 @@ install:
 	install -Dm644 extra/fancy.service "$(UNITSDIR)/fancy.service"
 	install -Dm644 extra/fancy-sleep.service "$(UNITSDIR)/fancy-sleep.service"
 	install -Dm644 extra/com.musikid.fancy.conf "$(DBUSDIR)/com.musikid.fancy.conf"
-	install -Dm644 nbfc_configs/* -t "$(DESTDIR)/etc/fancy/configs"
+	install -Dm644 nbfc_configs/Configs/* -t "$(DESTDIR)/etc/fancy/configs"
 
 uninstall:
 	rm "$(BINDIR)/fancyd"
