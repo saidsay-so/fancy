@@ -11,10 +11,10 @@ test:
 
 install:
 	[ -e "../Cargo.toml" ] && install -Dm744 -s ../target/release/"$(NAME)" "$(BINDIR)/fancyd" || install -Dm744 -s target/release/"$(NAME)" "$(BINDIR)/fancyd"
-	install -Dm644 .rpm/fancy.service "$(UNITSDIR)/fancy.service"
-	install -Dm644 .rpm/fancy-sleep.service "$(UNITSDIR)/fancy-sleep.service"
-	install -Dm644 .rpm/com.musikid.fancy.conf "$(DBUSDIR)/com.musikid.fancy.conf"
-	install -Dm644 .rpm/configs/* -t "$(DESTDIR)/etc/fancy/configs"
+	install -Dm644 extra/fancy.service "$(UNITSDIR)/fancy.service"
+	install -Dm644 extra/fancy-sleep.service "$(UNITSDIR)/fancy-sleep.service"
+	install -Dm644 extra/com.musikid.fancy.conf "$(DBUSDIR)/com.musikid.fancy.conf"
+	install -Dm644 nbfc_configs/* -t "$(DESTDIR)/etc/fancy/configs"
 
 uninstall:
 	rm "$(BINDIR)/fancyd"

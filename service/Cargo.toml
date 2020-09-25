@@ -26,34 +26,34 @@ is_sorted = "^0.1.1"
 dbus-codegen = "~0.5.0"
 
 # All these metadatas are used for testing
-[package.metadata.deb]
-depends = "$auto, systemd, dbus"
-section = "utils"
-priority = "optional"
-assets = [
-    ["../target/release/fancy-service", "usr/sbin/fancyd", "744"],
-    [".rpm/fancy.service", "etc/systemd/system/", "644"],
-    [".rpm/fancy-sleep.service", "etc/systemd/system/", "644"],
-    ["fancy_dbus.service", "/usr/share/dbus-1/services/com.musikid.fancy.service", "644"],
-    [".rpm/configs/*", "etc/fancy/configs/", "644"],
-    [".rpm/com.musikid.fancy.conf", "/etc/dbus-1/system.d/", "644"]
-]
-
-[package.metadata.rpm]
-package = "fancy-service"
-
-[package.metadata.rpm.cargo]
-buildflags = ["--release"]
-
-[package.metadata.rpm.build_hooks]
-strip = ["--strip-all", "../target/release/fancy-service"]
-
-[package.metadata.rpm.targets]
-fancy-service = { path = "/usr/sbin/fancyd" }
-
-[package.metadata.rpm.files]
-"fancy.service" = { path = "/usr/lib/systemd/system/fancy.service" }
-"fancy-sleep.service" = { path = "/usr/lib/systemd/system/fancy-sleep.service" }
-"fancy_dbus.service" = { path = "/usr/share/dbus-1/services/com.musikid.fancy.service" }
-configs = { path = "/etc/fancy/configs" }
-"com.musikid.fancy.conf" = { path = "/etc/dbus-1/system.d/com.musikid.fancy.conf" }
+# [package.metadata.deb]
+# depends = "$auto, systemd, dbus"
+# section = "utils"
+# priority = "optional"
+# assets = [
+#     ["../target/release/fancy-service", "usr/sbin/fancyd", "744"],
+#     ["extra/fancy.service", "etc/systemd/system/", "644"],
+#     ["extra/fancy-sleep.service", "etc/systemd/system/", "644"],
+#     ["extra/fancy_dbus.service", "/usr/share/dbus-1/services/com.musikid.fancy.service", "644"],
+#     ["extra/configs/*", "etc/fancy/configs/", "644"],
+#     ["extra/com.musikid.fancy.conf", "/etc/dbus-1/system.d/", "644"]
+# ]
+#
+# [package.metadata.rpm]
+# package = "fancy-service"
+#
+# [package.metadata.rpm.cargo]
+# buildflags = ["--release"]
+#
+# [package.metadata.rpm.build_hooks]
+# strip = ["--strip-all", "../target/release/fancy-service"]
+#
+# [package.metadata.rpm.targets]
+# fancy-service = { path = "/usr/sbin/fancyd" }
+#
+# [package.metadata.rpm.files]
+# "fancy.service" = { path = "/usr/lib/systemd/system/fancy.service" }
+# "fancy-sleep.service" = { path = "/usr/lib/systemd/system/fancy-sleep.service" }
+# "fancy_dbus.service" = { path = "/usr/share/dbus-1/services/com.musikid.fancy.service" }
+# configs = { path = "/etc/fancy/configs" }
+# "com.musikid.fancy.conf" = { path = "/etc/dbus-1/system.d/com.musikid.fancy.conf" }

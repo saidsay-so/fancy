@@ -16,7 +16,7 @@ Group: System Environment/Daemons
 
 # Upstream license specification: MPL-2.0
 License:        MPLv2.0
-URL: https://github.com/MusiKid/fancy.git
+URL: https://github.com/MusiKid/fancy
 Source:         {{{ git_subpackage_pack }}}
 VCS:        {{{ git_dir_vcs }}}
 
@@ -51,11 +51,11 @@ cargo build --release --frozen
 
 %install
 %{__install} -Dm744 -s target/release/%{name} %{buildroot}%{_sbindir}/fancyd
-%{__install} -Dm644 .rpm/fancy.service %{buildroot}%{_unitdir}/fancy.service
-%{__install} -Dm644 .rpm/fancy-sleep.service %{buildroot}%{_unitdir}/fancy-sleep.service
+%{__install} -Dm644 extra/fancy.service %{buildroot}%{_unitdir}/fancy.service
+%{__install} -Dm644 extra/fancy-sleep.service %{buildroot}%{_unitdir}/fancy-sleep.service
 %{__install} -Dm644 nbfc_configs/Configs/* -t %{buildroot}%{_sysconfdir}/fancy/configs
-%{__install} -Dm644 .rpm/com.musikid.fancy.conf %{buildroot}%{_sysconfdir}/dbus-1/system.d/com.musikid.fancy.conf
-%{__install} -Dm644 .rpm/fancy_dbus.service %{buildroot}%{_datadir}/dbus-1/services/com.musikid.fancy.service
+%{__install} -Dm644 extra/com.musikid.fancy.conf %{buildroot}%{_sysconfdir}/dbus-1/system.d/com.musikid.fancy.conf
+%{__install} -Dm644 extra/fancy_dbus.service %{buildroot}%{_datadir}/dbus-1/services/com.musikid.fancy.service
 
 %post
 %systemd_post fancy.service fancy-sleep.service
