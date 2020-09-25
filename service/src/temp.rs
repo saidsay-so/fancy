@@ -39,6 +39,7 @@ impl Temperatures {
             .filter_map(|s| s.ok())
             .filter(|s| CPU_SENSORS_NAMES.iter().any(|&c| c.contains(s.unit())))
             .map(|s| s.current().celsius() as f64)
+            .filter(|x| x.is_normal())
             .collect();
         if cpu_sensors.is_empty() {
             return Err(SensorError::NoCPUSensorFound {});
@@ -49,6 +50,7 @@ impl Temperatures {
             .filter_map(|s| s.ok())
             .filter(|s| GPU_SENSORS_NAMES.iter().any(|&c| c.contains(s.unit())))
             .map(|s| s.current().celsius() as f64)
+            .filter(|x| x.is_normal())
             .collect();
 
         let acpi_sensors: Vec<f64> = temperatures()
@@ -56,6 +58,7 @@ impl Temperatures {
             .filter_map(|s| s.ok())
             .filter(|s| ACPI_SENSORS_NAMES.iter().any(|&c| c.contains(s.unit())))
             .map(|s| s.current().celsius() as f64)
+            .filter(|x| x.is_normal())
             .collect();
 
         let nvme_sensors: Vec<f64> = temperatures()
@@ -63,6 +66,7 @@ impl Temperatures {
             .filter_map(|s| s.ok())
             .filter(|s| NVME_SENSORS_NAMES.iter().any(|&c| c.contains(s.unit())))
             .map(|s| s.current().celsius() as f64)
+            .filter(|x| x.is_normal())
             .collect();
 
         Ok(Temperatures {

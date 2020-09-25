@@ -76,8 +76,7 @@ fn main() {
 
     info!("Creating D-Bus connection");
 
-    let mut dbus_conn =
-        create_dbus_conn(Rc::clone(&state)).expect("Failed to create D-Bus connection");
+    let dbus_conn = create_dbus_conn(Rc::clone(&state)).expect("Failed to create D-Bus connection");
 
     let fan_config = {
         if state.config.read().unwrap().trim().is_empty() {
@@ -162,7 +161,7 @@ fn main() {
 
 fn main_loop<RW: Unpin + Read + Write + Seek>(
     ec_manager: Rc<Mutex<ECManager<RW>>>,
-    mut dbus_conn: dbus_crate::blocking::LocalConnection,
+    dbus_conn: dbus_crate::blocking::LocalConnection,
     state: Rc<State>,
 ) -> Result<()> {
     loop {
@@ -177,13 +176,13 @@ fn main_loop<RW: Unpin + Read + Write + Seek>(
         temps.update_map(&mut *state.temps.write().unwrap());
 
         let critical = *state.critical.read().unwrap();
+        let temp_lock = state.temps.read().unwrap();
+        let temp_values = temp_lock.values();
+        let temp: f64 = temp_values.clone().sum::<f64>() / temp_values.len() as f64;
         *state.critical.write().unwrap() = if !critical {
-            temps.cpu_temp as u8 >= ec_manager.critical_temperature
+            temp as u8 >= ec_manager.critical_temperature
         } else {
-            ec_manager
-                .critical_temperature
-                .saturating_sub(temps.cpu_temp as u8)
-                <= CRITICAL_INTERVAL
+            ec_manager.critical_temperature.saturating_sub(temp as u8) <= CRITICAL_INTERVAL
         };
 
         let mut fans_speeds = state.fans_speeds.write().unwrap();
