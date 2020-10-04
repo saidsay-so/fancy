@@ -7,7 +7,7 @@
 
 ![test](https://github.com/MusiKid/fancy/workflows/test/badge.svg)
 
-# Control your laptop fans with a fancy ( ͡° ͜ʖ ͡°) interface.
+# Control your laptop fans with a fancy ( ͡° ͜ʖ ͡°) software.
 
 Fancy is a set of software which allows you to control your laptop fans. It includes a service daemon to allow accessing to the [EC](https://en.wikipedia.org/wiki/Embedded_controller#Tasks) and controlling it through D-Bus, a CLI to send commands and a GUI (WIP). It works only on Linux and Windows support is not planned<sup>[1](#linux-only)</sup>.
 
