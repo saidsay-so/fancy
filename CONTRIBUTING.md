@@ -16,4 +16,5 @@ If you encounter a bug, or have an idea to improve Fancy, you can open an issue.
 ## Pull request
 
 ### Code formatting
+
 Before sumbitting a pull request, you have to ensure that commits are correctly formatted using `cargo fmt --all`.

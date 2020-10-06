@@ -1,2 +1,2 @@
 # Fancy Interfaces
-This repo just contains the interfaces used by the tools.
+This folder just contains the D-Bus interfaces.
