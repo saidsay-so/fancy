@@ -5,6 +5,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+
+- Conflict between `auto` and `target_fan_speeds` options.
+
 ## v0.1.0
 
 Initial version.

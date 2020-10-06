@@ -32,7 +32,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         .short("f")
                         .long("fans-speeds")
                         .takes_value(true)
-                        .value_name("TARGET_FAN_SPEEDS"),
+                        .value_name("TARGET_FAN_SPEEDS")
+                        .conflicts_with("auto"),
                 )
                 .arg(
                     Arg::with_name("config")
@@ -46,7 +47,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     Arg::with_name("auto")
                         .help("Set auto state")
                         .short("a")
-                        .long("auto"),
+                        .long("auto")
+                        .conflicts_with("target_fans_speeds"),
                 ),
         )
         .subcommand(
@@ -63,7 +65,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .arg(
                     Arg::with_name("recommended")
                         .long("recommended")
-                        .help("Filter to get only recommended ones"),
+                        .help("Filter to get only the recommended ones"),
                 ),
         )
         .get_matches();
@@ -142,10 +144,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let args = matches.values_of("target_fans_speeds").unwrap();
             //TODO: Error handling
             let speeds = args.map(|n| n.parse::<f64>().unwrap()).collect();
-
-            if !matches.is_present("auto") {
-                proxy.set_auto(false)?;
-            }
 
             proxy.set_target_fans_speeds(speeds)?;
         }
