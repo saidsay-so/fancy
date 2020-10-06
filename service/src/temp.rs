@@ -30,7 +30,7 @@ pub(crate) struct Temperatures {
 }
 
 impl Temperatures {
-    //TODO: Find a way to hold some references to the sensors to not have to refresh anytime.
+    //TODO: Find a way to hold some references to the sensors to not have to refresh everytime.
     //TODO: Manage errors
     /// Get the current temperatures.
     pub fn get_temps() -> Result<Self, SensorError> {
