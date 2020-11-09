@@ -1,0 +1,71 @@
+name: Build cli releases
+on:
+  push:
+    tags:
+      - "fancy-cli-*"
+
+jobs:
+# Version is not properly formatted for direct use
+  filter:
+    runs-on: ubuntu-latest
+    name: Get version
+    outputs:
+      version: ${{ steps.filter.outputs.version }}
+    env:
+      VERSION: ${{ github.ref }}
+    steps:
+      - run: echo $VERSION | cut -d- -f3  | tr -d '[:space:]' | xargs printf "::set-output name=version::%s"
+        id: filter
+
+  create_release:
+    runs-on: ubuntu-latest
+    name: Create release
+    needs: filter
+    outputs:
+      upload_url: ${{ steps.create.outputs.upload_url }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/create-release@v1
+        id: create
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ format('Fancy CLI v{0}', needs.filter.outputs.version) }}
+
+  ubuntu:
+    runs-on: ubuntu-latest
+    name: Build (Ubuntu)
+    needs: [create_release, filter]
+    steps:
+      - name: Install required packages
+        run: sudo apt update && sudo apt install -y libdbus-1-dev libgtk-3-dev build-essential debhelper dh-make devscripts fakeroot
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - uses: actions/checkout@v2
+
+      - name: Build the package
+        working-directory: ./cli
+        run: dpkg-buildpackage --no-sign
+
+      - name: Find the package file
+        id: find_file
+        run: |
+          path=$(find .. -name '*.deb' -print -quit)
+          echo "::set-output name=path::$path"
+          echo "::set-output name=name::$(basename $path)"
+
+      - name: Upload Debian package
+        id: upload-deb
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_path: ${{ steps.find_file.outputs.path }}
+          asset_name: ${{ steps.find_file.outputs.name }}
+          asset_content_type: application/vnd.debian.binary-package

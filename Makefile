@@ -1,6 +1,6 @@
 all: cli service
 
-.PHONY: cli service install uninstall
+.PHONY: cli service
 
 cli:
 	make -C cli/
