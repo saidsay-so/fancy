@@ -1,7 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
-use psutil::sensors::temperatures;
+use psutil::sensors;
 use snafu::Snafu;
 
 use std::collections::HashMap;
@@ -34,9 +34,11 @@ impl Temperatures {
     //TODO: Manage errors
     /// Get the current temperatures.
     pub fn get_temps() -> Result<Self, SensorError> {
-        let cpu_sensors: Vec<f64> = temperatures()
-            .into_iter()
-            .filter_map(|s| s.ok())
+        let temperatures = sensors::temperatures();
+
+        let cpu_sensors: Vec<f64> = temperatures
+            .iter()
+            .filter_map(|s| s.as_ref().ok())
             .filter(|s| CPU_SENSORS_NAMES.iter().any(|&c| c.contains(s.unit())))
             .map(|s| s.current().celsius() as f64)
             .filter(|x| x.is_normal())
@@ -45,25 +47,25 @@ impl Temperatures {
             return Err(SensorError::NoCPUSensorFound {});
         }
 
-        let gpu_sensors: Vec<f64> = temperatures()
-            .into_iter()
-            .filter_map(|s| s.ok())
+        let gpu_sensors: Vec<f64> = temperatures
+            .iter()
+            .filter_map(|s| s.as_ref().ok())
             .filter(|s| GPU_SENSORS_NAMES.iter().any(|&c| c.contains(s.unit())))
             .map(|s| s.current().celsius() as f64)
             .filter(|x| x.is_normal())
             .collect();
 
-        let acpi_sensors: Vec<f64> = temperatures()
-            .into_iter()
-            .filter_map(|s| s.ok())
+        let acpi_sensors: Vec<f64> = temperatures
+            .iter()
+            .filter_map(|s| s.as_ref().ok())
             .filter(|s| ACPI_SENSORS_NAMES.iter().any(|&c| c.contains(s.unit())))
             .map(|s| s.current().celsius() as f64)
             .filter(|x| x.is_normal())
             .collect();
 
-        let nvme_sensors: Vec<f64> = temperatures()
-            .into_iter()
-            .filter_map(|s| s.ok())
+        let nvme_sensors: Vec<f64> = temperatures
+            .iter()
+            .filter_map(|s| s.as_ref().ok())
             .filter(|s| NVME_SENSORS_NAMES.iter().any(|&c| c.contains(s.unit())))
             .map(|s| s.current().celsius() as f64)
             .filter(|x| x.is_normal())

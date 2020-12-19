@@ -1,13 +1,14 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+use dbus_crate::strings::{BusName, Path as DBusPath};
 use dbus_crate::{
     blocking::stdintf::org_freedesktop_dbus::PropertiesPropertiesChanged, message::SignalArgs,
 };
-use log::{info, trace, warn};
+use log::{info, trace};
+use once_cell::sync::Lazy;
 use snafu::{ResultExt, Snafu};
 
-use std::io::{Read, Seek, Write};
 use std::path::Path;
 use std::rc::Rc;
 use std::sync::Mutex;
@@ -25,12 +26,19 @@ mod temp;
 
 use cleaner::cleaner;
 use config::{nbfc_control::load_control_config, service::ServiceConfig};
-use constants::{BUS_NAME, DBUS_PATH};
+use constants::OBJ_PATH_STR;
 use dbus::connection::create_dbus_conn;
-use ec_control::ec_manager::{ECError, ECManager};
+use ec_control::{
+    ec_manager::{ECError, ECManager},
+    RW,
+};
 use state::State;
 
 const CRITICAL_INTERVAL: u8 = 10;
+
+const BUS_NAME_STR: &str = "com.musikid.fancy";
+static BUS_NAME: Lazy<BusName> = Lazy::new(|| BusName::new(BUS_NAME_STR).unwrap());
+static DBUS_PATH: Lazy<DBusPath> = Lazy::new(|| DBusPath::new(OBJ_PATH_STR).unwrap());
 
 // TODO: The error string is not displayed at the end of the main loop
 type Result<T> = std::result::Result<T, ServiceError>;
@@ -51,51 +59,34 @@ enum ServiceError {
     },
 
     #[snafu(display("{}", source))]
-    ControlConfigLoad {
-        source: config::nbfc_control::ControlConfigLoadError,
-    },
+    Sensor { source: temp::SensorError },
 
     #[snafu(display("{}", source))]
-    Sensor { source: temp::SensorError },
+    DBus { source: dbus_crate::Error },
 }
-fn main() {
+fn main() -> Result<()> {
     pretty_env_logger::init();
 
     info!("Loading service configuration");
 
-    let service_config = ServiceConfig::load_service_config()
-        .context(ServiceConfigLoad)
-        .unwrap_or_else(|e| {
-            warn!("Failed to load service configuration: {}\nUsing default", e);
-            ServiceConfig {
-                auto: true,
-                ..Default::default()
-            }
-        });
-    let state = Rc::from(State::from(service_config));
+    let service_config = ServiceConfig::load_service_config().unwrap_or_else(|_| {
+        info!(
+            "Failed to load service configuration
+            Using default values"
+        );
+        ServiceConfig {
+            auto: true,
+            ..Default::default()
+        }
+    });
 
     info!("Creating D-Bus connection");
 
+    let state = State::from(service_config);
+    let state = Rc::from(state);
     let dbus_conn = create_dbus_conn(Rc::clone(&state)).expect("Failed to create D-Bus connection");
 
-    let fan_config = {
-        if state.config.read().unwrap().trim().is_empty() {
-            // Blocking the process until a valid configuration is provided.
-            loop {
-                dbus_conn.process(Duration::from_millis(1000)).unwrap();
-                if !state.config.read().unwrap().is_empty() {
-                    break;
-                }
-            }
-        }
-        info!(
-            "Loading fan control configuration '{}'",
-            &state.config.read().unwrap()
-        );
-        load_control_config(&*state.config.read().unwrap())
-            .context(ControlConfigLoad)
-            .unwrap()
-    };
+    let fan_config = get_fan_config(Rc::clone(&state), &dbus_conn);
 
     unsafe {
         signal_hook::register(signal_hook::SIGTERM, || {
@@ -106,25 +97,30 @@ fn main() {
         .unwrap();
     }
 
-    let dev_path = state.ec_access_mode.read().unwrap().to_path();
+    let dev_path = state.ec_access_mode.borrow().to_path();
+
     let ec_dev = std::fs::OpenOptions::new()
         .read(true)
         .write(true)
         .open(dev_path)
-        .context(OpenDev { dev_path })
-        .unwrap();
+        .context(OpenDev { dev_path })?;
+
     let ec_manager = Rc::from(Mutex::new(ECManager::new(ec_dev)));
+    let ec_manager = ECManager::new(ec_dev);
+    let ec_manager = Rc::from(Mutex::new(ec_manager));
     ec_manager
         .lock()
         .unwrap()
         .refresh_control_config(fan_config)
-        .context(ECIO {})
-        .unwrap();
+        .context(ECIO {})?;
 
-    // We catch this signal to save the config and to hook some calls.
-    //XXX: UGLY CODE
-    let d_state = Rc::clone(&state);
-    let d_ec_m = Rc::clone(&ec_manager);
+    *state.ec_access_mode.borrow_mut() = crate::config::service::ECAccessMode::from(dev_path);
+
+    // We have to clone the references to "move" them to the closure.
+    let dbus_state = Rc::clone(&state);
+    let dbus_ec_manager = Rc::clone(&ec_manager);
+    // We catch the signal when a property changed to save the config and to hook some calls.
+    //XXX: VERY UGLY CODE
     dbus_conn
         .add_match(
             PropertiesPropertiesChanged::match_rule(Some(&BUS_NAME), Some(&DBUS_PATH)),
@@ -132,60 +128,96 @@ fn main() {
                 for (property, _val) in props.changed_properties {
                     match &*property {
                         "Config" => {
-                            trace!(
-                                "Swapping configuration to '{}'",
-                                &*d_state.config.read().unwrap()
-                            );
-                            d_state.fans_speeds.write().unwrap().clear();
-                            let conf =
-                                load_control_config(&*d_state.config.read().unwrap()).unwrap();
-                            d_ec_m.lock().unwrap().refresh_control_config(conf).unwrap();
+                            let config = dbus_state.config.borrow();
+                            trace!("Swapping configuration to '{}'", &*config);
+
+                            let mut target_fans_speeds = dbus_state.fans_speeds.borrow_mut();
+                            target_fans_speeds.clear();
+
+                            let conf = load_control_config(&*config).unwrap();
+
+                            dbus_ec_manager
+                                .lock()
+                                .unwrap()
+                                .refresh_control_config(conf)
+                                .unwrap();
                         }
                         _ => {}
                     }
                 }
-                trace!("Saving service configuration to disk");
-                d_state.as_service_config().save().unwrap();
+
+                trace!("Saving service configuration");
+                dbus_state.as_service_config().save().unwrap();
                 true
             },
         )
         .unwrap();
 
-    main_loop(ec_manager, dbus_conn, state)
-        .map_err(|e| {
-            cleaner();
-            e
-        })
-        .unwrap()
+    main_loop(ec_manager, dbus_conn, state).map_err(|e| {
+        cleaner();
+        e
+    })
 }
 
-fn main_loop<RW: Unpin + Read + Write + Seek>(
-    ec_manager: Rc<Mutex<ECManager<RW>>>,
+fn get_fan_config(
+    state: Rc<State>,
+    dbus_conn: &dbus_crate::blocking::LocalConnection,
+) -> nbfc::FanControlConfigV2 {
+    let mut fan_config = state.config.borrow();
+    if fan_config.trim().is_empty() {
+        // Blocking the process until a valid configuration is provided.
+        loop {
+            dbus_conn.process(Duration::from_millis(1000)).unwrap();
+            fan_config = state.config.borrow();
+            if !fan_config.trim().is_empty() {
+                break;
+            }
+        }
+    }
+
+    info!("Loading fan control configuration '{}'", &fan_config);
+
+    load_control_config(&*fan_config).unwrap()
+}
+
+fn main_loop<T: RW>(
+    ec_manager: Rc<Mutex<ECManager<T>>>,
     dbus_conn: dbus_crate::blocking::LocalConnection,
     state: Rc<State>,
 ) -> Result<()> {
     loop {
-        // We should normally use a timer to call the function at an interval but instead of losing time,
+        // We should normally use a timer (or convert service to async?) to call the function at an interval but instead of losing time,
         // we treat the D-Bus requests.
-        let timeout = ec_manager.lock().unwrap().poll_interval;
-        dbus_conn.process(timeout).unwrap();
+        let timeout = {
+            let t = ec_manager.lock().unwrap().poll_interval;
+            if t > Duration::from_millis(0) {
+                t
+            } else {
+                Duration::from_millis(10)
+            }
+        };
+        dbus_conn.process(timeout).context(DBus {})?;
 
         let mut ec_manager = ec_manager.lock().unwrap();
 
-        let temps = temp::Temperatures::get_temps().unwrap();
-        temps.update_map(&mut *state.temps.write().unwrap());
+        // TODO: Find a way to optimize that
+        let current_temps = temp::Temperatures::get_temps().context(Sensor {})?;
+        let mut state_temps = state.temps.borrow_mut();
+        current_temps.update_map(&mut state_temps);
 
-        let critical = *state.critical.read().unwrap();
-        let temp_lock = state.temps.read().unwrap();
-        let temp_values = temp_lock.values();
+        let temp_values = state_temps.values();
         let temp: f64 = temp_values.clone().sum::<f64>() / temp_values.len() as f64;
-        *state.critical.write().unwrap() = if !critical {
+
+        let critical_now = *state.critical.borrow();
+        let mut critical_temp = state.critical.borrow_mut();
+
+        *critical_temp = if !critical_now {
             temp as u8 >= ec_manager.critical_temperature
         } else {
             ec_manager.critical_temperature.saturating_sub(temp as u8) <= CRITICAL_INTERVAL
         };
 
-        let mut fans_speeds = state.fans_speeds.write().unwrap();
+        let mut fans_speeds = state.fans_speeds.borrow_mut();
 
         for i in 0..ec_manager.fan_configs.len() {
             fans_speeds.insert(
@@ -193,15 +225,20 @@ fn main_loop<RW: Unpin + Read + Write + Seek>(
                 ec_manager.read_fan_speed(i).context(ECIO {})?,
             );
 
-            if *state.critical.read().unwrap() {
+            // If there is a target fan speed set by the user
+            let user_defined_speed =
+                !*state.auto.borrow() && state.target_fans_speeds.borrow().get(i).is_some();
+
+            if *critical_temp {
                 ec_manager.write_fan_speed(i, 100.0).context(ECIO {})?;
-            } else if !*state.auto.read().unwrap()
-                && state.target_fans_speeds.read().unwrap().get(i).is_some()
-            {
+            } else if user_defined_speed {
                 ec_manager
-                    .write_fan_speed(i, state.target_fans_speeds.read().unwrap()[i])
+                    .write_fan_speed(i, state.target_fans_speeds.borrow()[i])
                     .context(ECIO {})?;
-            } else if ec_manager.refresh_fan_threshold(temps.cpu_temp, i) {
+            }
+            // If the function returns `true`, the threshold has changed.
+            // Else, there is nothing to change.
+            else if ec_manager.refresh_fan_threshold(current_temps.cpu_temp, i) {
                 let value = ec_manager.fan_configs[i].thresholds[ec_manager.current_thr_indices[i]]
                     .fan_speed
                     .into();

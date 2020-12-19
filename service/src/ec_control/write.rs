@@ -4,13 +4,12 @@
 use log::debug;
 
 use std::io::{Error, Seek, SeekFrom, Write};
-use std::marker::Unpin;
-use std::sync::{Arc, Mutex};
 
+use super::RcWrapper;
 use crate::nbfc::*;
 
 #[derive(Debug)]
-/// This strcture contains information for writing to the EC for a fan.
+/// Contains information about writing to the EC for a fan.
 struct FanWriteConfig {
     write_register: u8,
     reset_required: bool,
@@ -21,20 +20,20 @@ struct FanWriteConfig {
 }
 
 #[derive(Debug)]
-/// A structure to manage writes to the EC.
-pub(crate) struct ECWriter<W: Unpin + Write + Seek> {
+/// Manages writes to the EC.
+pub(crate) struct ECWriter<W: Write + Seek> {
     on_write_reg_confs: Option<Vec<RegisterWriteConfiguration>>,
     init_reg_confs: Option<Vec<RegisterWriteConfiguration>>,
     fans_write_config: Vec<FanWriteConfig>,
     write_words: bool,
-    ec_dev: Arc<Mutex<W>>,
+    ec_dev: RcWrapper<W>,
 }
 
-type Result<T> = std::result::Result<T, Error>;
+type Result<T = ()> = std::result::Result<T, Error>;
 
-impl<W: Unpin + Write + Seek> ECWriter<W> {
+impl<W: Write + Seek> ECWriter<W> {
     /// Initialize a new writer.
-    pub fn new(ec_dev: Arc<Mutex<W>>) -> Self {
+    pub fn new(ec_dev: RcWrapper<W>) -> Self {
         ECWriter {
             on_write_reg_confs: None,
             init_reg_confs: None,
@@ -51,7 +50,7 @@ impl<W: Unpin + Write + Seek> ECWriter<W> {
         write_words: bool,
         reg_confs: Option<Vec<RegisterWriteConfiguration>>,
         fan_configs: &[FanConfiguration],
-    ) -> Result<()> {
+    ) -> Result {
         self.on_write_reg_confs = reg_confs.as_ref().map(|e| {
             e.iter()
                 .filter(|r| r.write_occasion == Some(RegisterWriteOccasion::OnWriteFanSpeed))
@@ -92,18 +91,18 @@ impl<W: Unpin + Write + Seek> ECWriter<W> {
     }
 
     /// Function to call before starting to write. It initialize the EC controlller so it can be used.
-    fn init_write(&mut self) -> Result<()> {
+    fn init_write(&mut self) -> Result {
         if let Some(reg_confs) = &self.init_reg_confs {
             for reg_conf in reg_confs.iter() {
                 let write_off = SeekFrom::Start(reg_conf.register as u64);
-                self.f_write_value(false, write_off, &reg_conf.value.to_le_bytes())?
+                self.write_value(false, write_off, &reg_conf.value.to_le_bytes())?
             }
         }
 
         for c in &self.fans_write_config {
             if let Some(value) = c.reset_value {
                 let write_off = SeekFrom::Start(c.write_register as u64);
-                self.f_write_value(self.write_words, write_off, &value.to_le_bytes())?;
+                self.write_value(self.write_words, write_off, &value.to_le_bytes())?;
             }
         }
 
@@ -111,13 +110,13 @@ impl<W: Unpin + Write + Seek> ECWriter<W> {
     }
 
     /// Reset the EC. Resets all the registers (even when it's not required) if `reset_all` is true.
-    pub fn reset(&mut self, reset_all: bool) -> Result<()> {
+    pub fn reset(&mut self, reset_all: bool) -> Result {
         if let Some(reg_confs) = &self.init_reg_confs {
             for reg_conf in reg_confs.iter() {
                 if reset_all || reg_conf.reset_required {
                     let write_off = SeekFrom::Start(reg_conf.register as u64);
                     if let Some(value) = reg_conf.reset_value {
-                        self.f_write_value(false, write_off, &value.to_le_bytes())?;
+                        self.write_value(false, write_off, &value.to_le_bytes())?;
                     }
                 }
             }
@@ -128,7 +127,7 @@ impl<W: Unpin + Write + Seek> ECWriter<W> {
                 if reset_all || reg_conf.reset_required {
                     let write_off = SeekFrom::Start(reg_conf.register as u64);
                     if let Some(value) = reg_conf.reset_value {
-                        self.f_write_value(false, write_off, &value.to_le_bytes())?;
+                        self.write_value(false, write_off, &value.to_le_bytes())?;
                     }
                 }
             }
@@ -138,7 +137,7 @@ impl<W: Unpin + Write + Seek> ECWriter<W> {
             if reset_all || c.reset_required {
                 if let Some(value) = c.reset_value {
                     let write_off = SeekFrom::Start(c.write_register as u64);
-                    self.f_write_value(self.write_words, write_off, &value.to_le_bytes())?;
+                    self.write_value(self.write_words, write_off, &value.to_le_bytes())?;
                 }
             }
         }
@@ -147,16 +146,16 @@ impl<W: Unpin + Write + Seek> ECWriter<W> {
     }
 
     /// Write the `speed_percent` to the EC for the fan specified by `fan_index`.
-    pub fn write_speed_percent(&mut self, fan_index: usize, speed_percent: f64) -> Result<()> {
+    pub fn write_speed_percent(&mut self, fan_index: usize, speed_percent: f64) -> Result {
         if let Some(reg_confs) = &self.on_write_reg_confs {
             for reg_conf in reg_confs.iter() {
                 let write_off = SeekFrom::Start(reg_conf.register as u64);
-                self.f_write_value(false, write_off, &reg_conf.value.to_le_bytes())?;
+                self.write_value(false, write_off, &reg_conf.value.to_le_bytes())?;
             }
         }
 
         let fan = &self.fans_write_config[fan_index];
-        //TODO: It takes 2 bytes even if just one is needed
+        //XXX: It takes 2 bytes even if just one is needed
         let speed: [u8; 2] = if let Some(speed_value) =
             fan.write_percent_overrides.as_ref().and_then(|f| {
                 f.iter()
@@ -175,18 +174,18 @@ impl<W: Unpin + Write + Seek> ECWriter<W> {
         };
 
         let write_off = SeekFrom::Start(fan.write_register as u64);
-        self.f_write_value(self.write_words, write_off, &speed)
+        self.write_value(self.write_words, write_off, &speed)
     }
 
     /// Low-level write function.
-    fn f_write_value(&self, write_word: bool, write_off: SeekFrom, value: &[u8]) -> Result<()> {
-        let mut dev = self.ec_dev.lock().unwrap();
-
+    fn write_value(&self, write_word: bool, write_off: SeekFrom, value: &[u8]) -> Result {
         debug!(
             "Writing {:?} to offset {:?}",
             if write_word { &value[..] } else { &value[..=0] },
             write_off
         );
+
+        let mut dev = (*self.ec_dev).borrow_mut();
 
         dev.seek(write_off)?;
         dev.write_all(if write_word { &value[..] } else { &value[..=0] })
@@ -197,8 +196,9 @@ impl<W: Unpin + Write + Seek> ECWriter<W> {
 mod tests {
     use super::*;
     use once_cell::sync::Lazy;
+    use std::cell::RefCell;
     use std::io::{Cursor, Read};
-    use std::sync::{Arc, Mutex};
+    use std::rc::Rc;
 
     static CONFIGS_PARSED: Lazy<Vec<FanControlConfigV2>> = Lazy::new(|| {
         std::fs::read_dir("nbfc_configs/Configs")
@@ -219,7 +219,7 @@ mod tests {
         CONFIGS_PARSED.iter().for_each(|c| {
             println!("{}", c.notebook_model);
             let mut ec = Cursor::new(vec![0; 256]);
-            let mut writer = ECWriter::new(Arc::new(Mutex::new(&mut ec)));
+            let mut writer = ECWriter::new(Rc::new(RefCell::new(&mut ec)));
             writer
                 .refresh_config(
                     c.read_write_words,
@@ -268,8 +268,8 @@ mod tests {
     fn write_overrides() {
         CONFIGS_PARSED.iter().for_each(|c| {
             let ec = Cursor::new(vec![0; 256]);
-            let ec = Arc::new(Mutex::new(ec));
-            let mut writer = ECWriter::new(Arc::clone(&ec));
+            let ec = Rc::new(RefCell::new(ec));
+            let mut writer = ECWriter::new(Rc::clone(&ec));
             writer
                 .refresh_config(
                     c.read_write_words,
@@ -292,18 +292,19 @@ mod tests {
                         let write_off = fan.write_register as u64;
                         let excepted_value = override_s.fan_speed_value;
 
-                        let value = if c.read_write_words {
-                            let mut buf = [0; 2];
-                            let mut ec = ec.lock().unwrap();
-                            ec.set_position(write_off);
-                            ec.read(&mut buf).unwrap();
-                            u16::from_le_bytes(buf)
-                        } else {
-                            let mut buf = [0; 1];
-                            let mut ec = ec.lock().unwrap();
-                            ec.set_position(write_off);
-                            ec.read(&mut buf).unwrap();
-                            buf[0] as u16
+                        let value = {
+                            let mut ec = (*ec).borrow_mut();
+                            if c.read_write_words {
+                                let mut buf = [0; 2];
+                                ec.set_position(write_off);
+                                ec.read(&mut buf).unwrap();
+                                u16::from_le_bytes(buf)
+                            } else {
+                                let mut buf = [0; 1];
+                                ec.set_position(write_off);
+                                ec.read(&mut buf).unwrap();
+                                buf[0] as u16
+                            }
                         };
 
                         assert_eq!(excepted_value, value);
@@ -319,8 +320,8 @@ mod tests {
     fn on_write_confs() {
         CONFIGS_PARSED.iter().for_each(|c| {
             let ec = Cursor::new(vec![0; 256]);
-            let ec = Arc::new(Mutex::new(ec));
-            let mut writer = ECWriter::new(Arc::clone(&ec));
+            let ec = Rc::new(RefCell::new(ec));
+            let mut writer = ECWriter::new(Rc::clone(&ec));
             writer
                 .refresh_config(
                     c.read_write_words,
@@ -339,7 +340,7 @@ mod tests {
                     let write_off = reg_conf.register as usize;
                     let excepted_value = reg_conf.value;
 
-                    let value = ec.lock().unwrap().get_ref()[write_off];
+                    let value = (*ec).borrow_mut().get_ref()[write_off];
                     assert_eq!(excepted_value, value);
                 }
             }
@@ -350,8 +351,8 @@ mod tests {
     fn write_good_offset() {
         CONFIGS_PARSED.iter().for_each(|c| {
             let ec = Cursor::new(vec![0; 256]);
-            let ec = Arc::new(Mutex::new(ec));
-            let mut writer = ECWriter::new(Arc::clone(&ec));
+            let ec = Rc::new(RefCell::new(ec));
+            let mut writer = ECWriter::new(Rc::clone(&ec));
             writer
                 .refresh_config(
                     c.read_write_words,
@@ -368,13 +369,13 @@ mod tests {
                 let write_off = fan.write_register as u64;
                 let value = if c.read_write_words {
                     let mut buf = [0; 2];
-                    let mut ec = ec.lock().unwrap();
+                    let mut ec = (*ec).borrow_mut();
                     ec.set_position(write_off);
                     ec.read(&mut buf).unwrap();
                     u16::from_le_bytes(buf)
                 } else {
                     let mut buf = [0; 1];
-                    let mut ec = ec.lock().unwrap();
+                    let mut ec = (*ec).borrow_mut();
                     ec.set_position(write_off);
                     ec.read(&mut buf).unwrap();
                     buf[0] as u16

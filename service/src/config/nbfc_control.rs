@@ -1,17 +1,18 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+use once_cell::sync::Lazy;
+use quick_xml::de::from_str as xml_from_str;
+use snafu::{ResultExt, Snafu};
+
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
-use quick_xml::de::from_str as xml_from_str;
-use snafu::{ResultExt, Snafu};
-
-use crate::constants::CONTROL_CONFIGS_DIR_PATH;
 use crate::constants::ROOT_CONFIG_PATH;
 use crate::nbfc::{check_control_config, CheckControlConfigError, FanControlConfigV2};
 
+static CONTROL_CONFIGS_DIR_PATH: Lazy<PathBuf> = Lazy::new(|| ROOT_CONFIG_PATH.join("configs"));
 #[derive(Debug, Snafu)]
 pub(crate) enum ControlConfigLoadError {
     #[snafu(display(

@@ -1,6 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+use once_cell::sync::Lazy;
 use quick_xml::de::from_str as xml_from_str;
 use serde::{Deserialize, Serialize};
 use snafu::{ResultExt, Snafu};
@@ -8,18 +9,23 @@ use toml::{de::from_str as toml_from_str, ser::to_string_pretty};
 
 use std::fs::File;
 use std::io::prelude::*;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
-use crate::constants::{
-    ACPI_EC_DEV_PATH, CONFIG_FILE_PATH, EC_SYS_DEV_PATH, NBFC_SETTINGS_PATH, PORT_DEV_PATH,
-};
+use crate::constants::ROOT_CONFIG_PATH;
 use crate::nbfc::NbfcServiceSettings;
 
-#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+static EC_SYS_DEV_PATH: Lazy<&Path> = Lazy::new(|| Path::new("/sys/kernel/debug/ec/ec0/io"));
+static ACPI_EC_DEV_PATH: Lazy<&Path> = Lazy::new(|| Path::new("/dev/ec"));
+static PORT_DEV_PATH: Lazy<&Path> = Lazy::new(|| Path::new("/dev/port"));
+static CONFIG_FILE_PATH: Lazy<PathBuf> = Lazy::new(|| ROOT_CONFIG_PATH.join("config.toml"));
+static NBFC_SETTINGS_PATH: Lazy<&Path> =
+    Lazy::new(|| Path::new("/etc/NbfcService/NbfcServiceSettings.xml"));
+
+#[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
 /// Describe the way to access to the EC.
 pub(crate) enum ECAccessMode {
     /// Access to the EC using the `/dev/port` file.
-    Port,
+    RawPort,
     /// Access to the EC using the module `acpi_ec`.
     AcpiEC,
     /// Access to the EC using the module `ec_sys` with `write_support=1`.
@@ -32,11 +38,13 @@ pub(crate) enum ECAccessMode {
 impl ECAccessMode {
     pub fn to_path(&self) -> &'static Path {
         match self {
-            ECAccessMode::Port => *PORT_DEV_PATH,
+            ECAccessMode::RawPort => *PORT_DEV_PATH,
             ECAccessMode::AcpiEC => *ACPI_EC_DEV_PATH,
             ECAccessMode::ECSys => *EC_SYS_DEV_PATH,
             ECAccessMode::Either => {
-                if ACPI_EC_DEV_PATH.exists() {
+                if PORT_DEV_PATH.exists() {
+                    *PORT_DEV_PATH
+                } else if ACPI_EC_DEV_PATH.exists() {
                     *ACPI_EC_DEV_PATH
                 } else if EC_SYS_DEV_PATH.exists() {
                     *EC_SYS_DEV_PATH
@@ -50,6 +58,16 @@ impl ECAccessMode {
 impl Default for ECAccessMode {
     fn default() -> Self {
         ECAccessMode::Either
+    }
+}
+impl From<&Path> for ECAccessMode {
+    fn from(s: &Path) -> Self {
+        match s {
+            s if s == *PORT_DEV_PATH => ECAccessMode::RawPort,
+            s if s == *ACPI_EC_DEV_PATH => ECAccessMode::AcpiEC,
+            s if s == *EC_SYS_DEV_PATH => ECAccessMode::ECSys,
+            _ => unreachable!(),
+        }
     }
 }
 

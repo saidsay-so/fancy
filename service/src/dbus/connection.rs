@@ -37,10 +37,10 @@ impl From<DBusError> for MethodErr {
 
 impl ComMusikidFancy for State {
     fn fans_speeds(&self) -> Result<HashMap<String, f64>, MethodErr> {
-        Ok(self.fans_speeds.read().unwrap().to_owned())
+        Ok(self.fans_speeds.borrow().to_owned())
     }
     fn target_fans_speeds(&self) -> Result<Vec<f64>, MethodErr> {
-        Ok(self.target_fans_speeds.read().unwrap().to_owned())
+        Ok(self.target_fans_speeds.borrow().to_owned())
     }
     fn set_target_fans_speeds(&self, mut value: Vec<f64>) -> Result<(), MethodErr> {
         // From https://rust-num.github.io/num/src/num_traits/lib.rs.html#329-338
@@ -57,18 +57,18 @@ impl ComMusikidFancy for State {
         }
 
         value.iter_mut().for_each(|v| *v = clamp(*v, 0., 100.));
-        *self.target_fans_speeds.write().unwrap() = value;
+        *self.target_fans_speeds.borrow_mut() = value;
         Ok(())
     }
     fn config(&self) -> Result<String, MethodErr> {
-        Ok(self.config.read().unwrap().to_owned())
+        Ok(self.config.borrow().to_owned())
     }
     fn critical(&self) -> Result<bool, MethodErr> {
-        Ok(*self.critical.read().unwrap())
+        Ok(*self.critical.borrow())
     }
     fn set_config(&self, value: String) -> Result<(), MethodErr> {
         if test_load_control_config(&value).is_ok() {
-            *self.config.write().unwrap() = value;
+            *self.config.borrow_mut() = value;
             Ok(())
         } else {
             Err(MethodErr::failed(&format!(
@@ -78,14 +78,14 @@ impl ComMusikidFancy for State {
         }
     }
     fn auto(&self) -> Result<bool, MethodErr> {
-        Ok(*self.auto.read().unwrap())
+        Ok(*self.auto.borrow())
     }
     fn set_auto(&self, value: bool) -> Result<(), MethodErr> {
-        *self.auto.write().unwrap() = value;
+        *self.auto.borrow_mut() = value;
         Ok(())
     }
     fn temperatures(&self) -> Result<HashMap<String, f64>, MethodErr> {
-        Ok(self.temps.read().unwrap().to_owned())
+        Ok(self.temps.borrow().to_owned())
     }
 }
 
@@ -116,7 +116,7 @@ pub(crate) fn create_dbus_conn(data: Rc<State>) -> Result<LocalConnection, DBusE
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::RwLock;
+    use std::cell::RefCell;
 
     #[test]
     fn getters() {
@@ -131,13 +131,13 @@ mod tests {
         let dummy_temps: HashMap<String, f64> = vec![("CPU".to_owned(), 26.)].into_iter().collect();
         let dummy_config = String::from("Dummy config");
         let state = State {
-            ec_access_mode: RwLock::new(crate::config::service::ECAccessMode::Either),
-            fans_speeds: RwLock::new(dummy_fans_speeds.clone()),
-            target_fans_speeds: RwLock::new(dummy_target_fans_speeds.clone()),
-            auto: RwLock::new(true),
-            critical: RwLock::new(false),
-            config: RwLock::new(dummy_config),
-            temps: RwLock::new(dummy_temps.clone()),
+            ec_access_mode: RefCell::new(crate::config::service::ECAccessMode::Either),
+            fans_speeds: RefCell::new(dummy_fans_speeds.clone()),
+            target_fans_speeds: RefCell::new(dummy_target_fans_speeds.clone()),
+            auto: RefCell::new(true),
+            critical: RefCell::new(false),
+            config: RefCell::new(dummy_config),
+            temps: RefCell::new(dummy_temps.clone()),
         };
 
         assert_eq!(state.fans_speeds().unwrap(), dummy_fans_speeds);
@@ -166,14 +166,14 @@ mod tests {
         assert!(state.set_auto(true).is_ok());
 
         assert_eq!(
-            state.target_fans_speeds.read().unwrap().clone(),
+            state.target_fans_speeds.borrow().clone(),
             dummy_target_fans_speeds
         );
         // assert_eq!(
         //     block_on(async { state.config.read().clone() }),
         //     dummy_config
         // );
-        assert_eq!(*state.auto.read().unwrap(), true);
+        assert_eq!(*state.auto.borrow(), true);
     }
 
     #[test]
@@ -186,7 +186,7 @@ mod tests {
             .set_target_fans_speeds(dummy_target_speeds.clone())
             .is_ok());
 
-        assert!(*state.target_fans_speeds.read().unwrap() == dummy_target_speeds);
+        assert!(*state.target_fans_speeds.borrow() == dummy_target_speeds);
     }
 
     #[test]
@@ -202,8 +202,7 @@ mod tests {
 
         assert!(state
             .target_fans_speeds
-            .read()
-            .unwrap()
+            .borrow()
             .iter()
             .all(|&el| 0.0 <= el && el <= 100.0));
     }
@@ -215,7 +214,7 @@ mod tests {
     //       use std::thread::spawn;
     //
     //       let state = Rc::from(State {
-    //           target_fans_speeds: RwLock::new([42.0].to_vec()),
+    //           target_fans_speeds: RefCell::new([42.0].to_vec()),
     //           ..Default::default()
     //       });
     //       let _conn = create_dbus_conn(Rc::clone(&state)).unwrap();
@@ -240,7 +239,7 @@ mod tests {
     //       use std::time::Duration;
     //
     //       let state = Rc::from(State {
-    //           target_fans_speeds: RwLock::new([42.0].to_vec()),
+    //           target_fans_speeds: RefCell::new([42.0].to_vec()),
     //           ..Default::default()
     //       });
     //       let mut conn = create_dbus_conn(Rc::clone(&state)).unwrap();

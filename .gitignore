@@ -1,7 +1,7 @@
 **/target
 pkg/
 *.tar*
-interfaces.rs
+**/interfaces.rs
 /*.deb
 /*.dsc
 /*.changes

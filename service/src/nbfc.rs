@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-//TODO: Implement macros to simplify the generation of structures compatible with quick-xml deserializing
+//XXX: Implement macros to simplify the generation of structures compatible with quick-xml deserializing
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 #[serde(from = "String")]

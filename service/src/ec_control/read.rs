@@ -4,10 +4,11 @@
 use log::debug;
 
 use std::io::{Error, Read, Seek, SeekFrom};
-use std::marker::Unpin;
-use std::sync::{Arc, Mutex};
 
+use super::RcWrapper;
 use crate::nbfc::*;
+
+type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug)]
 /// This strcture contains information for reading from the EC for a fan.
@@ -20,15 +21,15 @@ struct FanReadConfig {
 
 #[derive(Debug)]
 /// A structure to manage reads from the EC.
-pub(crate) struct ECReader<R: Unpin + Read + Seek> {
+pub(crate) struct ECReader<R: Read + Seek> {
     read_words: bool,
-    ec_dev: Arc<Mutex<R>>,
+    ec_dev: RcWrapper<R>,
     fans_read_config: Vec<FanReadConfig>,
 }
 
-impl<R: Unpin + Read + Seek> ECReader<R> {
+impl<R: Read + Seek> ECReader<R> {
     /// Initialize a reader.
-    pub fn new(ec_dev: Arc<Mutex<R>>) -> Self {
+    pub fn new(ec_dev: RcWrapper<R>) -> Self {
         ECReader {
             ec_dev,
             read_words: false,
@@ -68,10 +69,10 @@ impl<R: Unpin + Read + Seek> ECReader<R> {
 
     /// Read the speed value for the fan specified at `fan_index`.
     //TODO: Check if the value is not out of the bounds
-    pub fn read_speed_percent(&self, fan_index: usize) -> Result<f64, Error> {
+    pub fn read_speed_percent(&self, fan_index: usize) -> Result<f64> {
         let fan = &self.fans_read_config[fan_index];
         let read_off = SeekFrom::Start(fan.read_register as u64);
-        let speed = self.f_read_value(read_off)?;
+        let speed = self.read_value(read_off)?;
 
         let percentage: f64 = if let Some(speed_percent) =
             fan.read_percent_overrides.as_ref().and_then(|f| {
@@ -91,11 +92,13 @@ impl<R: Unpin + Read + Seek> ECReader<R> {
     }
 
     /// Low-level read function.
-    //TODO: The function returns an u16 even if just a u8 is needed
-    fn f_read_value(&self, read_off: SeekFrom) -> Result<u16, Error> {
-        // TODO: The buffer takes 2 bytes even if just one is needed
+    // XXX: The function returns an u16 even if just a u8 is needed
+    fn read_value(&self, read_off: SeekFrom) -> Result<u16> {
+        // XXX: The buffer takes 2 bytes even if just one is needed
         let mut buf = [0u8; 2];
-        let mut dev = self.ec_dev.lock().unwrap();
+        let mut dev = (*self.ec_dev).borrow_mut();
+
+        debug!("Reading at offset {:?} the value {:?}", read_off, &buf);
 
         dev.seek(read_off)?;
         dev.read_exact(if self.read_words {
@@ -103,8 +106,6 @@ impl<R: Unpin + Read + Seek> ECReader<R> {
         } else {
             &mut buf[..=0]
         })?;
-
-        debug!("Reading at offset {:?} the value {:?}", read_off, &buf);
 
         if self.read_words {
             Ok(u16::from_le_bytes(buf))
@@ -118,7 +119,9 @@ mod tests {
     use super::*;
     use once_cell::sync::Lazy;
     use rand::Rng;
+    use std::cell::RefCell;
     use std::io::{Cursor, Write};
+    use std::rc::Rc;
 
     static CONFIGS_PARSED: Lazy<Vec<FanControlConfigV2>> = Lazy::new(|| {
         std::fs::read_dir("nbfc_configs/Configs")
@@ -135,13 +138,13 @@ mod tests {
     });
 
     #[test]
-    fn read_good_value() {
+    fn read_register_value() {
         CONFIGS_PARSED.iter().for_each(|c| {
             println!("{}", c.notebook_model);
             let mut rng = rand::thread_rng();
             let ec = Cursor::new(vec![0; 256]);
-            let ec = Arc::new(Mutex::new(ec));
-            let mut reader = ECReader::new(Arc::clone(&ec));
+            let ec = Rc::new(RefCell::new(ec));
+            let mut reader = ECReader::new(Rc::clone(&ec));
             reader.refresh_config(c.read_write_words, &c.fan_configurations);
             let mut i = 0;
 
@@ -182,7 +185,7 @@ mod tests {
                     };
 
                     write(
-                        Arc::clone(&ec),
+                        Rc::clone(&ec),
                         fan.read_register.into(),
                         &write_value.to_le_bytes(),
                     );
@@ -201,8 +204,8 @@ mod tests {
     fn read_overrides() {
         CONFIGS_PARSED.iter().for_each(|c| {
             let ec = Cursor::new(vec![0; 256]);
-            let ec = Arc::new(Mutex::new(ec));
-            let mut reader = ECReader::new(Arc::clone(&ec));
+            let ec = Rc::new(RefCell::new(ec));
+            let mut reader = ECReader::new(Rc::clone(&ec));
             reader.refresh_config(c.read_write_words, &c.fan_configurations);
             let mut i = 0;
 
@@ -213,7 +216,7 @@ mod tests {
                             || e.target_operation == Some(OverrideTargetOperation::Read)
                     }) {
                         write(
-                            Arc::clone(&ec),
+                            Rc::clone(&ec),
                             fan.read_register as u64,
                             &override_s.fan_speed_value.to_le_bytes(),
                         );
@@ -228,8 +231,8 @@ mod tests {
         });
     }
 
-    fn write(ec: Arc<Mutex<Cursor<Vec<u8>>>>, pos: u64, value: &[u8]) {
-        let mut ec = ec.lock().unwrap();
+    fn write(ec: RcWrapper<Cursor<Vec<u8>>>, pos: u64, value: &[u8]) {
+        let mut ec = (*ec).borrow_mut();
         ec.set_position(pos);
         ec.write(value).unwrap();
     }

@@ -3,12 +3,13 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 use snafu::{ResultExt, Snafu};
 
-use std::io::{Read, Seek, Write};
-use std::sync::{Arc, Mutex};
-use std::{cmp::Ordering, marker::Unpin, time::Duration};
+use std::cell::RefCell;
+use std::rc::Rc;
+use std::{cmp::Ordering, time::Duration};
 
 use super::read::ECReader;
 use super::write::ECWriter;
+use super::RW;
 use crate::nbfc::*;
 
 #[derive(Debug, Snafu)]
@@ -30,29 +31,29 @@ pub(crate) struct FanConfig {
     pub thresholds: Vec<TemperatureThreshold>,
 }
 
-/// Holds the state for the EC.
+/// Manages accesses to the EC.
 #[derive(Debug)]
-pub(crate) struct ECManager<RW: Unpin + Read + Write + Seek> {
+pub(crate) struct ECManager<T: RW> {
     pub poll_interval: Duration,
     pub fan_configs: Vec<FanConfig>,
     pub critical_temperature: u8,
     /// We store the current threshold(s) by using indices.
     pub current_thr_indices: Vec<usize>,
-    reader: ECReader<RW>,
-    writer: ECWriter<RW>,
+    reader: ECReader<T>,
+    writer: ECWriter<T>,
 }
 
-impl<RW: Unpin + Read + Write + Seek> ECManager<RW> {
-    pub fn new(ec_device: RW) -> Self {
-        let ec_device = Arc::new(Mutex::new(ec_device));
+impl<T: RW> ECManager<T> {
+    pub fn new(ec_device: T) -> Self {
+        let ec_device = Rc::from(RefCell::from(ec_device));
 
         ECManager {
             poll_interval: Duration::from_nanos(0),
             current_thr_indices: Vec::new(),
             fan_configs: Vec::new(),
             critical_temperature: 0,
-            writer: ECWriter::new(Arc::clone(&ec_device)),
-            reader: ECReader::new(Arc::clone(&ec_device)),
+            writer: ECWriter::new(Rc::clone(&ec_device)),
+            reader: ECReader::new(Rc::clone(&ec_device)),
         }
     }
 
@@ -139,7 +140,7 @@ impl<RW: Unpin + Read + Write + Seek> ECManager<RW> {
 mod tests {
     use super::*;
     use once_cell::sync::Lazy;
-    use std::io::Cursor;
+    use std::io::{Cursor, Read};
 
     static CONFIGS_PARSED: Lazy<Vec<FanControlConfigV2>> = Lazy::new(|| {
         std::fs::read_dir("nbfc_configs/Configs")
