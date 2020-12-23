@@ -30,7 +30,7 @@ use constants::OBJ_PATH_STR;
 use dbus::connection::create_dbus_conn;
 use ec_control::{
     ec_manager::{ECError, ECManager},
-    RW,
+    RawPort, RW,
 };
 use state::State;
 
@@ -80,7 +80,9 @@ fn main() -> Result<()> {
         }
     });
 
-    info!("Creating D-Bus connection");
+    // We have to check if it's /dev/port because we have to "wrap" the file in this case.
+    let is_raw_port =
+        service_config.ec_access_mode == crate::config::service::ECAccessMode::RawPort;
 
     let state = State::from(service_config);
     let state = Rc::from(state);
@@ -105,7 +107,13 @@ fn main() -> Result<()> {
         .open(dev_path)
         .context(OpenDev { dev_path })?;
 
-    let ec_manager = Rc::from(Mutex::new(ECManager::new(ec_dev)));
+    // XXX: Sorry...
+    let ec_dev = if is_raw_port {
+        Box::from(RawPort::from(ec_dev)) as Box<dyn RW>
+    } else {
+        Box::from(ec_dev) as Box<dyn RW>
+    };
+
     let ec_manager = ECManager::new(ec_dev);
     let ec_manager = Rc::from(Mutex::new(ec_manager));
     ec_manager

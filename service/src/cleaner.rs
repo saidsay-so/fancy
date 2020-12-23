@@ -3,7 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 use crate::config::{nbfc_control::load_control_config, service::ServiceConfig};
 use crate::ec_control::ECWriter;
-use crate::ec_control::RW;
+use crate::ec_control::{RawPort, RW};
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -18,6 +18,11 @@ pub(super) fn cleaner() {
             .write(true)
             .open(path)
             .unwrap();
+        let ec_dev = if serv_conf.ec_access_mode == crate::config::service::ECAccessMode::RawPort {
+            Box::new(RawPort::from(ec_dev)) as Box<dyn RW>
+        } else {
+            Box::new(ec_dev) as Box<dyn RW>
+        };
 
         let mut writer = ECWriter::new(Rc::from(RefCell::from(ec_dev)));
 
