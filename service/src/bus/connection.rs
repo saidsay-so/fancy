@@ -1,15 +1,18 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
-use dbus_crate::blocking::LocalConnection;
-use dbus_crate::tree::{DataType, Factory, MethodErr};
+use dbus::blocking::LocalConnection;
+use dbus_tree::{DataType, Factory, MethodErr};
 use snafu::{ResultExt, Snafu};
 
 use super::interfaces::*;
-use crate::{config::nbfc_control::test_load_control_config, constants::OBJ_PATH_STR, State};
+use crate::config::nbfc_control::test_load_control_config;
+use crate::constants::OBJ_PATH_STR;
+use crate::State;
 
+use std::borrow::Borrow;
 use std::collections::HashMap;
-use std::{borrow::Borrow, rc::Rc};
+use std::rc::Rc;
 
 #[derive(Copy, Clone, Default, Debug)]
 struct TData;
@@ -26,7 +29,7 @@ impl DataType for TData {
 #[derive(Debug, Snafu)]
 pub(crate) enum DBusError {
     #[snafu(display("An error occured with D-Bus: {}", source))]
-    DBus { source: dbus_crate::Error },
+    DBus { source: dbus::Error },
 }
 
 impl From<DBusError> for MethodErr {
@@ -43,28 +46,12 @@ impl ComMusikidFancy for State {
         Ok(self.target_fans_speeds.borrow().to_owned())
     }
     fn set_target_fans_speeds(&self, mut value: Vec<f64>) -> Result<(), MethodErr> {
-        // From https://rust-num.github.io/num/src/num_traits/lib.rs.html#329-338
-        #[inline]
-        fn clamp<T: PartialOrd>(input: T, min: T, max: T) -> T {
-            assert!(min <= max, "min must be less than or equal to max");
-            if input < min {
-                min
-            } else if input > max {
-                max
-            } else {
-                input
-            }
-        }
-
-        value.iter_mut().for_each(|v| *v = clamp(*v, 0., 100.));
+        value.iter_mut().for_each(|v| *v = f64::clamp(*v, 0., 100.));
         *self.target_fans_speeds.borrow_mut() = value;
         Ok(())
     }
     fn config(&self) -> Result<String, MethodErr> {
         Ok(self.config.borrow().to_owned())
-    }
-    fn critical(&self) -> Result<bool, MethodErr> {
-        Ok(*self.critical.borrow())
     }
     fn set_config(&self, value: String) -> Result<(), MethodErr> {
         if test_load_control_config(&value).is_ok() {
@@ -76,6 +63,9 @@ impl ComMusikidFancy for State {
                 value
             )))
         }
+    }
+    fn critical(&self) -> Result<bool, MethodErr> {
+        Ok(*self.critical.borrow())
     }
     fn auto(&self) -> Result<bool, MethodErr> {
         Ok(*self.auto.borrow())
@@ -209,7 +199,7 @@ mod tests {
 
     //   #[test]
     //   fn connecting() {
-    //       use dbus_crate::blocking::stdintf::org_freedesktop_dbus::Properties;
+    //       use dbus::blocking::stdintf::org_freedesktop_dbus::Properties;
     //       use std::sync::Rc;
     //       use std::thread::spawn;
     //
@@ -220,7 +210,7 @@ mod tests {
     //       let _conn = create_dbus_conn(Rc::clone(&state)).unwrap();
     //
     //       let t = spawn(|| {
-    //           let client_conn = dbus_crate::blocking::LocalConnection::new_system().unwrap();
+    //           let client_conn = dbus::blocking::LocalConnection::new_system().unwrap();
     //           let _proxy = client_conn.with_proxy(
     //               "com.musikid.fancy",
     //               "/com/musikid/fancy",
@@ -233,7 +223,7 @@ mod tests {
     //
     //   #[test]
     //   fn test_client() {
-    //       use dbus_crate::blocking::stdintf::org_freedesktop_dbus::Properties;
+    //       use dbus::blocking::stdintf::org_freedesktop_dbus::Properties;
     //       use std::sync::Rc;
     //       use std::thread::spawn;
     //       use std::time::Duration;
@@ -245,7 +235,7 @@ mod tests {
     //       let mut conn = create_dbus_conn(Rc::clone(&state)).unwrap();
     //
     //       let res = spawn(|| {
-    //           let client_conn = dbus_crate::blocking::LocalConnection::new_system().unwrap();
+    //           let client_conn = dbus::blocking::LocalConnection::new_system().unwrap();
     //           let proxy = client_conn.with_proxy(
     //               "com.musikid.fancy",
     //               "/com/musikid/fancy",

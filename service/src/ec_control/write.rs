@@ -155,16 +155,12 @@ impl<W: Write + Seek> ECWriter<W> {
         }
 
         let fan = &self.fans_write_config[fan_index];
-        //XXX: It takes 2 bytes even if just one is needed
-        let speed: [u8; 2] = if let Some(speed_value) =
-            fan.write_percent_overrides.as_ref().and_then(|f| {
-                f.iter()
-                    .filter(|e| {
-                        (e.fan_speed_percentage as f64 - speed_percent).abs() < f64::EPSILON
-                    })
-                    .map(|e| e.fan_speed_value)
-                    .next()
-            }) {
+        let speed = if let Some(speed_value) = fan.write_percent_overrides.as_ref().and_then(|f| {
+            f.iter()
+                .filter(|e| (e.fan_speed_percentage as f64 - speed_percent).abs() < f64::EPSILON)
+                .map(|e| e.fan_speed_value)
+                .next()
+        }) {
             speed_value.to_le_bytes()
         } else {
             ((fan.min_speed as f64
@@ -215,9 +211,116 @@ mod tests {
     });
 
     #[test]
-    fn reset_write() {
+    fn reset_only_required() {
         CONFIGS_PARSED.iter().for_each(|c| {
-            println!("{}", c.notebook_model);
+            let ec = Cursor::new(vec![0; 256]);
+            let ec = Rc::new(RefCell::new(ec));
+            let mut writer = ECWriter::new(Rc::clone(&ec));
+            writer
+                .refresh_config(
+                    c.read_write_words,
+                    c.register_write_configurations.clone(),
+                    &c.fan_configurations,
+                )
+                .unwrap();
+
+            ec.borrow_mut().get_mut().iter_mut().map(|x| *x = 0).count();
+            writer.reset(false).unwrap();
+
+            if let Some(reg_confs) = c.register_write_configurations.as_ref() {
+                let ec = ec.borrow();
+
+                for reg_conf in reg_confs.iter() {
+                    let write_off = reg_conf.register as usize;
+                    let excepted_value = if reg_conf.reset_required {
+                        reg_conf.reset_value.unwrap()
+                    } else {
+                        0
+                    };
+
+                    let value = ec.get_ref()[write_off];
+                    assert_eq!(excepted_value, value);
+                }
+
+                for fan in &c.fan_configurations {
+                    if fan.reset_required {
+                        let write_off = fan.write_register as usize;
+                        let excepted_value = &fan.fan_speed_reset_value.unwrap().to_le_bytes();
+
+                        let value = if c.read_write_words {
+                            &ec.get_ref()[write_off..=write_off + 1]
+                        } else {
+                            &ec.get_ref()[write_off..=write_off]
+                        };
+                        assert_eq!(
+                            if c.read_write_words {
+                                &excepted_value[..]
+                            } else {
+                                &excepted_value[..=0]
+                            },
+                            value
+                        );
+                    }
+                }
+            }
+        });
+    }
+
+    #[test]
+    fn reset_all() {
+        CONFIGS_PARSED.iter().for_each(|c| {
+            let ec = Cursor::new(vec![0; 256]);
+            let ec = Rc::new(RefCell::new(ec));
+            let mut writer = ECWriter::new(Rc::clone(&ec));
+            writer
+                .refresh_config(
+                    c.read_write_words,
+                    c.register_write_configurations.clone(),
+                    &c.fan_configurations,
+                )
+                .unwrap();
+
+            ec.borrow_mut().get_mut().iter_mut().map(|x| *x = 0).count();
+            writer.reset(true).unwrap();
+
+            if let Some(reg_confs) = c.register_write_configurations.as_ref() {
+                let ec = ec.borrow();
+
+                for reg_conf in reg_confs.iter().filter(|e| e.reset_value.is_some()) {
+                    let write_off = reg_conf.register as usize;
+                    let excepted_value = reg_conf.reset_value.unwrap();
+
+                    let value = ec.get_ref()[write_off];
+                    assert_eq!(excepted_value, value);
+                }
+
+                for fan in &c.fan_configurations {
+                    if fan.reset_required {
+                        let write_off = fan.write_register as usize;
+                        let excepted_value = &fan.fan_speed_reset_value.unwrap().to_le_bytes();
+
+                        let value = if c.read_write_words {
+                            &ec.get_ref()[write_off..=write_off + 1]
+                        } else {
+                            &ec.get_ref()[write_off..=write_off]
+                        };
+                        assert_eq!(
+                            if c.read_write_words {
+                                &excepted_value[..]
+                            } else {
+                                &excepted_value[..=0]
+                            },
+                            value
+                        );
+                    }
+                }
+            }
+        });
+    }
+
+    #[test]
+    fn init_write() {
+        CONFIGS_PARSED.iter().for_each(|c| {
             let mut ec = Cursor::new(vec![0; 256]);
             let mut writer = ECWriter::new(Rc::new(RefCell::new(&mut ec)));
             writer

@@ -1,12 +1,28 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+use gio::prelude::*;
+use gtk::prelude::*;
 
-// use futures::prelude::*;
-// use gio::prelude::*;
+use std::env::args;
 
-// const DBUS_PATH: &str = "/com/musikid/fancy";
+fn build_ui(application: &gtk::Application) {
+    let window = gtk::ApplicationWindow::new(application);
+
+    window.set_title("Fancy");
+    window.set_border_width(10);
+    window.set_position(gtk::WindowPosition::Center);
+    window.set_default_size(350, 70);
+
+    let button = gtk::Button::with_label("Click me!");
+
+    window.add(&button);
+
+    window.show_all();
+}
 
 fn main() {
-    // gio::dbus_address_get_stream_future(DBUS_PATH);
+    let app = gtk::Application::new(Some("com.musikid.fancy.gui"), Default::default())
+        .expect("Initialization failed");
+
+    app.connect_activate(|a| build_ui(a));
+
+    app.run(&args().collect::<Vec<_>>());
 }

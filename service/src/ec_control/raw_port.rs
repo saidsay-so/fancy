@@ -1,8 +1,11 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 use super::RW;
 use std::io::{Error, Read, Seek, SeekFrom, Write};
 
 #[derive(Copy, Clone, PartialEq)]
-enum BufferFull {
+enum BufferEmpty {
     OutputBuffer = 0x01,
     InputBuffer = 0x02,
 }
@@ -34,8 +37,7 @@ impl<T: RW> RawPort<T> {
     /// Low-level wait function before reading/writing to `/dev/port`.
     ///
     /// It waits for input/output buffer to be empty and return an error on timeout.
-    // XXX: Could be interesting to rewrite the service as async again?
-    fn raw_port_wait(&mut self, buffer_type: BufferFull) -> Result {
+    fn raw_port_wait(&mut self, buffer_type: BufferEmpty) -> Result {
         let mut retries = RAW_PORT_TIMEOUT;
         while retries > 0 {
             retries -= 1;
@@ -46,7 +48,7 @@ impl<T: RW> RawPort<T> {
 
             let mut value = value[0];
             // Invert the value for output buffer.
-            if buffer_type == BufferFull::OutputBuffer {
+            if buffer_type == BufferEmpty::OutputBuffer {
                 value = !value;
             }
 
@@ -60,12 +62,12 @@ impl<T: RW> RawPort<T> {
 
     /// Read variant of [`raw_port_wait`](#method.raw_port_wait).
     fn raw_port_wait_read(&mut self) -> Result {
-        self.raw_port_wait(BufferFull::OutputBuffer)
+        self.raw_port_wait(BufferEmpty::OutputBuffer)
     }
 
     /// Write variant of [`raw_port_wait`](#method.raw_port_wait).
     fn raw_port_wait_write(&mut self) -> Result {
-        self.raw_port_wait(BufferFull::InputBuffer)
+        self.raw_port_wait(BufferEmpty::InputBuffer)
     }
 
     /// Write data (a query) to a port.
@@ -131,15 +133,12 @@ impl<T: RW> Seek for RawPort<T> {
             SeekFrom::Start(pos) => {
                 self.pos = pos as u8;
             }
-            SeekFrom::Current(rel_pos) => {
-                self.pos += rel_pos as u8;
-            }
             _ => {
                 return Err(Error::from(std::io::ErrorKind::InvalidInput));
             }
         }
 
-        return Ok(self.pos.into());
+        Ok(self.pos.into())
     }
 }
 
@@ -202,17 +201,16 @@ mod tests {
     impl Read for BufferTest {
         fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
             assert!(buf.len() == 1);
-            // TODO: This is already irrefutable
             buf[0] = if self.pos == COMMAND_PORT_UINT {
                 let input_status = if self.full_input {
-                    BufferFull::InputBuffer as u8
+                    BufferEmpty::InputBuffer as u8
                 } else {
-                    !(BufferFull::InputBuffer as u8)
+                    !(BufferEmpty::InputBuffer as u8)
                 };
                 let output_status = if self.full_output {
-                    !(BufferFull::OutputBuffer as u8)
+                    !(BufferEmpty::OutputBuffer as u8)
                 } else {
-                    BufferFull::OutputBuffer as u8
+                    BufferEmpty::OutputBuffer as u8
                 };
 
                 input_status | output_status
@@ -248,7 +246,7 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(result.unwrap_err().kind(), std::io::ErrorKind::TimedOut);
 
-        assert!(buffer.reads.len() == RAW_PORT_TIMEOUT as usize);
+        assert_eq!(buffer.reads.len(), RAW_PORT_TIMEOUT as usize);
         assert!(buffer.reads.iter().all(|e| e.0 == COMMAND_PORT_UINT as u8));
     }
 
@@ -263,7 +261,7 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(result.unwrap_err().kind(), std::io::ErrorKind::TimedOut);
 
-        assert!(buffer.reads.len() == RAW_PORT_TIMEOUT as usize);
+        assert_eq!(buffer.reads.len(), RAW_PORT_TIMEOUT as usize);
         assert!(buffer.reads.iter().all(|e| e.0 == COMMAND_PORT_UINT as u8));
     }
 
@@ -303,17 +301,29 @@ mod tests {
     fn read_offset_value() {
         let mut buffer = BufferTest::new();
         let excepted_value = 50;
-        buffer.registers.insert(0, excepted_value);
+        let excepted_register = 37;
+        buffer.registers.insert(excepted_register, excepted_value);
 
         let mut raw_port = RawPort::from(&mut buffer);
 
         let mut value = [0u8; 1];
-        raw_port.seek(SeekFrom::Start(0)).unwrap();
+        raw_port
+            .seek(SeekFrom::Start(excepted_register as u64))
+            .unwrap();
         raw_port.read(&mut value).unwrap();
         let value = value[0];
         assert_eq!(value, excepted_value);
 
         //TODO: Check the reads/writes
         assert!(buffer.reads.len() == 5);
+
+        assert_eq!(
+            *buffer.writes.iter().skip(1).next().unwrap(),
+            (DATA_PORT_UINT, excepted_register)
+        );
+        assert_eq!(
+            *buffer.reads.last().unwrap(),
+            (DATA_PORT_UINT, excepted_value)
+        );
     }
 }

@@ -140,7 +140,6 @@ mod tests {
     #[test]
     fn read_register_value() {
         CONFIGS_PARSED.iter().for_each(|c| {
-            println!("{}", c.notebook_model);
             let mut rng = rand::thread_rng();
             let ec = Cursor::new(vec![0; 256]);
             let ec = Rc::new(RefCell::new(ec));

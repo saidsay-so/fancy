@@ -26,7 +26,7 @@ static NBFC_SETTINGS_PATH: Lazy<&Path> =
 pub(crate) enum ECAccessMode {
     /// Access to the EC using the `/dev/port` file.
     RawPort,
-    /// Access to the EC using the module `acpi_ec`.
+    /// Access to the EC using the module `acpi_ec` (`/dev/ec`).
     AcpiEC,
     /// Access to the EC using the module `ec_sys` with `write_support=1`.
     ECSys,
@@ -63,9 +63,9 @@ impl Default for ECAccessMode {
 impl From<&Path> for ECAccessMode {
     fn from(s: &Path) -> Self {
         match s {
-            s if s == *PORT_DEV_PATH => ECAccessMode::RawPort,
-            s if s == *ACPI_EC_DEV_PATH => ECAccessMode::AcpiEC,
-            s if s == *EC_SYS_DEV_PATH => ECAccessMode::ECSys,
+            _s if _s == *PORT_DEV_PATH => ECAccessMode::RawPort,
+            _s if _s == *ACPI_EC_DEV_PATH => ECAccessMode::AcpiEC,
+            _s if _s == *EC_SYS_DEV_PATH => ECAccessMode::ECSys,
             _ => unreachable!(),
         }
     }
@@ -93,13 +93,13 @@ impl From<NbfcServiceSettings> for ServiceConfig {
 #[derive(Debug, Snafu)]
 pub(crate) enum ServiceConfigSaveError {
     #[snafu(display(
-        "An I/O error occured while trying to create the service config file: {}",
+        "An I/O error occured while trying to create the service configuration file: {}",
         source
     ))]
     CreateConfig { source: std::io::Error },
 
     #[snafu(display(
-        "An I/O error occured while trying to save the service config: {}",
+        "An I/O error occured while trying to save the service configuration: {}",
         source
     ))]
     SaveConfig { source: std::io::Error },
@@ -108,30 +108,33 @@ pub(crate) enum ServiceConfigSaveError {
 #[derive(Debug, Snafu)]
 pub(crate) enum ServiceConfigLoadError {
     #[snafu(display(
-        "An I/O error occured while trying to open the service config file: {}",
+        "An I/O error occured while trying to open the service configuration file: {}",
         source
     ))]
     OpenServiceConfig { source: std::io::Error },
 
     #[snafu(display(
-        "An I/O error occured while trying to open the NBFC service config file: {}",
+        "An I/O error occured while trying to open the NBFC service configuration file: {}",
         source
     ))]
     OpenNbfcServiceConfig { source: std::io::Error },
 
     #[snafu(display(
-        "An I/O error occured while trying to load the service config: {}",
+        "An I/O error occured while trying to load the service configuration: {}",
         source
     ))]
     LoadService { source: std::io::Error },
 
-    #[snafu(display("Error occured while deserializing XML: {}", source))]
+    #[snafu(display(
+        "Error occured while deserializing NBFC service configuration: {}",
+        source
+    ))]
     NbfcServiceXmlDeserialize { source: quick_xml::DeError },
 
-    #[snafu(display("Error occured while deserializing TOML: {}", source))]
+    #[snafu(display("Error occured while deserializing service configuration: {}", source))]
     TomlDeserialize { source: toml::de::Error },
 
-    #[snafu(display("There is not config"))]
+    #[snafu(display("There is no configuration available"))]
     NoConfig {},
 }
 

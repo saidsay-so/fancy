@@ -20,18 +20,6 @@ You can check if your computer model is supported by checking if a configuration
 
 **NOTE: If you have Secure Boot enabled, you have to instead install [`acpi_ec`](https://github.com/MusiKid/acpi_ec).**
 
-**NOTE: Users of Arch Linux (with or without Secure Boot) or distros which builds ec_sys directly in the kernel (`modinfo ec_sys | grep filename` returns builtin), should instead add `ec_sys.write_support=1` to the [kernel command line parameters](https://wiki.archlinux.org/index.php/Kernel_parameters) for the first step.**
-
-### First, enable `ec_sys` kernel module to allow `fancy` to access the EC:
-
-```sh
-sudo sh -c "echo ec_sys >> /etc/modules-load.d/ec_sys.conf"
-sudo sh -c "echo 'options ec_sys write_support=1' >> /etc/modprobe.d/ec_sys-write-support.conf"
-sudo systemctl restart systemd-modules-load.service
-```
-
-### After that, install `fancy`:
-
 <!--
 ##### Debian:
 ```sh
@@ -68,7 +56,7 @@ fancy list --recommended
 ### Apply a config:
 
 ```sh
-fancy set -c "CONFIG_TO_USE"
+fancy set -c "YOUR_COMPUTER_MODEL"
 ```
 
 You can then set the fan speed. For example, to make it silent:

@@ -7,8 +7,8 @@ use std::collections::HashMap;
 
 #[derive(Debug, Default)]
 /// This struct is shared between the **D-Bus** tree and the `main` function.
-/// Some of the properties are in common with the `ServiceConfig`.
-/// It stores the current state of the information provided through **D-Bus**.
+/// It stores the current state of the information provided through **D-Bus** and is used to save
+/// the configuration.
 pub(crate) struct State {
     pub ec_access_mode: RefCell<ECAccessMode>,
     pub fans_speeds: RefCell<HashMap<String, f64>>,

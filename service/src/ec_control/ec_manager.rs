@@ -4,8 +4,9 @@
 use snafu::{ResultExt, Snafu};
 
 use std::cell::RefCell;
+use std::cmp::Ordering;
 use std::rc::Rc;
-use std::{cmp::Ordering, time::Duration};
+use std::time::Duration;
 
 use super::read::ECReader;
 use super::write::ECWriter;
@@ -21,14 +22,14 @@ pub(crate) enum ECError {
     Reader { source: std::io::Error },
 }
 
-type Result<T> = std::result::Result<T, ECError>;
+type Result<T = ()> = std::result::Result<T, ECError>;
 
+/// Holds useful information not used by the writer or the reader.
 #[derive(Debug)]
-/// Lighter struct than `FanConfiguration` which holds useful information
-/// not used by the writer or the reader.
 pub(crate) struct FanConfig {
     pub name: String,
     pub thresholds: Vec<TemperatureThreshold>,
+    pub current_threshold: usize,
 }
 
 /// Manages accesses to the EC.
@@ -37,8 +38,6 @@ pub(crate) struct ECManager<T: RW> {
     pub poll_interval: Duration,
     pub fan_configs: Vec<FanConfig>,
     pub critical_temperature: u8,
-    /// We store the current threshold(s) by using indices.
-    pub current_thr_indices: Vec<usize>,
     reader: ECReader<T>,
     writer: ECWriter<T>,
 }
@@ -49,7 +48,6 @@ impl<T: RW> ECManager<T> {
 
         ECManager {
             poll_interval: Duration::from_nanos(0),
-            current_thr_indices: Vec::new(),
             fan_configs: Vec::new(),
             critical_temperature: 0,
             writer: ECWriter::new(Rc::clone(&ec_device)),
@@ -58,11 +56,11 @@ impl<T: RW> ECManager<T> {
     }
 
     /// Refresh the `FanControlConfigV2` and initialize the writer according to this config.
-    pub fn refresh_control_config(&mut self, c: FanControlConfigV2) -> Result<()> {
+    pub fn refresh_control_config(&mut self, c: FanControlConfigV2) -> Result {
         self.fan_configs = c
             .fan_configurations
             .iter()
-            .scan(0u8, |acc, f| {
+            .scan(0, |acc, f| {
                 *acc += 1;
                 Some(FanConfig {
                     name: f
@@ -70,18 +68,20 @@ impl<T: RW> ECManager<T> {
                         .to_owned()
                         .unwrap_or(format!("Fan #{}", acc)),
                     thresholds: f.temperature_thresholds.to_owned(),
+                    current_threshold: 0,
                 })
             })
             .collect();
 
-        self.critical_temperature = c.critical_temperature as u8;
+        self.critical_temperature = c.critical_temperature;
         self.poll_interval = Duration::from_millis(c.ec_poll_interval);
 
         self.fan_configs
             .iter_mut()
             .for_each(|c| c.thresholds.sort());
 
-        self.current_thr_indices = self.fan_configs.iter().map(|_| 0).collect();
+        self.reader
+            .refresh_config(c.read_write_words, &c.fan_configurations);
 
         self.writer
             .refresh_config(
@@ -89,45 +89,50 @@ impl<T: RW> ECManager<T> {
                 c.register_write_configurations,
                 &c.fan_configurations,
             )
-            .context(Writer {})?;
-
-        self.reader
-            .refresh_config(c.read_write_words, &c.fan_configurations);
-
-        Ok(())
+            .context(Writer {})
     }
 
-    //TODO: Refactoring
     /// Refresh the index of the current fan threshold according to the temperature (if necessary).
     /// Returns false if the threshold didn't need change.
-    pub fn refresh_fan_threshold(&mut self, current_temp: f64, fan_index: usize) -> bool {
-        let thresholds = &self.fan_configs[fan_index].thresholds;
-        let current_thr_i = &mut self.current_thr_indices[fan_index];
+    ///
+    /// # Panics
+    ///
+    /// Panics if the temperature cannot be converted to `u8`.
+    /// Panics if the thresholds has no elements.
+    pub fn refresh_fan_threshold(&mut self, temp: f64, fan_index: usize) -> bool {
+        let temp = temp as u8;
+        let fan_config = &mut self.fan_configs[fan_index];
+        let thresholds = &fan_config.thresholds;
+        let current = &mut fan_config.current_threshold;
 
-        if current_temp as u8 >= thresholds[*current_thr_i].down_threshold
-            && current_temp as u8 <= thresholds[*current_thr_i].up_threshold
+        if temp >= thresholds[*current].down_threshold && temp <= thresholds[*current].up_threshold
         {
             return false;
-        } else if current_temp as u8 <= thresholds[1].down_threshold {
-            *current_thr_i = 0;
-        } else if current_temp as u8 >= thresholds[thresholds.len() - 1].up_threshold {
-            *current_thr_i = thresholds.len() - 1;
+        } else if temp <= thresholds[1].down_threshold {
+            *current = 0;
+        } else if temp >= thresholds.last().unwrap().up_threshold {
+            *current = thresholds.len() - 1;
         } else if let Ok(i) = thresholds.binary_search_by(|el| match el {
-            tmp if tmp.down_threshold > current_temp as u8 => Ordering::Greater,
-            tmp if tmp.up_threshold < current_temp as u8 => Ordering::Less,
+            _t if _t.down_threshold > temp => Ordering::Greater,
+            _t if _t.up_threshold < temp => Ordering::Less,
             _ => Ordering::Equal,
         }) {
-            *current_thr_i = i;
+            *current = i;
         }
 
         true
     }
 
     /// Write the speed percent to the EC for the fan specified by `fan_index`.
-    pub fn write_fan_speed(&mut self, fan_index: usize, speed_percent: f64) -> Result<()> {
+    pub fn write_fan_speed(&mut self, fan_index: usize, speed_percent: f64) -> Result {
         self.writer
             .write_speed_percent(fan_index, speed_percent)
             .context(Writer {})
+    }
+
+    /// Reset the EC, including non-required registers when `reset_all` is true.
+    pub fn reset_ec(&mut self, reset_all: bool) -> Result {
+        self.writer.reset(reset_all).context(Writer {})
     }
 
     /// Read the speed percent from the EC of the fan specified by `fan_index`.
@@ -155,22 +160,23 @@ mod tests {
             .map(|e| quick_xml::de::from_str::<FanControlConfigV2>(&e).unwrap())
             .collect()
     });
+
     #[test]
     fn refresh_config() {
         use is_sorted::IsSorted;
         CONFIGS_PARSED.iter().for_each(|c| {
             let ec = Cursor::new(vec![0u8; 256]);
 
-            let mut task_struct: ECManager<_> = ECManager::new(ec);
+            let mut manager = ECManager::new(ec);
 
-            task_struct.refresh_control_config(c.clone()).unwrap();
+            manager.refresh_control_config(c.clone()).unwrap();
 
-            assert!(task_struct.critical_temperature == c.critical_temperature as u8);
-            assert!(task_struct
+            assert!(manager.critical_temperature == c.critical_temperature as u8);
+            assert!(manager
                 .fan_configs
                 .iter_mut()
                 .all(|f| { IsSorted::is_sorted(&mut f.thresholds.iter()) }));
-            assert!(task_struct.current_thr_indices.iter().all(|e| *e == 0));
+            assert!(manager.fan_configs.iter().all(|f| f.current_threshold == 0));
         });
     }
 
@@ -179,22 +185,22 @@ mod tests {
         CONFIGS_PARSED.iter().for_each(|c| {
             let ec = Cursor::new(vec![0u8; 256]);
 
-            let mut task_struct: ECManager<_> = ECManager::new(ec);
+            let mut manager = ECManager::new(ec);
 
-            task_struct.refresh_control_config(c.clone()).unwrap();
+            manager.refresh_control_config(c.clone()).unwrap();
 
             for i in 0..c.fan_configurations.len() {
                 let thresholds = &c.fan_configurations[i].temperature_thresholds;
 
                 let very_high_temperature = 90.0;
-                task_struct.refresh_fan_threshold(very_high_temperature, i);
-                assert!(task_struct.current_thr_indices[i] == thresholds.len() - 1);
+                manager.refresh_fan_threshold(very_high_temperature, i);
+                assert!(manager.fan_configs[i].current_threshold == thresholds.len() - 1);
 
                 let very_low_temperature = 20.0;
-                task_struct.refresh_fan_threshold(very_low_temperature, i);
+                manager.refresh_fan_threshold(very_low_temperature, i);
                 assert!(
-                    task_struct.current_thr_indices[i] == 0
-                        || task_struct.current_thr_indices[i] == 1
+                    manager.fan_configs[i].current_threshold == 0
+                        || manager.fan_configs[i].current_threshold == 1
                 );
 
                 // let mut rng = rand::thread_rng();
@@ -203,11 +209,11 @@ mod tests {
                 //     println!("t°:{}", t);
                 //     // let random_temp = rng.gen_range(40.0, 80.0);
 
-                //     task_struct.refresh_fan_threshold(t as f64, i);
+                //     manager.refresh_fan_threshold(t as f64, i);
 
-                //     let thr = task_struct.current_thr_indices[i];
+                //     let thr = manager.current_thr_indices[i];
                 //     println!("thr:{}", thr);
-                //     let excepted_thr = match task_struct.fan_configurations[i]
+                //     let excepted_thr = match manager.fan_configurations[i]
                 //         .temperature_thresholds
                 //         .binary_search_by(|el| match el {
                 //             tmp if tmp.down_threshold >= t as u8 => Ordering::Greater,

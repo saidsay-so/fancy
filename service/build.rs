@@ -13,13 +13,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let interface_code = dbus_codegen::generate(
         &data,
         &dbus_codegen::GenOpts {
-            dbuscrate: String::from("dbus_crate"),
             ..Default::default()
         },
     )?;
 
-    let mut file = std::fs::File::create("src/dbus/interfaces.rs")?;
-    file.write("#![allow(unused_imports)]\n".as_bytes())?;
+    let mut file = std::fs::File::create("src/bus/interfaces.rs")?;
     file.write_all(interface_code.as_bytes())?;
 
     Ok(())
