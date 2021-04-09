@@ -161,8 +161,8 @@ mod tests {
                 };
 
                 let random_value: u16 = rng.gen_range(
-                    std::cmp::min(min_speed_read, max_speed_read),
-                    std::cmp::max(min_speed_read, max_speed_read),
+                    std::cmp::min(min_speed_read, max_speed_read)
+                        ..std::cmp::max(min_speed_read, max_speed_read),
                 );
 
                 for write_value in [min_speed_read, max_speed_read, random_value].iter() {
