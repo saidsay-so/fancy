@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Support for setting fan speed by using the index.
+
 - Support for `/dev/port`, allowing to install the service without installing
   kernel modules (on systems where `/dev/port` can be accessed).
 

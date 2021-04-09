@@ -7,7 +7,7 @@ use snafu::{ResultExt, Snafu};
 
 use super::interfaces::*;
 use crate::config::nbfc_control::test_load_control_config;
-use crate::constants::OBJ_PATH_STR;
+use crate::constants::{BUS_NAME_STR, OBJ_PATH_STR};
 use crate::State;
 
 use std::borrow::Borrow;
@@ -45,9 +45,32 @@ impl ComMusikidFancy for State {
     fn target_fans_speeds(&self) -> Result<Vec<f64>, MethodErr> {
         Ok(self.target_fans_speeds.borrow().to_owned())
     }
-    fn set_target_fans_speeds(&self, mut value: Vec<f64>) -> Result<(), MethodErr> {
-        value.iter_mut().for_each(|v| *v = f64::clamp(*v, 0., 100.));
-        *self.target_fans_speeds.borrow_mut() = value;
+    fn set_target_fans_speeds(&self, value: Vec<f64>) -> Result<(), MethodErr> {
+        let mut target_fans_speeds = self.target_fans_speeds.borrow_mut();
+        if value.len() != target_fans_speeds.len() {
+            return Err(MethodErr::invalid_arg(
+                "The number of values is not equal to the number of fans.",
+            ));
+        }
+        if target_fans_speeds.iter().any(|&v| 100. < v || v < 0.) {
+            return Err(MethodErr::invalid_arg("One of the values is out of bounds"));
+        }
+
+        *target_fans_speeds = value;
+        Ok(())
+    }
+    fn set_target_fan_speed(&self, index: u8, speed: f64) -> Result<(), MethodErr> {
+        let mut target_fans_speeds = self.target_fans_speeds.borrow_mut();
+        if index as usize >= target_fans_speeds.len() {
+            return Err(MethodErr::invalid_arg(&format!(
+                "{} is not a valid index.",
+                index
+            )));
+        }
+        if 0. > speed || 100. < speed {
+            return Err(MethodErr::invalid_arg("The speed is out of bounds"));
+        }
+        target_fans_speeds[index as usize] = speed;
         Ok(())
     }
     fn config(&self) -> Result<String, MethodErr> {
@@ -59,7 +82,7 @@ impl ComMusikidFancy for State {
             Ok(())
         } else {
             Err(MethodErr::failed(&format!(
-                "`{}` is not in configs path",
+                "`{}` is not in configs path.",
                 value
             )))
         }
@@ -96,7 +119,7 @@ pub(crate) fn create_dbus_conn(data: Rc<State>) -> Result<LocalConnection, DBusE
         .add(fac.object_path("/", ()).introspectable());
 
     let c = LocalConnection::new_system().context(DBus {})?;
-    c.request_name("com.musikid.fancy", true, true, false)
+    c.request_name(BUS_NAME_STR, true, true, false)
         .context(DBus {})?;
     tree.start_receive(&c);
 
@@ -149,16 +172,16 @@ mod tests {
             ..Default::default()
         };
 
+        assert_eq!(
+            &*state.target_fans_speeds.borrow(),
+            &dummy_target_fans_speeds
+        );
+
         assert!(state
-            .set_target_fans_speeds(dummy_target_fans_speeds.clone())
+            .set_target_fans_speeds(dummy_target_fans_speeds)
             .is_ok());
         // assert!(state.set_config(dummy_config.clone()).is_ok());
         assert!(state.set_auto(true).is_ok());
-
-        assert_eq!(
-            state.target_fans_speeds.borrow().clone(),
-            dummy_target_fans_speeds
-        );
         // assert_eq!(
         //     block_on(async { state.config.read().clone() }),
         //     dummy_config
@@ -172,11 +195,9 @@ mod tests {
             ..Default::default()
         };
         let dummy_target_speeds = vec![3., 2., 10., 24., 26.];
-        assert!(state
-            .set_target_fans_speeds(dummy_target_speeds.clone())
-            .is_ok());
 
         assert!(*state.target_fans_speeds.borrow() == dummy_target_speeds);
+        assert!(state.set_target_fans_speeds(dummy_target_speeds).is_ok());
     }
 
     #[test]
@@ -186,15 +207,7 @@ mod tests {
         };
         let dummy_target_speeds = vec![-35., 0., 100., 24.54, 26.12];
 
-        assert!(state
-            .set_target_fans_speeds(dummy_target_speeds.clone())
-            .is_ok());
-
-        assert!(state
-            .target_fans_speeds
-            .borrow()
-            .iter()
-            .all(|&el| 0.0 <= el && el <= 100.0));
+        assert!(state.set_target_fans_speeds(dummy_target_speeds).is_err());
     }
 
     //   #[test]
