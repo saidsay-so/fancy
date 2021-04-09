@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-use dbus::blocking::stdintf::org_freedesktop_dbus::PropertiesPropertiesChanged;
+use dbus::ffidisp::stdintf::org_freedesktop_dbus::PropertiesPropertiesChanged;
 use dbus::message::SignalArgs;
 use dbus::strings::{BusName, Path as DBusPath};
 use log::{info, trace};
@@ -25,13 +25,12 @@ mod temp;
 
 use bus::connection::create_dbus_conn;
 use config::{nbfc_control::load_control_config, service::ServiceConfig};
-use constants::OBJ_PATH_STR;
+use constants::{BUS_NAME_STR, OBJ_PATH_STR};
 use ec_control::{ECError, ECManager, RawPort, RW};
 use state::State;
 
 const CRITICAL_INTERVAL: u8 = 10;
 
-const BUS_NAME_STR: &str = "com.musikid.fancy";
 static BUS_NAME: Lazy<BusName> = Lazy::new(|| BusName::new(BUS_NAME_STR).unwrap());
 static DBUS_PATH: Lazy<DBusPath> = Lazy::new(|| DBusPath::new(OBJ_PATH_STR).unwrap());
 
@@ -186,7 +185,7 @@ fn main_loop<T: RW>(
     state: Rc<State>,
 ) -> Result<()> {
     let signal_received = Arc::new(AtomicBool::new(false));
-    signal_hook::flag::register(signal_hook::SIGTERM, Arc::clone(&signal_received))
+    signal_hook::flag::register(signal_hook::consts::SIGTERM, Arc::clone(&signal_received))
         .context(Signal {})?;
 
     loop {
@@ -194,6 +193,7 @@ fn main_loop<T: RW>(
             let mut ec_manager = ec_manager.lock().unwrap();
             return ec_manager.reset_ec(true).context(ECIO {});
         }
+
         // We should normally use a timer (or convert service to async?) to call the function at an interval but instead of losing time,
         // we treat the D-Bus requests.
         let timeout = {
