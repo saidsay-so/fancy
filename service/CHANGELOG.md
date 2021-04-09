@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `Mutex` and `RwLock` have been replaced by `RefCell` where appropriated.
   - Remove `Unpin` trait.
 
+### Fixed
+
+- Check the number of speeds provided to `set_target_fans_speeds`.
+
 ## [v0.2.0] - 2020-09-25
 
 ### Added

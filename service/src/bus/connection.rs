@@ -52,7 +52,7 @@ impl ComMusikidFancy for State {
                 "The number of values is not equal to the number of fans.",
             ));
         }
-        if target_fans_speeds.iter().any(|&v| 100. < v || v < 0.) {
+        if value.iter().any(|&v| v > 100. || v < 0.) {
             return Err(MethodErr::invalid_arg("One of the values is out of bounds"));
         }
 
@@ -169,35 +169,40 @@ mod tests {
         let dummy_target_fans_speeds = vec![90., 85., 75.];
         // let dummy_config = String::from("Dummy config");
         let state = State {
+            target_fans_speeds: RefCell::from(vec![0., 0., 0.]),
             ..Default::default()
         };
 
+        assert!(state
+            .set_target_fans_speeds(dummy_target_fans_speeds.clone())
+            .is_ok());
         assert_eq!(
             &*state.target_fans_speeds.borrow(),
             &dummy_target_fans_speeds
         );
 
-        assert!(state
-            .set_target_fans_speeds(dummy_target_fans_speeds)
-            .is_ok());
-        // assert!(state.set_config(dummy_config.clone()).is_ok());
         assert!(state.set_auto(true).is_ok());
-        // assert_eq!(
-        //     block_on(async { state.config.read().clone() }),
-        //     dummy_config
-        // );
         assert_eq!(*state.auto.borrow(), true);
     }
 
     #[test]
     fn set_target_fans_speeds() {
         let state = State {
+            target_fans_speeds: RefCell::from(vec![0., 0., 0.]),
             ..Default::default()
         };
-        let dummy_target_speeds = vec![3., 2., 10., 24., 26.];
+        let dummy_target_speeds = vec![3., 2., 10.];
 
+        assert!(state
+            .set_target_fans_speeds(dummy_target_speeds.clone())
+            .is_ok());
         assert!(*state.target_fans_speeds.borrow() == dummy_target_speeds);
-        assert!(state.set_target_fans_speeds(dummy_target_speeds).is_ok());
+
+        let invalid_target_speeds = vec![102., 1023., 1244.];
+        assert!(state.set_target_fans_speeds(invalid_target_speeds).is_err());
+
+        let invalid_number_speeds = vec![0.];
+        assert!(state.set_target_fans_speeds(invalid_number_speeds).is_err());
     }
 
     #[test]
