@@ -7,6 +7,7 @@ StartLimitBurst=5
 StartLimitIntervalSec=10
 
 AssertPathExists=|/dev/ec
+AssertPathExists=|/dev/port
 AssertPathExists=|/sys/kernel/debug/ec/ec0/io
 
 [Service]

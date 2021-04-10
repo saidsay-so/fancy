@@ -1,0 +1,17 @@
+#!/usr/bin/make -f
+# See debhelper(7) (uncomment to enable)
+# output every command that modifies files on the build system.
+#export DH_VERBOSE = 1
+
+# see FEATURE AREAS in dpkg-buildflags(1)
+#export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+%:
+	dh $@
+
+override_dh_installman:
+	mkdir manpages
+	find service/nbfc_configs/Configs -type f -print0 | xargs -0 -L1 basename -s .xml | sort | sed 's/^/- /g' | cat fancy.7.md - | pandoc --standalone --to man -o manpages/fancy.7
+	pandoc --standalone --to man cli/extra/fancy.1.md -o manpages/fancy.1
+	pandoc --standalone --to man service/extra/fancyd.8.md -o manpages/fancyd.8
+	dh_installman

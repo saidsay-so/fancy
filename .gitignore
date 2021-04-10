@@ -1,6 +1,8 @@
 **/target
 pkg/
 *.tar*
+
+# Debian packaging
 /*.deb
 /*.dsc
 /*.changes

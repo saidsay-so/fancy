@@ -1,6 +1,0 @@
-Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: fancy-cli
-Source: https://github.com/MusiKid/fancy.git
-Files: *
-Copyright: 2020 Musikid <musikid@outlook.com>
-License: MPL-2.0

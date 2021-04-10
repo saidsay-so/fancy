@@ -4,7 +4,7 @@
 use std::io::{Read, Write};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("cargo:rerun-if-changed=interfaces/fancy.xml");
+    /*println!("cargo:rerun-if-changed=interfaces/fancy.xml");*/
 
     let mut data = String::new();
     std::fs::File::open("../interfaces/fancy.xml")

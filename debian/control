@@ -1,16 +1,16 @@
-Source: fancy-cli
+Source: fancy
 Section: misc
 Priority: optional
-Maintainer: Musikid <musikid@outlook.com>
-Build-Depends: debhelper (>= 11), dbus
-#FIXME: rust should be in the deps
-Standards-Version: 4.1.3
+Maintainer: musikid <musikid@outlook.com>
+Build-Depends: debhelper (>= 12), dbus, pandoc
+Standards-Version: 4.5.1
 Homepage: https://github.com/MusiKid/fancy
 Vcs-Browser: https://github.com/MusiKid/fancy
 Vcs-Git: https://github.com/MusiKid/fancy.git
+Rules-Requires-Root: no
 
-Package: fancy-cli
+Package: fancy
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, dbus
 Recommends: systemd
-Description: CLI for Fancy, a set of software to control laptop fans
+Description: Fancy is a set of software to control laptop fans

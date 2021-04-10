@@ -10,7 +10,8 @@
 
 ___
 
-Fancy is a set of software which allows you to control your laptop fans. It includes a service daemon to allow accessing to the [EC](https://en.wikipedia.org/wiki/Embedded_controller#Tasks) and controlling it through D-Bus, a CLI to send commands and a GUI (WIP). It works only on Linux and Windows support is not planned<sup>[1](#linux-only)</sup>.
+Fancy is a set of software which allows you to control your laptop fans.
+It includes a service daemon to allow accessing to the [EC](https://en.wikipedia.org/wiki/Embedded_controller#Tasks) and controlling it through D-Bus, a CLI to send commands and a GUI (WIP). It works only on Linux and Windows support is not planned<sup>[1](#linux-only)</sup>.
 
 ## Compatibility
 
@@ -40,7 +41,7 @@ cd fancy
 make && sudo make install
 ```
 
-### Then, enable the service:
+### Then, enable the service
 
 ```sh
 sudo systemctl enable --now fancy fancy-sleep
@@ -53,7 +54,7 @@ You can see the recommended configurations for your computer:
 fancy list --recommended
 ```
 
-### Apply a config:
+### Apply a config
 
 ```sh
 fancy set -c "YOUR_COMPUTER_MODEL"
