@@ -1,5 +1,5 @@
 [workspace]
-members = ["service", "cli", "gui"]
+members = ["service", "cli"]
 
 [profile.release]
 lto = true
