@@ -1,6 +1,10 @@
-all: cli service
+all: cli service man
 
-.PHONY: cli service
+.PHONY: cli service man
+
+man:
+	find service/nbfc_configs/Configs -type f -print0 | xargs -0 -L1 basename -s .xml | sort | sed 's/^/- /g' | cat fancy.7.md - | pandoc --standalone --to man -o fancy.7
+	gzip fancy.7
 
 cli:
 	make -C cli/
@@ -11,7 +15,11 @@ service:
 install:
 	make install -C service/
 	make install -C cli/
+	install -Dm644 fancy.7.gz "$(mandir)/man7/fancy.7.gz"
 
 uninstall:
 	make uninstall -C service/
 	make uninstall -C cli/
+
+clean:
+	rm -rf fancy.7.gz
