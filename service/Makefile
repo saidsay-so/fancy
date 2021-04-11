@@ -3,7 +3,7 @@ exec_prefix ?= $(prefix)
 
 bindir ?= $(exec_prefix)/bin
 libdir ?= $(exec_prefix)/lib
-sysconfdir ?= /etc
+sysconfdir ?= $(DESTDIR)/etc
 mandir ?= $(prefix)/share/man
 
 UNITSDIR := $(libdir)/systemd/system
