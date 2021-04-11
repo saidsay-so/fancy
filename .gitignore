@@ -1,6 +1,7 @@
 **/target
 pkg/
 *.tar*
+**/interfaces.rs
 
 # Debian packaging
 /*.deb
