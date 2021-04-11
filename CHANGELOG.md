@@ -1,4 +1,4 @@
-# Service Changelog
+# Changelog
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 ### Added
+
+- Conflict between `auto` and `target_fan_speeds` options.
 
 - Support for setting fan speed by using the index.
 
@@ -28,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Support of other sensors than the CPU one for temperature computation.
+
 
 ## [v0.1.0]
 
