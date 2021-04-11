@@ -2,31 +2,25 @@ name: Build releases
 on:
   push:
     tags:
-      - "*.*.*"
+      - "[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
   create_release:
     runs-on: ubuntu-latest
     name: Create release
-    outputs:
-      upload_url: ${{ steps.create.outputs.upload_url }}
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/create-release@v1
-        id: create
+
+      - uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: ${{ format('v{0}', github.ref) }}
 
-  deb:
+  build:
     runs-on: ubuntu-latest
-    name: Build package
-    needs: create_release
+    name: Build
     steps:
       - name: Install required packages
-        run: sudo apt update && sudo apt install -y libdbus-1-dev build-essential debhelper dh-make fakeroot
+        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev build-essential debhelper dh-make fakeroot pandoc
 
       - name: Install Rust
         uses: actions-rs/toolchain@v1
@@ -35,23 +29,65 @@ jobs:
 
       - uses: actions/checkout@v2
 
-      - name: Build the package
-        run: dpkg-buildpackage -us -uc
+      - name: Upload build folder
+        uses: actions/upload-artifact@v2
+        with:
+          name: build
+          path: target/
 
-      - name: Find Debian package
-        id: find_deb
-        run: |
-          path=$(find .. -name '*.deb' -print -quit)
-          echo "::set-output name=path::$path"
-          echo "::set-output name=name::$(basename $path)"
+  make-archive:
+    runs-on: ubuntu-latest
+    name: Build archive
+    needs: [create_release, build]
+    env:
+      DESTDIR: ${{ format('fancy-{0}', github.ref) }}
+      OUTPUT_FILE: ${{ format('fancy-{0}.tar.xz', github.ref) }}
 
-      - name: Upload Debian package
-        id: upload-deb
-        uses: actions/upload-release-asset@v1
+    steps:
+      - name: Install required packages
+        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev build-essential debhelper dh-make fakeroot pandoc
+
+      - uses: actions/checkout@v2
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: build
+
+      - name: Build
+        run: make && make install
+
+      - name: Make archive
+        run: tar czf $OUTPUT_FILE $DESTDIR
+
+      - name: Upload archive
+        uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_path: ${{ steps.find_deb.outputs.path }}
-          asset_name: ${{ steps.find_deb.outputs.name }}
-          asset_content_type: application/vnd.debian.binary-package
+          files: ${{ env.OUTPUT_FILE }}
+
+  make-deb:
+    runs-on: ubuntu-latest
+    name: Build Debian package
+    needs: [create_release, build]
+    steps:
+      - name: Install required packages
+        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev build-essential debhelper dh-make fakeroot pandoc
+
+      - uses: actions/checkout@v2
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: build
+
+      - name: Build the package
+        run: dpkg-buildpackage -us -uc
+
+      - name: Upload Debian package
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: "../*.deb"
