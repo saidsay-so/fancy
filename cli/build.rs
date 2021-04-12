@@ -24,11 +24,5 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     file.write("#![allow(unused_imports)]\n".as_bytes())?;
     file.write_all(code.as_bytes())?;
 
-    // Format the file
-    std::process::Command::new("rustfmt")
-        .arg("src/interfaces.rs")
-        .status()
-        .unwrap();
-
     Ok(())
 }
