@@ -13,7 +13,9 @@ SYNOPSIS
 DESCRIPTION
 ===========
 
-fancyd is the service daemon of *fancy(7)*, a set of software which allows to control laptop fans.
+fancyd is the service daemon of *fancy(7)*,
+a set of software which allows to control laptop fans.
+It should not be run manually!
 
 BUGS
 ====

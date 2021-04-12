@@ -9,7 +9,8 @@ DESCRIPTION
 ===========
 
 Fancy is a set of software which allows you to control your laptop fans.
-It includes a service daemon to allow accessing to the embedded controller and controlling it through *D-Bus*, and a CLI to send commands.
+It includes a service daemon to allow accessing to the embedded controller
+and controlling it through *D-Bus*, and a CLI to send commands.
 
 BUGS
 ====
@@ -20,7 +21,8 @@ COMPATIBILITY
 =============
 
 It is compatible with laptops which have an embedded controller.
-However, it needs a configuration (to know where to read or write, critical temperature, etc.), which is specific to a computer model.
+However, it needs a configuration (to know where to read or write,
+the critical temperature, etc.), which is specific to a computer model.
 
 Here is a list of supported models:
 

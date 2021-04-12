@@ -76,7 +76,12 @@ fancy set -f 0 0
 
 ### Why? NBFC can also do it.
 
-NBFC is a great software (also one of the cleanest codebase I ever seen). However, it's written in C#, which means that it depends on `mono` runtime on Linux. `mono` is a pretty huge dependency, especiallly when NBFC is the only thing which needs it, and uses a lot of RAM. That's the reason why I started to write `fancy` (and also because I wanted to test my Rust (<sub>kind of</sub>) "skills").
+NBFC is a great software (also one of the cleanest codebase I ever seen).
+However, it's written in C#, which means that it depends on `mono` runtime on Linux.
+`mono` is a pretty huge dependency,
+especiallly when NBFC is the only thing which needs it, and uses a lot of RAM.
+That's the reason why I started to write `fancy`
+(and also because I wanted to test my Rust (<sub>kind of</sub>) "skills").
 
 ### Linux ONLY?
 
