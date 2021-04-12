@@ -1,0 +1,66 @@
+%global debug_package %{nil}
+
+%bcond_without check
+%global __cargo_skip_build 0
+
+Name:           {{{ git_dir_name }}}
+Version:        {{{ git_dir_version }}}
+Release:        1%{?dist}
+Group:          System Environment/Base
+Summary:        Fancy is a set of software to control laptop fans
+
+License:        MPLv2.0
+URL:            github.com/MusiKid/fancy
+VCS:            {{{ git_dir_vcs }}}
+Source:         {{{ git_dir_pack }}}
+
+ExclusiveArch:  %{rust_arches}
+
+BuildRequires:  rust-packaging
+BuildRequires:  systemd-rpm-macros
+BuildRequires:  systemd
+BuildRequires:  dbus
+BuildRequires:  pandoc
+
+Requires:       dbus
+
+Recommends:     systemd
+
+%global _description %{expand:
+Set of software which allows you to control your laptop fans.
+It includes a service daemon to allow accessing
+to the embedded controller and controlling it through D-Bus,
+and a CLI to send commands.}
+
+%description %{_description}
+
+%files
+%doc README.md
+%{_bindir}/fancy
+%{_bindir}/fancyd
+%{_mandir}/man7/fancy.7.gz
+%{_mandir}/man1/fancy.1.gz
+%{_mandir}/man8/fancyd.8.gz
+%{_unitdir}/fancy.service
+%{_unitdir}/fancy-sleep.service
+%{_sysconfdir}/dbus-1/system.d/com.musikid.fancy.conf
+%{_sysconfdir}/fancy/configs/*
+
+%prep
+{{{ git_dir_setup_macro }}}
+
+%build
+%make_build
+
+%install
+%make_install
+
+%if %{with check}
+%check
+%cargo_test
+%endif
+
+%changelog
+{{{ git_dir_changelog }}}
+
+# vim: ft=spec :
