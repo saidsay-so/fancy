@@ -1,3 +1,6 @@
+prefix ?= $(DESTDIR)/usr
+mandir ?= $(prefix)/share/man
+
 all: cli service man
 
 .PHONY: cli service man
