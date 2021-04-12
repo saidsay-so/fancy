@@ -60,7 +60,4 @@ and a CLI to send commands.}
 %cargo_test
 %endif
 
-%changelog
-{{{ git_dir_changelog }}}
-
 # vim: ft=spec :
