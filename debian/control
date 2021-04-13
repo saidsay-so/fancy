@@ -2,7 +2,8 @@ Source: fancy
 Section: misc
 Priority: optional
 Maintainer: musikid <musikid@outlook.com>
-Build-Depends: debhelper (>= 12), dbus, pandoc
+Build-Depends: debhelper (>= 12), libdbus-1-dev, pandoc
+#FIXME: Rust should be in the build dependencies
 Standards-Version: 4.5.1
 Homepage: https://github.com/MusiKid/fancy
 Vcs-Browser: https://github.com/MusiKid/fancy
@@ -13,4 +14,6 @@ Package: fancy
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, dbus
 Recommends: systemd
-Description: Fancy is a set of software to control laptop fans
+Description: Set of software to control laptop fans.
+	It includes a service daemon to allow accessing to the embedded controller
+	and controlling it through *D-Bus*, and a CLI to send commands.

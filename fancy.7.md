@@ -3,7 +3,7 @@
 NAME
 ====
 
-Fancy
+Fancy - Control your laptop fans
 
 DESCRIPTION
 ===========
