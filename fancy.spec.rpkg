@@ -1,16 +1,15 @@
 %global debug_package %{nil}
 
-%bcond_without check
-%global __cargo_skip_build 0
+%bcond_with check
 
 Name:           {{{ git_dir_name }}}
 Version:        {{{ git_dir_version }}}
 Release:        1%{?dist}
 Group:          System Environment/Base
-Summary:        Fancy is a set of software to control laptop fans
+Summary:        Set of software to control laptop fans
 
 License:        MPLv2.0
-URL:            github.com/MusiKid/fancy
+URL:            https://github.com/MusiKid/fancy
 VCS:            {{{ git_dir_vcs }}}
 Source:         {{{ git_dir_pack }}}
 
@@ -19,7 +18,7 @@ ExclusiveArch:  %{rust_arches}
 BuildRequires:  rust-packaging
 BuildRequires:  systemd-rpm-macros
 BuildRequires:  systemd
-BuildRequires:  dbus
+BuildRequires:  dbus-devel
 BuildRequires:  pandoc
 
 Requires:       dbus
@@ -53,11 +52,13 @@ and a CLI to send commands.}
 %make_build
 
 %install
-%make_install
+%make_install prefix=%{_prefix}
 
 %if %{with check}
 %check
 %cargo_test
 %endif
+
+%changelog
 
 # vim: ft=spec :

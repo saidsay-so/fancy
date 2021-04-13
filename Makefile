@@ -1,5 +1,7 @@
-prefix ?= $(DESTDIR)/usr
+prefix ?= /usr/local
+
 mandir ?= $(prefix)/share/man
+INSTALL ?= install
 
 all: cli service man
 
@@ -19,7 +21,7 @@ service:
 install:
 	make install -C service/
 	make install -C cli/
-	install -Dm644 fancy.7.gz "$(mandir)/man7/fancy.7.gz"
+	$(INSTALL) -Dm644 fancy.7.gz $(DESTDIR)$(mandir)/man7/fancy.7.gz
 
 uninstall:
 	make uninstall -C service/
@@ -28,4 +30,5 @@ uninstall:
 clean:
 	make clean -C service/
 	make clean -C cli/
+	cargo clean
 	rm -rf fancy.7.gz
