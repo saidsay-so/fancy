@@ -15,30 +15,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  build:
-    runs-on: ubuntu-latest
-    name: Build
-    steps:
-      - name: Install required packages
-        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev build-essential debhelper dh-make fakeroot pandoc
-
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-
-      - uses: actions/checkout@v2
-
-      - name: Upload build folder
-        uses: actions/upload-artifact@v2
-        with:
-          name: build
-          path: target/
-
   make-archive:
     runs-on: ubuntu-latest
     name: Build archive
-    needs: [create_release, build]
+    needs: create_release
     env:
       DESTDIR: ${{ format('fancy-{0}', github.ref) }}
       OUTPUT_FILE: ${{ format('fancy-{0}.tar.xz', github.ref) }}
@@ -48,11 +28,6 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev build-essential debhelper dh-make fakeroot pandoc
 
       - uses: actions/checkout@v2
-
-      - name: Download build artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: build
 
       - name: Install Rust
         uses: actions-rs/toolchain@v1
@@ -75,17 +50,12 @@ jobs:
   make-deb:
     runs-on: ubuntu-latest
     name: Build Debian package
-    needs: [create_release, build]
+    needs: create_release
     steps:
       - name: Install required packages
-        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev build-essential debhelper dh-make fakeroot pandoc
+        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev build-essential debhelper fakeroot pandoc
 
       - uses: actions/checkout@v2
-
-      - name: Download build artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: build
 
       - name: Install Rust
         uses: actions-rs/toolchain@v1
