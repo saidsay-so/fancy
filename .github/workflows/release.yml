@@ -2,7 +2,7 @@ name: Build releases
 on:
   push:
     tags:
-      - "[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
   create_release:
@@ -19,29 +19,36 @@ jobs:
     runs-on: ubuntu-latest
     name: Build archive
     needs: create_release
-    env:
-      DESTDIR: ${{ format('fancy-{0}', github.ref) }}
-      OUTPUT_FILE: ${{ format('fancy-{0}.tar.xz', github.ref) }}
 
     steps:
-      - name: Install required packages
-        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev build-essential debhelper dh-make fakeroot pandoc
-
       - uses: actions/checkout@v2
+
+      - name: Install required packages
+        run: |
+          sudo apt-get update && sudo apt-get install -y devscripts equivs --no-install-recommends
+          mk-build-deps --install --build-dep -t "apt-get -o Debug::pkgProblemResolver=yes -y --no-install-recommends" debian/control
 
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
 
+      - name: Set variables
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          REL_DESTDIR="fancy-$VERSION"
+          echo "DESTDIR=$PWD/$REL_DESTDIR" >> $GITHUB_ENV
+          echo "REL_DESTDIR=$REL_DESTDIR" >> $GITHUB_ENV
+          echo "OUTPUT_FILE=$REL_DESTDIR.tar.xz" >> $GITHUB_ENV
+
       - name: Create DESTDIR folder
         run: mkdir -p $DESTDIR
 
       - name: Build
-        run: make && make install
+        run: make && make install DESTDIR=$DESTDIR
 
       - name: Make archive
-        run: tar czf $OUTPUT_FILE $DESTDIR
+        run: tar czf $OUTPUT_FILE $REL_DESTDIR
 
       - name: Upload archive
         uses: softprops/action-gh-release@v1
@@ -68,15 +75,11 @@ jobs:
           mkdir -p $HOME/.config/
           echo "$COPR_CONFIG_TOKEN" > $HOME/.config/copr
 
-      - name: Build package for COPR
-        run: rpkg build Fancy
-
       - name: Set tempdir
         run: tempdir=$(mktemp -d) >> $GITHUB_ENV
 
-      - name: Build package for GitHub
-        run: |
-          "rpkg local --outdir=${{ env.tempdir }}"
+      - name: Build package for COPR
+        run: rpkg build --outdir $tempdir Fancy
 
       - name: Upload package
         uses: softprops/action-gh-release@v1
@@ -91,7 +94,9 @@ jobs:
     needs: create_release
     steps:
       - name: Install required packages
-        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev build-essential debhelper fakeroot pandoc
+        run: |
+          sudo apt-get update && sudo apt-get install -y devscripts equivs --no-install-recommends
+          sudo mk-build-deps --install --build-dep -t "apt-get -o Debug::pkgProblemResolver=yes -y --no-install-recommends" debian/control
 
       - uses: actions/checkout@v2
 
