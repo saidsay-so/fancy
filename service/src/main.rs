@@ -5,7 +5,7 @@
 use dbus::ffidisp::stdintf::org_freedesktop_dbus::PropertiesPropertiesChanged;
 use dbus::message::SignalArgs;
 use dbus::strings::{BusName, Path as DBusPath};
-use log::{info, trace};
+use log::{debug, info};
 use once_cell::sync::Lazy;
 use snafu::{ResultExt, Snafu};
 
@@ -128,7 +128,7 @@ fn main() -> Result<()> {
                         match &*property {
                             "Config" => {
                                 let config = state.config.borrow();
-                                trace!("Swapping configuration to '{}'", &*config);
+                                info!("Swapping configuration to '{}'", &*config);
 
                                 let mut target_fans_speeds = state.fans_speeds.borrow_mut();
                                 target_fans_speeds.clear();
@@ -145,7 +145,7 @@ fn main() -> Result<()> {
                         }
                     }
 
-                    trace!("Saving service configuration");
+                    info!("Saving service configuration");
                     state.as_service_config().save().unwrap();
                     true
                 },
@@ -212,9 +212,11 @@ fn main_loop<T: RW>(
         let current_temps = temp::Temperatures::get_temps().context(Sensor {})?;
         let mut state_temps = state.temps.borrow_mut();
         current_temps.update_map(&mut state_temps);
+        debug!("Temperatures got: {:#?}", state_temps);
 
         let temp_values = state_temps.values();
         let temp: f64 = temp_values.clone().sum::<f64>() / temp_values.len() as f64;
+        debug!("Computed temperature: {}", temp);
 
         let critical_now = *state.critical.borrow();
         let mut critical_temp = state.critical.borrow_mut();
@@ -224,6 +226,7 @@ fn main_loop<T: RW>(
         } else {
             ec_manager.critical_temperature.saturating_sub(temp as u8) <= CRITICAL_INTERVAL
         };
+        debug!("Critical state: {}", *critical_temp);
 
         let mut fans_speeds = state.fans_speeds.borrow_mut();
 
@@ -232,6 +235,7 @@ fn main_loop<T: RW>(
                 ec_manager.fan_configs[i].name.to_owned(),
                 ec_manager.read_fan_speed(i).context(ECIO {})?,
             );
+            debug!("Fans speeds: {:#?}", fans_speeds);
 
             // If there is a target fan speed set by the user
             let user_defined_speed =
@@ -240,6 +244,11 @@ fn main_loop<T: RW>(
             if *critical_temp {
                 ec_manager.write_fan_speed(i, 100.0).context(ECIO {})?;
             } else if user_defined_speed {
+                debug!(
+                    "Target fan speed for {}: {}",
+                    ec_manager.fan_configs[i].name,
+                    state.target_fans_speeds.borrow()[i]
+                );
                 ec_manager
                     .write_fan_speed(i, state.target_fans_speeds.borrow()[i])
                     .context(ECIO {})?;
@@ -248,9 +257,11 @@ fn main_loop<T: RW>(
             // Else, there is nothing to change.
             else if ec_manager.refresh_fan_threshold(current_temps.cpu_temp, i) {
                 let threshold = ec_manager.fan_configs[i].current_threshold;
+                debug!("Threshold: {:#?}", threshold);
                 let value = ec_manager.fan_configs[i].thresholds[threshold]
                     .fan_speed
                     .into();
+                debug!("Threshold fan speed: {}", value);
 
                 ec_manager.write_fan_speed(i, value).context(ECIO {})?;
             }
