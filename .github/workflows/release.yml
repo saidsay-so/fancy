@@ -50,6 +50,41 @@ jobs:
         with:
           files: ${{ env.OUTPUT_FILE }}
 
+  make-rpm:
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    name: Build RPM package
+    needs: create_release
+    steps:
+      - name: Install required packages
+        run: "dnf install -y rpkg copr-cli && dnf builddep -y $(rpkg spec | cut -d':' -f2 | tr -d '[:space:]')"
+
+      - uses: actions/checkout@v2
+
+      - name: Save COPR config
+        env:
+          COPR_CONFIG_TOKEN: ${{ secrets.COPR_CONFIG_TOKEN }}
+        run: |
+          mkdir -p $HOME/.config/
+          echo "$COPR_CONFIG_TOKEN" > $HOME/.config/copr
+
+      - name: Build package for COPR
+        run: rpkg build Fancy
+
+      - name: Set tempdir
+        run: tempdir=$(mktemp -d) >> $GITHUB_ENV
+
+      - name: Build package for GitHub
+        run: |
+          "rpkg local --outdir=${{ env.tempdir }}"
+
+      - name: Upload package
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: "${{ env.tempdir }}/**/*.rpm"
+
   make-deb:
     runs-on: ubuntu-latest
     name: Build Debian package
