@@ -80,7 +80,10 @@ jobs:
         run: echo "tempdir=$(mktemp -d)" >> $GITHUB_ENV
 
       - name: Build package for COPR
-        run: rpkg build --outdir "$tempdir" Fancy
+        run: rpkg build Fancy
+
+      - name: Build package for GitHub
+        run: "rpkg local --outdir=$tempdir"
 
       - name: Upload package
         uses: softprops/action-gh-release@v1
