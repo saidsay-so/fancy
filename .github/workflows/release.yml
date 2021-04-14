@@ -93,12 +93,12 @@ jobs:
     name: Build Debian package
     needs: create_release
     steps:
+      - uses: actions/checkout@v2
+
       - name: Install required packages
         run: |
           sudo apt-get update && sudo apt-get install -y devscripts equivs --no-install-recommends
           sudo mk-build-deps --install --build-dep -t "apt-get -o Debug::pkgProblemResolver=yes -y --no-install-recommends" debian/control
-
-      - uses: actions/checkout@v2
 
       - name: Install Rust
         uses: actions-rs/toolchain@v1
