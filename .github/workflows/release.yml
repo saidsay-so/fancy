@@ -34,6 +34,9 @@ jobs:
         with:
           toolchain: stable
 
+      - name: Create DESTDIR folder
+        run: mkdir -p $DESTDIR
+
       - name: Build
         run: make && make install
 
