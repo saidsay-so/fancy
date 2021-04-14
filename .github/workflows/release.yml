@@ -26,7 +26,7 @@ jobs:
       - name: Install required packages
         run: |
           sudo apt-get update && sudo apt-get install -y devscripts equivs --no-install-recommends
-          mk-build-deps --install --build-dep -t "apt-get -o Debug::pkgProblemResolver=yes -y --no-install-recommends" debian/control
+          sudo mk-build-deps --install --build-dep -t "apt-get -o Debug::pkgProblemResolver=yes -y --no-install-recommends" debian/control
 
       - name: Install Rust
         uses: actions-rs/toolchain@v1
@@ -63,10 +63,10 @@ jobs:
     name: Build RPM package
     needs: create_release
     steps:
+      - uses: actions/checkout@v2
+
       - name: Install required packages
         run: "dnf install -y rpkg copr-cli && dnf builddep -y $(rpkg spec | cut -d':' -f2 | tr -d '[:space:]')"
-
-      - uses: actions/checkout@v2
 
       - name: Save COPR config
         env:
