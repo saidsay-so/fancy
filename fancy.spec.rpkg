@@ -60,5 +60,7 @@ and a CLI to send commands.}
 %endif
 
 %changelog
+* Wed Apr 14 2021 Musikid <musikid@outlook.com> - 0.3.0-1
+- Initial release
 
 # vim: ft=spec :

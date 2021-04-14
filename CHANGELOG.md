@@ -5,9 +5,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [v0.3.0] - 2021-04-14
+
 ### Added
 
-- Conflict between `auto` and `target_fan_speeds` options.
+- Conflict between `auto` and `target_fan_speeds` options for the CLI.
 
 - Support for setting fan speed by using the index.
 
@@ -24,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Check the number of speeds provided to `set_target_fans_speeds`.
+
+## NB: Version before 0.3.0 were split between CLI and service !
 
 ## [v0.2.0] - 2020-09-25
 
