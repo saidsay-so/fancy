@@ -63,6 +63,7 @@ jobs:
     name: Build RPM package
     needs: create_release
     steps:
+      - run: dnf install -y git
       - uses: actions/checkout@v2
 
       - name: Install required packages
@@ -76,10 +77,10 @@ jobs:
           echo "$COPR_CONFIG_TOKEN" > $HOME/.config/copr
 
       - name: Set tempdir
-        run: tempdir=$(mktemp -d) >> $GITHUB_ENV
+        run: echo "tempdir=$(mktemp -d)" >> $GITHUB_ENV
 
       - name: Build package for COPR
-        run: rpkg build --outdir $tempdir Fancy
+        run: rpkg build --outdir "$tempdir" Fancy
 
       - name: Upload package
         uses: softprops/action-gh-release@v1
