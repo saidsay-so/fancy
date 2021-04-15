@@ -1,0 +1,2 @@
+# We want to restart the service after suspend
+systemd-service-file-refers-to-unusual-wantedby-target lib/systemd/system/fancy-sleep.service suspend.target

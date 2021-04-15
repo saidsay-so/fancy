@@ -10,4 +10,4 @@
 	dh $@
 
 override_dh_auto_install:
-	dh_auto_install -- prefix=/usr UNITSDIR=/lib
+	dh_auto_install -- prefix=/usr UNITDIR=/lib/systemd/system
