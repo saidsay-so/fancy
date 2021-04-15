@@ -40,5 +40,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Initial version.
 
+[v0.3.0]: https://github.com/musikid/fancy/compare/fancy-service-0.2.0..v0.3.0
 [v0.2.0]: https://github.com/musikid/fancy/compare/fancy-service-0.1.0...fancy-service-0.2.0
 [v0.1.0]: https://github.com/musikid/fancy/compare/fancy-service-0.1.0
