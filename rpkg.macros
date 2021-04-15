@@ -2,7 +2,7 @@ git_version() {
   local latest_tag="$(cached latest_tag)"
 
   if [[ -z "$latest_tag" ]]; then
-    latest_tag="$(git describe --contains --abbrev=0)"
+    latest_tag="$(git describe --tags --abbrev=0)"
     latest_tag="${latest_tag#v}"
   fi
 
