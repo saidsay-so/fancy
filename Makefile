@@ -18,6 +18,10 @@ cli:
 service:
 	make -C service/
 
+test:
+	make test -C service/
+	make test -C cli/
+
 install:
 	make install -C service/
 	make install -C cli/
