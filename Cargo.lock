@@ -40,12 +40,6 @@ dependencies = [
 
 [[package]]
 name = "bitflags"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aad18937a628ec6abcd26d1489012cc0e18c21798210f491af69ded9b881106d"
-
-[[package]]
-name = "bitflags"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf1de2fe8c75bc145a2f577add951f8134889b4795d47466a54a5c846d691693"
@@ -95,21 +89,11 @@ checksum = "37e58ac78573c40708d45522f0d80fa2f01cc4f9b4e2bf749807255454312002"
 dependencies = [
  "ansi_term",
  "atty",
- "bitflags 1.2.1",
+ "bitflags",
  "strsim",
  "textwrap",
  "unicode-width",
  "vec_map",
-]
-
-[[package]]
-name = "dbus"
-version = "0.8.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5cd9e78c210146a1860f897db03412fd5091fd73100778e43ee255cca252cf32"
-dependencies = [
- "libc",
- "libdbus-sys",
 ]
 
 [[package]]
@@ -124,24 +108,13 @@ dependencies = [
 
 [[package]]
 name = "dbus-codegen"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e55517298e05b37a6cee6bc2bc5cad35c31785c5f557e3d9dd9a8ff06368b721"
-dependencies = [
- "clap",
- "dbus 0.8.4",
- "xml-rs 0.3.6",
-]
-
-[[package]]
-name = "dbus-codegen"
 version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a49da9fdfbe872d4841d56605dc42efa5e6ca3291299b87f44e1cde91a28617c"
 dependencies = [
  "clap",
- "dbus 0.9.2",
- "xml-rs 0.8.3",
+ "dbus",
+ "xml-rs",
 ]
 
 [[package]]
@@ -150,7 +123,7 @@ version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b15e1727e94490a9e0c1174284ea83fe5e6db853b43cda77d99bb371008a4fd0"
 dependencies = [
- "dbus 0.9.2",
+ "dbus",
 ]
 
 [[package]]
@@ -178,16 +151,16 @@ version = "0.3.0"
 dependencies = [
  "bcmp",
  "clap",
- "dbus 0.8.4",
- "dbus-codegen 0.5.0",
+ "dbus",
+ "dbus-codegen",
 ]
 
 [[package]]
 name = "fancy-service"
 version = "0.3.0"
 dependencies = [
- "dbus 0.9.2",
- "dbus-codegen 0.9.1",
+ "dbus",
+ "dbus-codegen",
  "dbus-tree",
  "is_sorted",
  "log",
@@ -279,7 +252,7 @@ version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "50e4785f2c3b7589a0d0c1dd60285e1188adac4006e8abd6dd578e1567027363"
 dependencies = [
- "bitflags 1.2.1",
+ "bitflags",
  "cc",
  "cfg-if 0.1.10",
  "libc",
@@ -634,15 +607,6 @@ name = "winapi-x86_64-pc-windows-gnu"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
-
-[[package]]
-name = "xml-rs"
-version = "0.3.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ec6c39eaa68382c8e31e35239402c0a9489d4141a8ceb0c716099a0b515b562"
-dependencies = [
- "bitflags 0.7.0",
-]
 
 [[package]]
 name = "xml-rs"
