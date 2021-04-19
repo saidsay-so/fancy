@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fix path in the service's systemd file.
 
+- Toggle `auto` to false when setting a target fan speed.
+
 ## [v0.3.0] - 2021-04-14
 
 ### Added

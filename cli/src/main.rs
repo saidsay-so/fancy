@@ -70,8 +70,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .get_matches();
 
-    //TODO: Add the possibility to fetch/update the configs.
-
     if let Some(matches) = matches.subcommand_matches("get") {
         if let Some(_) = matches.subcommand_matches("speeds") {
             let fans_speeds = proxy.fans_speeds()?;
@@ -144,6 +142,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let args = matches.values_of("target_fans_speeds").unwrap();
             //TODO: Error handling
             let speeds = args.map(|n| n.parse::<f64>().unwrap()).collect();
+
+            if !matches.is_present("auto") {
+                proxy.set_auto(false)?;
+            }
 
             proxy.set_target_fans_speeds(speeds)?;
         }
