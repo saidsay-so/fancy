@@ -9,7 +9,7 @@
 
 ### _Control your laptop fans with a fancy ( ͡° ͜ʖ ͡°) software._
 
-___
+-------
 
 Fancy is a set of software which allows you to control your laptop fans.
 It includes a service daemon to allow accessing to the [EC](https://en.wikipedia.org/wiki/Embedded_controller#Tasks) and controlling it through D-Bus, a CLI to send commands and a GUI (WIP). It works only on Linux and Windows support is not planned<sup>[1](#linux-only)</sup>.
@@ -20,21 +20,25 @@ You can check if your computer model is supported by checking if a configuration
 
 ## Installation
 
-**NOTE: If you have Secure Boot enabled, you have to instead install [`acpi_ec`](https://github.com/MusiKid/acpi_ec).**
+**NOTE: If you have Secure Boot enabled, you have to install [`acpi_ec`](https://github.com/MusiKid/acpi_ec).**
 
 <!--
 ##### Debian:
+
 ```sh
 sudo add-apt-repository ppa:musikid/fancy
-sudo apt install fancy-service fancy-cli # fancy-gui
-```
-
-##### Fedora:
-```sh
-sudo dnf copr enable musikid/fancy
-sudo dnf install fancy-service fancy-cli # fancy-gui
+sudo apt install fancy
 ```
 -->
+
+##### Fedora
+
+```sh
+sudo dnf copr enable musikid/Fancy
+sudo dnf install fancy
+```
+
+#### For other distros
 
 ```sh
 git clone https://github.com/MusiKid/fancy.git
@@ -48,7 +52,8 @@ make && sudo make install
 sudo systemctl enable --now fancy fancy-sleep
 ```
 
-The service should be running. However, it's not active since there isn't any config loaded.
+The service should now be running.
+However, it's not active since there isn't any config loaded.
 You can see the recommended configurations for your computer:
 
 ```sh
@@ -73,9 +78,15 @@ If you have more fans:
 fancy set -f 0 0
 ```
 
+Back again to automatic:
+
+```sh
+fancy set -a
+```
+
 ## FAQ
 
-### Why? NBFC can also do it.
+### Why? NBFC can also do it
 
 NBFC is a great software (also one of the cleanest codebase I ever seen).
 However, it's written in C#, which means that it depends on `mono` runtime on Linux.
@@ -86,7 +97,8 @@ That's the reason why I started to write `fancy`
 
 ### Linux ONLY?
 
-*Well*, [NBFC](https://github.com/hirschmann/nbfc) is already *well* integrated with the Windows "ecosystem", since C# is more common on Windows. It works very *well*, so go check it. If you want to provide Windows support, you are also *wel*come.
+*Well*, [NBFC](https://github.com/hirschmann/nbfc) is already *well* integrated with the Windows "ecosystem", since C# is more common on Windows.
+It works very *well*, so go check it. If you want to provide Windows support, you are also *wel*come.
 
 ## License
 
