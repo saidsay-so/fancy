@@ -15,14 +15,14 @@ TARGET_NAME := fancy-service
 NAME := fancyd
 
 all:
-	cargo build --release
+	cargo build --release --locked
 	pandoc --standalone --to man extra/fancyd.8.md -o fancyd.8
 	gzip fancyd.8
 
 .PHONY: test
 
 test:
-	cargo test --release
+	cargo test --release --locked
 
 install:
 	[ -e "../Cargo.toml" ] && $(INSTALL) -Dm744 -s ../target/release/$(TARGET_NAME) $(DESTDIR)$(bindir)/$(NAME) || $(INSTALL) -Dm744 -s target/release/$(TARGET_NAME) $(DESTDIR)$(bindir)/$(NAME)

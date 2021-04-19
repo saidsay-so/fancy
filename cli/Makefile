@@ -10,14 +10,14 @@ TARGET_NAME := fancy-cli
 NAME := fancy
 
 all:
-	cargo build --release
+	cargo build --release --locked
 	pandoc --standalone --to man extra/fancy.1.md -o fancy.1
 	gzip fancy.1
 
 .PHONY: test
 
 test:
-	cargo test --release
+	cargo test --release --locked
 
 install:
 	[ -e "../Cargo.toml" ] && $(INSTALL) -Dm755 -s ../target/release/$(TARGET_NAME) $(DESTDIR)$(bindir)/$(NAME) || $(INSTALL) -Dm755 -s target/release/$(TARGET_NAME) $(DESTDIR)$(bindir)/$(NAME)
