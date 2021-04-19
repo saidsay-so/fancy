@@ -2,8 +2,11 @@ Source: fancy
 Section: misc
 Priority: optional
 Maintainer: musikid <musikid@outlook.com>
-Build-Depends: debhelper (>= 12), libdbus-1-dev, pandoc
-#FIXME: Rust should be in the build dependencies
+Build-Depends: debhelper (>= 12),
+  libdbus-1-dev,
+  pandoc,
+  rustc:native (>= 1.48),
+  cargo:native
 Standards-Version: 4.5.1
 Homepage: https://github.com/MusiKid/fancy
 Vcs-Browser: https://github.com/MusiKid/fancy
