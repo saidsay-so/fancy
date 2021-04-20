@@ -5,7 +5,7 @@ pkgrel=1
 pkgdesc='Set of software which allows you to control your laptop fans.
 It includes a service daemon to allow accessing to the embedded controller
 and controlling it through D-Bus, and a CLI to send commands.'
-makedepends=('cargo' 'pandoc')
+makedepends=('rust>=1.48' 'pandoc')
 depends=('dbus')
 optdepends=('systemd: manage the service')
 arch=('i686' 'x86_64')
