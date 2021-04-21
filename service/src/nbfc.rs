@@ -741,22 +741,22 @@ mod tests {
         assert_eq!(excepted_config, parsed_config);
     }
 
-    //   #[test]
-    //   fn all_configs() {
-    //       use std::io::Read;
-    //       std::fs::read_dir("nbfc_configs/Configs")
-    //           .unwrap()
-    //           .filter_map(|e| e.ok())
-    //           .map(|e| std::fs::File::open(e.path()).unwrap())
-    //           .map(|mut e| {
-    //               let mut buf = String::new();
-    //               e.read_to_string(&mut buf).unwrap();
-    //               buf
-    //           })
-    //           .for_each(|e| {
-    //               from_str::<FanControlConfigV2>(&e).unwrap();
-    //           });
-    //   }
+    #[test]
+    fn all_configs() {
+        use std::io::Read;
+        std::fs::read_dir("nbfc_configs/Configs")
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .map(|e| std::fs::File::open(e.path()).unwrap())
+            .map(|mut e| {
+                let mut buf = String::new();
+                e.read_to_string(&mut buf).unwrap();
+                buf
+            })
+            .for_each(|e| {
+                from_str::<FanControlConfigV2>(&e).unwrap();
+            });
+    }
 
     const SETTINGS: &str = r##"<?xml version="1.0"?>
 <NbfcServiceSettings xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
