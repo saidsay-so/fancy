@@ -23,16 +23,18 @@ You can check if your computer model is supported by checking if a configuration
 
 **NOTE: If you have Secure Boot enabled, you have to install [`acpi_ec`](https://github.com/MusiKid/acpi_ec) or disable it.**
 
-<!--
-##### Debian:
+#### Debian
 
+For now, you can find the `.deb` in the [Releases](https://github.com/MusiKid/fancy/releases/latest).
+
+<!--
 ```sh
 sudo add-apt-repository ppa:musikid/fancy
 sudo apt install fancy
 ```
 -->
 
-##### Fedora
+#### Fedora
 
 ```sh
 sudo dnf copr enable musikid/Fancy
