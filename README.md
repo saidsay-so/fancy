@@ -16,11 +16,12 @@ It includes a service daemon to allow accessing to the [EC](https://en.wikipedia
 
 ## Compatibility
 
-You can check if your computer model is supported by checking if a configuration exists in `nbfc_configs` (or a similar model).
+You can check if your computer model is supported by checking if a configuration exists in
+[nbfc_configs](https://github.com/MusiKid/nbfc_configs) (or maybe a similar model).
 
 ## Installation
 
-**NOTE: If you have Secure Boot enabled, you have to install [`acpi_ec`](https://github.com/MusiKid/acpi_ec).**
+**NOTE: If you have Secure Boot enabled, you have to install [`acpi_ec`](https://github.com/MusiKid/acpi_ec) or disable it.**
 
 <!--
 ##### Debian:
@@ -113,3 +114,10 @@ Please see [CONTRIBUTING.md](https://github.com/MusiKid/fancy/blob/master/CONTRI
 ## Credits
 
 Thanks to [@hirschmann](https://github.com/hirschmann/) for creating [NBFC](https://github.com/hirschmann/nbfc), where I shamelessly stolen some pieces of code (open source ¯\\_(ツ)_/¯), and all the contributors who created the configurations.
+
+## Warning
+
+I'm not responsible if your computer start to smell fried chicken,
+if your house is being assaulted by the SWAT because your laptop is becoming a nuclear power plant,
+if your head blow up because you saw a portion of the source code,
+and blabla...

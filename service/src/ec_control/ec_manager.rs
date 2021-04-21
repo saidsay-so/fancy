@@ -24,7 +24,7 @@ pub(crate) enum ECError {
 
 type Result<T = ()> = std::result::Result<T, ECError>;
 
-/// Holds useful information not used by the writer or the reader.
+/// Holds useful information about a fan (not used by the writer or the reader).
 #[derive(Debug)]
 pub(crate) struct FanConfig {
     pub name: String,
@@ -135,7 +135,7 @@ impl<T: RW> ECManager<T> {
         self.writer.reset(reset_all).context(Writer {})
     }
 
-    /// Read the speed percent from the EC of the fan specified by `fan_index`.
+    /// Read the speed percent from the EC for the fan specified by `fan_index`.
     pub fn read_fan_speed(&mut self, fan_index: usize) -> Result<f64> {
         self.reader.read_speed_percent(fan_index).context(Reader {})
     }

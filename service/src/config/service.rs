@@ -36,6 +36,11 @@ pub(crate) enum ECAccessMode {
 
 /// Get the device path from `ECAccessMode`.
 impl ECAccessMode {
+    /// Get path corresponding to the access mode.
+    ///
+    /// # Panics
+    ///
+    /// Panic if the value is [Either](#enum.ECAccessMode) and it's not possible to get an access to the EC.
     pub fn to_path(&self) -> &'static Path {
         match self {
             ECAccessMode::RawPort => *PORT_DEV_PATH,
