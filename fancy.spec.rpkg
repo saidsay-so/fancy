@@ -4,7 +4,7 @@
 
 Name:           {{{ git_dir_name }}}
 Version:        {{{ git_dir_version }}}
-Release:        2%{?dist}
+Release:        1%{?dist}
 Group:          System Environment/Base
 Summary:        Set of software to control laptop fans
 
@@ -60,6 +60,9 @@ and a CLI to send commands.}
 %endif
 
 %changelog
+* Wed Apr 21 2021 Musikid <musikid@outlook.com> - 0.3.1-1
+  - Initial release
+
 * Thu Apr 15 2021 Musikid <musikid@outlook.com> - 0.3.0-2
   - Fix issue with config files not correctly recognized as such
 

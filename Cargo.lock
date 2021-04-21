@@ -147,7 +147,7 @@ dependencies = [
 
 [[package]]
 name = "fancy-cli"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "bcmp",
  "clap",
@@ -157,7 +157,7 @@ dependencies = [
 
 [[package]]
 name = "fancy-service"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "dbus",
  "dbus-codegen",
