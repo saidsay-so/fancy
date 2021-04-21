@@ -24,7 +24,10 @@ mod state;
 mod temp;
 
 use bus::connection::create_dbus_conn;
-use config::{nbfc_control::load_control_config, service::ServiceConfig};
+use config::{
+    nbfc_control::load_control_config,
+    service::{ECAccessMode, ServiceConfig},
+};
 use constants::{BUS_NAME_STR, OBJ_PATH_STR};
 use ec_control::{ECError, ECManager, RawPort, RW};
 use state::State;
@@ -81,8 +84,7 @@ fn main() -> Result<()> {
     });
 
     // We have to check if it's /dev/port because we have to "wrap" the file in this case.
-    let is_raw_port =
-        service_config.ec_access_mode == crate::config::service::ECAccessMode::RawPort;
+    let is_raw_port = service_config.ec_access_mode == ECAccessMode::RawPort;
 
     let state = Rc::from(State::from(service_config));
     let dbus_conn = create_dbus_conn(Rc::clone(&state)).expect("Failed to create D-Bus connection");
@@ -112,7 +114,7 @@ fn main() -> Result<()> {
         .refresh_control_config(fan_config)
         .context(ECIO {})?;
 
-    *state.ec_access_mode.borrow_mut() = crate::config::service::ECAccessMode::from(dev_path);
+    *state.ec_access_mode.borrow_mut() = ECAccessMode::from(dev_path);
 
     {
         // We have to clone the references to move them to the closure.
@@ -201,7 +203,7 @@ fn main_loop<T: RW>(
             if t > Duration::from_nanos(0) {
                 t
             } else {
-                Duration::from_millis(10)
+                Duration::from_millis(100)
             }
         };
         dbus_conn.process(timeout).context(DBus {})?;
@@ -212,7 +214,7 @@ fn main_loop<T: RW>(
         let current_temps = temp::Temperatures::get_temps().context(Sensor {})?;
         let mut state_temps = state.temps.borrow_mut();
         current_temps.update_map(&mut state_temps);
-        debug!("Temperatures got: {:#?}", state_temps);
+        debug!("Temperatures: {:#?}", state_temps);
 
         let temp_values = state_temps.values();
         let temp: f64 = temp_values.clone().sum::<f64>() / temp_values.len() as f64;
