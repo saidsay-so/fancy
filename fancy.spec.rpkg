@@ -16,8 +16,6 @@ Source:         {{{ git_dir_pack }}}
 ExclusiveArch:  %{rust_arches}
 
 BuildRequires:  rust-packaging
-BuildRequires:  systemd-rpm-macros
-BuildRequires:  systemd
 BuildRequires:  dbus-devel
 BuildRequires:  pandoc
 
