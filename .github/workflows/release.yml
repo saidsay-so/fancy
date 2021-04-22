@@ -28,11 +28,6 @@ jobs:
           sudo apt-get update && sudo apt-get install -y devscripts equivs --no-install-recommends
           sudo mk-build-deps --install --build-dep -t "apt-get -o Debug::pkgProblemResolver=yes -y --no-install-recommends" debian/control
 
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-
       - name: Set variables
         run: |
           VERSION="${GITHUB_REF#refs/tags/v}"
@@ -104,13 +99,8 @@ jobs:
           sudo apt-get update && sudo apt-get install -y devscripts equivs --no-install-recommends
           sudo mk-build-deps --install --build-dep -t "apt-get -o Debug::pkgProblemResolver=yes -y --no-install-recommends" debian/control
 
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-
       - name: Build the package
-        run: dpkg-buildpackage -us -uc
+        run: dpkg-buildpackage --no-sign
 
       - name: Upload Debian package
         uses: softprops/action-gh-release@v1
