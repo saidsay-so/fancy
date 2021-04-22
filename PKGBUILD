@@ -5,12 +5,12 @@ pkgrel=1
 pkgdesc='Set of software which allows you to control your laptop fans.
 It includes a service daemon to allow accessing to the embedded controller
 and controlling it through D-Bus, and a CLI to send commands.'
-makedepends=('rust>=1.48' 'pandoc')
+makedepends=('rust' 'pandoc')
 depends=('dbus')
 optdepends=('systemd: manage the service')
 arch=('i686' 'x86_64')
 source=("$pkgname-$pkgver.tar.gz::https://github.com/MusiKid/$pkgname/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('d2917cba939495f880017f7cbe80df5dea1b19f5d9355b7d8b7564ec1aee3af1')
+sha256sums=('ba4499af6e3b3a7afb4aa13a07142b0f873e950d0ae0785fa987cb78a099d757')
 url='https://github.com/MusiKid/fancy'
 license=('MPL2')
 
@@ -27,4 +27,9 @@ check() {
 package() {
   cd "$pkgname-$pkgver"
   make install -- prefix=/usr DESTDIR="$pkgdir"
+}
+
+clean() {
+  cd "$pkgname-$pkgver"
+  make clean
 }
