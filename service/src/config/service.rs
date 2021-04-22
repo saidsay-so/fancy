@@ -144,7 +144,7 @@ pub(crate) enum ServiceConfigLoadError {
 }
 
 impl ServiceConfig {
-    /// Loads the `ServiceConfig` from the disk or generate a new one.
+    /// Loads the `ServiceConfig` from the disk (Fancy or NBFC format).
     pub(crate) fn load_service_config() -> Result<Self, ServiceConfigLoadError> {
         let mut buf = String::new();
 

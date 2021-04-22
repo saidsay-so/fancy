@@ -90,7 +90,7 @@ impl<W: Write + Seek> ECWriter<W> {
         self.init_write()
     }
 
-    /// Function to call before starting to write. It initialize the EC controlller so it can be used.
+    /// Function to call before starting to write. It initialize the EC controller so it can be used.
     fn init_write(&mut self) -> Result {
         if let Some(reg_confs) = &self.init_reg_confs {
             for reg_conf in reg_confs.iter() {

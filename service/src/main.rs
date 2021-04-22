@@ -190,12 +190,7 @@ fn main_loop<T: RW>(
     signal_hook::flag::register(signal_hook::consts::SIGTERM, Arc::clone(&signal_received))
         .context(Signal {})?;
 
-    loop {
-        if signal_received.load(std::sync::atomic::Ordering::Relaxed) {
-            let mut ec_manager = ec_manager.lock().unwrap();
-            return ec_manager.reset_ec(true).context(ECIO {});
-        }
-
+    while !signal_received.load(std::sync::atomic::Ordering::Relaxed) {
         // We should normally use a timer (or convert service to async?) to call the function at an interval but instead of losing time,
         // we treat the D-Bus requests.
         let timeout = {
@@ -269,4 +264,8 @@ fn main_loop<T: RW>(
             }
         }
     }
+
+    // We exit the loop
+    let mut ec_manager = ec_manager.lock().unwrap();
+    return ec_manager.reset_ec(true).context(ECIO {});
 }

@@ -39,10 +39,10 @@ pub(crate) enum ControlConfigLoadError {
 pub(crate) fn load_control_config<P: AsRef<Path>>(
     name: P,
 ) -> Result<FanControlConfigV2, ControlConfigLoadError> {
-    let mut fan_config_path = ROOT_CONFIG_PATH
-        .join(&*CONTROL_CONFIGS_DIR_PATH)
-        .join(name.as_ref());
+    let mut fan_config_path = CONTROL_CONFIGS_DIR_PATH.join(name.as_ref());
     fan_config_path.set_extension("xml");
+
+    test_load_control_config(&name)?;
 
     let mut config_file = File::open(fan_config_path).context(Loading {
         name: name.as_ref(),
@@ -64,14 +64,18 @@ pub(crate) fn load_control_config<P: AsRef<Path>>(
 pub(crate) fn test_load_control_config<P: AsRef<Path>>(
     name: P,
 ) -> Result<(), ControlConfigLoadError> {
-    let mut fan_config_path = ROOT_CONFIG_PATH
-        .join(&*CONTROL_CONFIGS_DIR_PATH)
-        .join(name.as_ref());
+    let mut fan_config_path = CONTROL_CONFIGS_DIR_PATH.join(name.as_ref());
     fan_config_path.set_extension("xml");
 
     File::open(fan_config_path)
         .context(Loading {
             name: name.as_ref(),
+        })
+        .and_then(|mut f| {
+            let mut buf = [0u8; 1];
+            f.read_exact(&mut buf).context(Loading {
+                name: name.as_ref(),
+            })
         })
         .map(|_| ())
 }
