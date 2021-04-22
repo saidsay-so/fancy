@@ -21,7 +21,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     .unwrap();
 
     let mut file = std::fs::File::create("src/interfaces.rs").unwrap();
-    file.write("#![allow(unused_imports)]\n".as_bytes())?;
+    file.write_all("#![allow(unused_imports)]\n".as_bytes())?;
     file.write_all(code.as_bytes())?;
 
     Ok(())
