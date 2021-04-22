@@ -5,7 +5,7 @@ Maintainer: musikid <musikid@outlook.com>
 Build-Depends: debhelper (>= 12),
   libdbus-1-dev,
   pandoc,
-  rustc:native (>= 1.48),
+  rustc:native (>= 1.43),
   cargo:native
 Standards-Version: 4.5.1
 Homepage: https://github.com/MusiKid/fancy
