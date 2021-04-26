@@ -31,8 +31,8 @@ impl<R: Read + Seek> ECReader<R> {
     /// Initialize a reader.
     pub fn new(ec_dev: RcWrapper<R>) -> Self {
         ECReader {
-            ec_dev,
             read_words: false,
+            ec_dev,
             fans_read_config: Vec::new(),
         }
     }
@@ -136,6 +136,60 @@ mod tests {
             .map(|e| quick_xml::de::from_str::<FanControlConfigV2>(&e).unwrap())
             .collect()
     });
+
+    #[test]
+    fn refresh() {
+        CONFIGS_PARSED.iter().for_each(|c| {
+            let ec = Cursor::new(vec![0; 256]);
+            let ec = Rc::new(RefCell::new(ec));
+            let mut reader = ECReader::new(Rc::clone(&ec));
+            reader.refresh_config(c.read_write_words, &c.fan_configurations);
+
+            assert_eq!(reader.read_words, c.read_write_words);
+
+            assert_eq!(reader.fans_read_config.len(), c.fan_configurations.len());
+
+            let mut i = 0;
+            reader.fans_read_config.iter().for_each(|f| {
+                assert_eq!(f.read_register, c.fan_configurations[i].read_register);
+                let fan = &c.fan_configurations[i];
+                let excepted_min = if fan.independent_read_min_max_values {
+                    fan.min_speed_value_read
+                } else {
+                    fan.min_speed_value
+                };
+                assert_eq!(f.min_speed_read, excepted_min);
+
+                let excepted_max = if fan.independent_read_min_max_values {
+                    fan.max_speed_value_read
+                } else {
+                    fan.max_speed_value
+                };
+                assert_eq!(f.max_speed_read, excepted_max);
+
+                if let Some(ref overrides) = f.read_percent_overrides {
+                    let excepted_overrides = c.fan_configurations[i]
+                        .fan_speed_percentage_overrides
+                        .as_ref()
+                        .unwrap();
+                    assert_eq!(
+                        overrides.len(),
+                        excepted_overrides
+                            .iter()
+                            .filter(|o| o.target_operation
+                                == Some(OverrideTargetOperation::ReadWrite)
+                                || o.target_operation == Some(OverrideTargetOperation::Read))
+                            .count()
+                    );
+
+                    overrides.iter().for_each(|o| {
+                        assert!(excepted_overrides.iter().any(|e| e == o));
+                    });
+                }
+                i += 1;
+            });
+        });
+    }
 
     #[test]
     fn read_register_value() {

@@ -211,6 +211,74 @@ mod tests {
     });
 
     #[test]
+    fn refresh() {
+        CONFIGS_PARSED.iter().for_each(|c| {
+            let ec = Cursor::new(vec![0; 256]);
+            let ec = Rc::new(RefCell::new(ec));
+            let mut writer = ECWriter::new(Rc::clone(&ec));
+            writer
+                .refresh_config(
+                    c.read_write_words,
+                    c.register_write_configurations.clone(),
+                    &c.fan_configurations,
+                )
+                .unwrap();
+
+            if let Some(ref on_w_confs) = writer.on_write_reg_confs {
+                assert_eq!(on_w_confs.len(), c.register_write_configurations.as_ref().unwrap().iter().filter(|c| c.write_occasion == Some(RegisterWriteOccasion::OnWriteFanSpeed)).count());
+            }
+
+            if let Some(ref on_i_confs) = writer.init_reg_confs {
+                assert_eq!(
+                    on_i_confs.len(),
+                    c.register_write_configurations
+                        .as_ref()
+                        .unwrap()
+                        .iter()
+                        .filter(
+                            |c| c.write_occasion == Some(RegisterWriteOccasion::OnInitialization)
+                        )
+                        .count()
+                );
+            }
+
+            assert_eq!(writer.fans_write_config.len(), c.fan_configurations.len());
+
+            let mut i = 0;
+            writer.fans_write_config.iter().for_each(|f| {
+                assert_eq!(f.reset_required, c.fan_configurations[i].reset_required);
+                assert_eq!(f.write_register, c.fan_configurations[i].write_register);
+                assert_eq!(f.reset_value, c.fan_configurations[i].fan_speed_reset_value);
+                assert_eq!(f.min_speed, c.fan_configurations[i].min_speed_value);
+                assert_eq!(f.max_speed, c.fan_configurations[i].max_speed_value);
+
+                if let Some(ref overrides) = f.write_percent_overrides {
+                    let excepted_overrides = c.fan_configurations[i]
+                        .fan_speed_percentage_overrides
+                        .as_ref()
+                        .unwrap();
+                    assert_eq!(
+                        overrides.len(),
+                        excepted_overrides
+                            .iter()
+                            .filter(|o| o.target_operation
+                                == Some(OverrideTargetOperation::ReadWrite)
+                                || o.target_operation == Some(OverrideTargetOperation::Write))
+                            .count()
+                    );
+
+                    overrides.iter().for_each(|o| {
+                        assert!(excepted_overrides.iter().any(|e| e == o));
+                    });
+                }
+                i += 1;
+            });
+
+            assert_eq!(writer.write_words, c.read_write_words);
+        });
+    }
+
+    #[test]
     fn reset_only_required() {
         CONFIGS_PARSED.iter().for_each(|c| {
             let ec = Cursor::new(vec![0; 256]);
