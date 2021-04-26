@@ -37,7 +37,6 @@ const CRITICAL_INTERVAL: u8 = 10;
 static BUS_NAME: Lazy<BusName> = Lazy::new(|| BusName::new(BUS_NAME_STR).unwrap());
 static DBUS_PATH: Lazy<DBusPath> = Lazy::new(|| DBusPath::new(OBJ_PATH_STR).unwrap());
 
-// TODO: The error string is not displayed at the end of the main loop
 type Result<T> = std::result::Result<T, ServiceError>;
 
 #[derive(Debug, Snafu)]
@@ -71,17 +70,21 @@ fn main() -> Result<()> {
 
     info!("Loading service configuration");
 
-    //TODO: Treat errors
-    let service_config = ServiceConfig::load_service_config().unwrap_or_else(|_| {
-        info!(
-            "Failed to load service configuration
+    let service_config = ServiceConfig::load_service_config()
+        .or_else(|e| match e {
+            config::service::ServiceConfigLoadError::NoConfig {} => {
+                info!(
+                    "Found no configuration
             Using default values"
-        );
-        ServiceConfig {
-            auto: true,
-            ..Default::default()
-        }
-    });
+                );
+                Ok(ServiceConfig {
+                    auto: true,
+                    ..Default::default()
+                })
+            }
+            _ => Err(e),
+        })
+        .context(ServiceConfigLoad {})?;
 
     // We have to check if it's /dev/port because we have to "wrap" the file in this case.
     let is_raw_port = service_config.ec_access_mode == ECAccessMode::RawPort;

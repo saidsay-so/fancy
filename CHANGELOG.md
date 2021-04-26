@@ -5,6 +5,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Fixed
+
+- Treat errors when loading service configuration.
+
 ### Added
 
 - Support for choosing temperature computation method.
