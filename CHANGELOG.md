@@ -5,6 +5,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- Support for choosing temperature computation method.
+
 ## [v0.3.1] - 2021-04-21
 
 ### Fixed

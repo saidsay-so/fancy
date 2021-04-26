@@ -1,7 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
-use crate::config::service::{ECAccessMode, ServiceConfig};
+use crate::config::service::{ECAccessMode, ServiceConfig, TempComputeMethod};
 use std::cell::RefCell;
 use std::collections::HashMap;
 
@@ -17,6 +17,7 @@ pub(crate) struct State {
     pub critical: RefCell<bool>,
     pub config: RefCell<String>,
     pub temps: RefCell<HashMap<String, f64>>,
+    pub temp_compute: RefCell<TempComputeMethod>,
 }
 impl From<ServiceConfig> for State {
     fn from(s: ServiceConfig) -> Self {
@@ -28,6 +29,7 @@ impl From<ServiceConfig> for State {
             critical: RefCell::new(false),
             config: RefCell::new(s.selected_fan_config),
             temps: RefCell::new(HashMap::new()),
+            temp_compute: RefCell::new(s.temp_compute),
         }
     }
 }
@@ -38,6 +40,7 @@ impl State {
             auto: *self.auto.borrow(),
             target_fans_speeds: self.target_fans_speeds.borrow().to_owned(),
             selected_fan_config: self.config.borrow().to_owned(),
+            temp_compute: *self.temp_compute.borrow(),
         }
     }
 }

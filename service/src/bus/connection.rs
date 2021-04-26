@@ -151,6 +151,7 @@ mod tests {
             critical: RefCell::new(false),
             config: RefCell::new(dummy_config),
             temps: RefCell::new(dummy_temps.clone()),
+            ..Default::default()
         };
 
         assert_eq!(state.fans_speeds().unwrap(), dummy_fans_speeds);

@@ -26,7 +26,7 @@ mod temp;
 use bus::connection::create_dbus_conn;
 use config::{
     nbfc_control::load_control_config,
-    service::{ECAccessMode, ServiceConfig},
+    service::{ECAccessMode, ServiceConfig, TempComputeMethod},
 };
 use constants::{BUS_NAME_STR, OBJ_PATH_STR};
 use ec_control::{ECError, ECManager, RawPort, RW};
@@ -211,8 +211,14 @@ fn main_loop<T: RW>(
         current_temps.update_map(&mut state_temps);
         debug!("Temperatures: {:#?}", state_temps);
 
-        let temp_values = state_temps.values();
-        let temp: f64 = temp_values.clone().sum::<f64>() / temp_values.len() as f64;
+        let temp = match *state.temp_compute.borrow() {
+            TempComputeMethod::CPUOnly => current_temps.cpu_temp,
+            TempComputeMethod::AllSensors => {
+                let temp_values = state_temps.values();
+                temp_values.clone().sum::<f64>() / temp_values.len() as f64
+            }
+        };
+
         debug!("Computed temperature: {}", temp);
 
         let critical_now = *state.critical.borrow();

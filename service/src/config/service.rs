@@ -76,6 +76,20 @@ impl From<&Path> for ECAccessMode {
     }
 }
 
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+/// Describe how to get the temperature.
+pub(crate) enum TempComputeMethod {
+    /// Get the CPU sensor data only.
+    CPUOnly,
+    /// Compute the average from all valid sensors.
+    AllSensors,
+}
+impl Default for TempComputeMethod {
+    fn default() -> Self {
+        TempComputeMethod::CPUOnly
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Default)]
 /// Stores the service configuration which can be written to the disk.
 pub(crate) struct ServiceConfig {
@@ -83,14 +97,17 @@ pub(crate) struct ServiceConfig {
     pub selected_fan_config: String,
     pub auto: bool,
     pub target_fans_speeds: Vec<f64>,
+    #[serde(default)]
+    pub temp_compute: TempComputeMethod,
 }
 impl From<NbfcServiceSettings> for ServiceConfig {
     fn from(s: NbfcServiceSettings) -> Self {
         ServiceConfig {
-            ec_access_mode: ECAccessMode::Either,
+            ec_access_mode: ECAccessMode::default(),
             selected_fan_config: s.selected_config_id,
             auto: true, // Doesn't have the same meaning as in NBFC
             target_fans_speeds: s.target_fan_speeds.iter().map(|s| *s as f64).collect(),
+            temp_compute: TempComputeMethod::default(),
         }
     }
 }
