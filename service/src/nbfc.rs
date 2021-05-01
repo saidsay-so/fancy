@@ -743,18 +743,12 @@ mod tests {
 
     #[test]
     fn all_configs() {
-        use std::io::Read;
         std::fs::read_dir("nbfc_configs/Configs")
             .unwrap()
             .filter_map(|e| e.ok())
-            .map(|e| std::fs::File::open(e.path()).unwrap())
-            .map(|mut e| {
-                let mut buf = String::new();
-                e.read_to_string(&mut buf).unwrap();
-                buf
-            })
+            .map(|e| std::fs::read_to_string(e.path()).unwrap())
             .for_each(|e| {
-                from_str::<FanControlConfigV2>(&e).unwrap();
+                assert!(from_str::<FanControlConfigV2>(&e).is_ok());
             });
     }
 
