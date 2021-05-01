@@ -105,13 +105,14 @@ impl<T: RW> ECManager<T> {
         let thresholds = &fan_config.thresholds;
         let current = &mut fan_config.current_threshold;
 
-        if temp >= thresholds[*current].down_threshold && temp <= thresholds[*current].up_threshold
+        if temp >= thresholds.last().unwrap().up_threshold {
+            *current = thresholds.len() - 1;
+        } else if temp >= thresholds[*current].down_threshold
+            && temp <= thresholds[*current].up_threshold
         {
             return false;
         } else if temp <= thresholds[1].down_threshold {
             *current = 0;
-        } else if temp >= thresholds.last().unwrap().up_threshold {
-            *current = thresholds.len() - 1;
         } else if let Ok(i) = thresholds.binary_search_by(|el| match el {
             _t if _t.down_threshold > temp => Ordering::Greater,
             _t if _t.up_threshold < temp => Ordering::Less,
@@ -203,6 +204,7 @@ mod tests {
                         || manager.fan_configs[i].current_threshold == 1
                 );
 
+                // TODO: Find a way to test for other thresholds
                 // let mut rng = rand::thread_rng();
 
                 // for t in 50..80 {

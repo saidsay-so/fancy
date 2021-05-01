@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Treat errors when loading service configuration.
 
+- Check first if the temperature is higher than all thresholds.
+
 ### Added
 
 - Support for choosing temperature computation method.
@@ -50,7 +52,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Support of other sensors than the CPU one for temperature computation.
-
 
 ## [v0.1.0]
 
