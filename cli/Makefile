@@ -12,7 +12,7 @@ NAME := fancy
 all:
 	cargo build --release --locked
 	pandoc --standalone --to man extra/fancy.1.md -o fancy.1
-	gzip fancy.1
+	gzip -f fancy.1
 
 .PHONY: test
 

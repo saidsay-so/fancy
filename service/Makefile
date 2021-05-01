@@ -17,7 +17,7 @@ NAME := fancyd
 all:
 	cargo build --release --locked
 	pandoc --standalone --to man extra/fancyd.8.md -o fancyd.8
-	gzip fancyd.8
+	gzip -f fancyd.8
 
 .PHONY: test
 

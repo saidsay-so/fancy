@@ -10,7 +10,7 @@ all: cli service man
 man:
 	# Get the list of configurations supported out-of-box
 	find service/nbfc_configs/Configs -type f -print0 | xargs -0 -L1 basename -s .xml | sort | sed 's/^/- /g' | cat fancy.7.md - | pandoc --standalone --to man -o fancy.7
-	gzip fancy.7
+	gzip -f fancy.7
 
 cli:
 	make -C cli/
