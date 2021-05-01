@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 use super::RW;
+
 use std::io::{Error, Read, Seek, SeekFrom, Write};
 
 #[derive(Copy, Clone, PartialEq)]
@@ -28,12 +29,13 @@ pub(crate) struct RawPort<T: RW> {
     pos: u8,
 }
 
-impl<T: RW> RawPort<T> {
-    // TODO: Should use the `From` trait
-    pub fn from(inner: T) -> Self {
+impl<T: RW> From<T> for RawPort<T> {
+    fn from(inner: T) -> Self {
         RawPort { inner, pos: 0 }
     }
+}
 
+impl<T: RW> RawPort<T> {
     /// Low-level wait function before reading/writing to `/dev/port`.
     ///
     /// It waits for input/output buffer to be empty and return an error on timeout.
