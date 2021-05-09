@@ -136,6 +136,7 @@ fn main() -> Result<()> {
                                 info!("Swapping configuration to '{}'", &*config);
 
                                 let mut target_fans_speeds = state.fans_speeds.borrow_mut();
+                                let target_fans_speeds_clone = target_fans_speeds.clone();
                                 target_fans_speeds.clear();
 
                                 let conf = load_control_config(&*config).unwrap();
@@ -145,6 +146,8 @@ fn main() -> Result<()> {
                                     .unwrap()
                                     .refresh_control_config(conf)
                                     .unwrap();
+
+                                *target_fans_speeds = target_fans_speeds_clone;
                             }
                             _ => {}
                         }
@@ -275,6 +278,7 @@ fn main_loop<T: RW>(
     }
 
     // We exit the loop
+    info!("Exiting");
     let mut ec_manager = ec_manager.lock().unwrap();
     return ec_manager.reset_ec(true).context(ECIO {});
 }

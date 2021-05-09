@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Restore target fans speeds after a configuration change.
+
 - Treat errors when loading service configuration.
 
 - Check first if the temperature is higher than all thresholds.
