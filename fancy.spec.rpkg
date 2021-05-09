@@ -59,6 +59,9 @@ and a CLI to send commands.}
 %endif
 
 %changelog
+* Sun May 09 2021 Musikid <musikid@outlook.com> - 0.4.0-1
+  - Initial release
+
 * Wed Apr 21 2021 Musikid <musikid@outlook.com> - 0.3.1-1
   - Initial release
 

@@ -1,6 +1,6 @@
 [package]
 name = "fancy-cli"
-version = "0.3.1"
+version = "0.4.0"
 authors = ["Musikid <musikid@outlook.com>"]
 edition = "2018"
 description = """This package provides the CLI for Fancy, a set of software to control laptop fans."""
