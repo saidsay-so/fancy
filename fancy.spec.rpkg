@@ -32,6 +32,7 @@ and a CLI to send commands.}
 %description %{_description}
 
 %files
+%license LICENSE
 %doc README.md
 %{_bindir}/fancy
 %{_bindir}/fancyd
