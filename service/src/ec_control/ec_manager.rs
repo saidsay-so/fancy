@@ -55,7 +55,7 @@ impl<T: RW> ECManager<T> {
         }
     }
 
-    /// Refresh the `FanControlConfigV2` and initialize the writer according to this config.
+    /// Refresh the fan(s) configuration and initialize the writer according to this config.
     pub fn refresh_control_config(&mut self, c: FanControlConfigV2) -> Result {
         self.fan_configs = c
             .fan_configurations
