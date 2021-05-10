@@ -60,8 +60,11 @@ and a CLI to send commands.}
 %endif
 
 %changelog
-* Sun May 09 2021 Musikid <musikid@outlook.com> - 0.4.0-2
+* Mon May 10 2021 Musikid <musikid@outlook.com> - 0.4.0-2
   - Fix systemd-rpm-macros require
+
+* Sun May 09 2021 Musikid <musikid@outlook.com> - 0.4.0-1
+  - Initial release
 
 * Wed Apr 21 2021 Musikid <musikid@outlook.com> - 0.3.1-1
   - Initial release
