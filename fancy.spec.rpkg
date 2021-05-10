@@ -4,7 +4,7 @@
 
 Name:           {{{ git_dir_name }}}
 Version:        {{{ git_dir_version }}}
-Release:        1%{?dist}
+Release:        2%{?dist}
 Group:          System Environment/Base
 Summary:        Set of software to control laptop fans
 
@@ -16,6 +16,7 @@ Source:         {{{ git_dir_pack }}}
 ExclusiveArch:  %{rust_arches}
 
 BuildRequires:  rust-packaging
+BuildRequires:  systemd-rpm-macros
 BuildRequires:  dbus-devel
 BuildRequires:  pandoc
 
@@ -59,8 +60,8 @@ and a CLI to send commands.}
 %endif
 
 %changelog
-* Sun May 09 2021 Musikid <musikid@outlook.com> - 0.4.0-1
-  - Initial release
+* Sun May 09 2021 Musikid <musikid@outlook.com> - 0.4.0-2
+  - Fix systemd-rpm-macros require
 
 * Wed Apr 21 2021 Musikid <musikid@outlook.com> - 0.3.1-1
   - Initial release
