@@ -23,6 +23,12 @@ You can check if your computer model is supported by checking if a configuration
 
 **NOTE: If you have Secure Boot enabled, you have to install [`acpi_ec`](https://github.com/MusiKid/acpi_ec) or disable it.**
 
+#### Arch Linux (thanks to @[BachoSeven](https://github.com/BachoSeven)!)
+
+```sh
+yay -S fancy
+```
+
 #### Debian
 
 For now, you can find the `.deb` in the [Releases](https://github.com/MusiKid/fancy/releases/latest).
