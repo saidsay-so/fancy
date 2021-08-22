@@ -5,7 +5,6 @@ use once_cell::sync::Lazy;
 use quick_xml::de::from_str as xml_from_str;
 use serde::{Deserialize, Serialize};
 use snafu::{ResultExt, Snafu};
-use toml::{de::from_str as toml_from_str, ser::to_string_pretty};
 
 use std::fs::File;
 use std::io::prelude::*;
@@ -171,7 +170,7 @@ impl ServiceConfig {
                 .read_to_string(&mut buf)
                 .context(LoadService {})?;
 
-            toml_from_str::<ServiceConfig>(&buf).context(TomlDeserialize {})
+            toml::from_str::<ServiceConfig>(&buf).context(TomlDeserialize {})
         } else if NBFC_SETTINGS_PATH.is_file() {
             File::open(*NBFC_SETTINGS_PATH)
                 .context(OpenNbfcServiceConfig {})?
@@ -190,7 +189,7 @@ impl ServiceConfig {
     pub(crate) fn save(&self) -> Result<(), ServiceConfigSaveError> {
         File::create(&*CONFIG_FILE_PATH)
             .context(CreateConfig {})?
-            .write_all(to_string_pretty(self).unwrap().as_bytes())
+            .write_all(toml::to_string_pretty(self).unwrap().as_bytes())
             .context(SaveConfig {})
     }
 }
