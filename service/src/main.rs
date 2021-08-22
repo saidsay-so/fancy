@@ -29,7 +29,7 @@ use config::{
     service::{ECAccessMode, ServiceConfig, TempComputeMethod},
 };
 use constants::{BUS_NAME_STR, OBJ_PATH_STR};
-use ec_control::{ECError, ECManager, RawPort, RW};
+use ec_control::{ECManager, RawPort, RW};
 use state::State;
 
 const CRITICAL_INTERVAL: u8 = 10;
@@ -48,7 +48,7 @@ enum ServiceError {
     },
 
     #[snafu(display("{}", source))]
-    ECIO { source: ECError },
+    ECIO { source: ec_control::ECError },
 
     #[snafu(display("{}", source))]
     ServiceConfigLoad {
@@ -201,7 +201,7 @@ fn main_loop<T: RW>(
         // we treat the D-Bus requests.
         let timeout = {
             let t = ec_manager.lock().unwrap().poll_interval;
-            if t > Duration::from_nanos(0) {
+            if t > Duration::ZERO {
                 t
             } else {
                 Duration::from_millis(100)
