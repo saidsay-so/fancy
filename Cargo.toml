@@ -1,5 +1,6 @@
 [workspace]
 members = ["service", "cli", "nbfc"]
+exclude = ["gui/src-tauri"]
 
 [profile.release]
 lto = "thin"
