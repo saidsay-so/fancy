@@ -10,7 +10,9 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 
 use crate::constants::ROOT_CONFIG_PATH;
-use crate::nbfc::{check_control_config, CheckControlConfigError, FanControlConfigV2};
+use crate::nbfc::{
+    check_control_config, CheckControlConfigError, FanControlConfigV2, XmlFanControlConfigV2,
+};
 
 static CONTROL_CONFIGS_DIR_PATH: Lazy<PathBuf> = Lazy::new(|| ROOT_CONFIG_PATH.join("configs"));
 #[derive(Debug, Snafu)]
@@ -53,7 +55,9 @@ pub(crate) fn load_control_config<P: AsRef<Path>>(
         name: name.as_ref(),
     })?;
 
-    let c = xml_from_str::<FanControlConfigV2>(&buf).context(ControlXmlDeserialize {})?;
+    let c = xml_from_str::<XmlFanControlConfigV2>(&buf)
+        .context(ControlXmlDeserialize {})?
+        .into();
     check_control_config(&c).context(Check {
         name: name.as_ref(),
     })?;

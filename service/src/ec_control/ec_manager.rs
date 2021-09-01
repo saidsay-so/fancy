@@ -158,7 +158,11 @@ mod tests {
                 e.read_to_string(&mut buf).unwrap();
                 buf
             })
-            .map(|e| quick_xml::de::from_str::<FanControlConfigV2>(&e).unwrap())
+            .map(|e| {
+                quick_xml::de::from_str::<XmlFanControlConfigV2>(&e)
+                    .unwrap()
+                    .into()
+            })
             .collect()
     });
 

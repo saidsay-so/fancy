@@ -1,7 +1,13 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
+//! This module contains structures for serializing and deserializing NBFC configuration.
+//! The XML variants are here to apply custom deserializing for XML format. They should be used as
+//! middlemen before saving/reading configs.
+
+use serde::{Deserialize, Serialize};
+
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 #[serde(from = "String")]
@@ -150,7 +156,7 @@ struct FanSpeedPercentageOverrides {
 
 #[derive(PartialEq, Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
-struct __FanConfiguration {
+pub struct XmlFanConfiguration {
     read_register: u8,
     write_register: u8,
     min_speed_value: u16,
@@ -170,9 +176,9 @@ struct __FanConfiguration {
     fan_speed_percentage_overrides: Option<FanSpeedPercentageOverrides>,
 }
 
-impl From<FanConfiguration> for __FanConfiguration {
+impl From<FanConfiguration> for XmlFanConfiguration {
     fn from(f: FanConfiguration) -> Self {
-        __FanConfiguration {
+        XmlFanConfiguration {
             read_register: f.read_register,
             write_register: f.write_register,
             min_speed_value: f.min_speed_value,
@@ -195,7 +201,7 @@ impl From<FanConfiguration> for __FanConfiguration {
     }
 }
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Clone, Debug, Serialize, Deserialize)]
 pub struct FanConfiguration {
     pub read_register: u8,
     pub write_register: u8,
@@ -211,8 +217,8 @@ pub struct FanConfiguration {
     pub fan_speed_percentage_overrides: Option<Vec<FanSpeedPercentageOverride>>,
 }
 
-impl From<__FanConfiguration> for FanConfiguration {
-    fn from(f: __FanConfiguration) -> Self {
+impl From<XmlFanConfiguration> for FanConfiguration {
+    fn from(f: XmlFanConfiguration) -> Self {
         FanConfiguration {
             read_register: f.read_register,
             write_register: f.write_register,
@@ -232,29 +238,11 @@ impl From<__FanConfiguration> for FanConfiguration {
     }
 }
 
-impl Serialize for FanConfiguration {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        __FanConfiguration::from(self.clone()).serialize(serializer)
-    }
-}
-
-impl<'de> Deserialize<'de> for FanConfiguration {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        Ok(__FanConfiguration::deserialize(deserializer)?.into())
-    }
-}
-
 #[derive(PartialEq, Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 struct FanConfigurations {
     #[serde(rename = "FanConfiguration")]
-    fan_configurations: Vec<__FanConfiguration>,
+    fan_configurations: Vec<XmlFanConfiguration>,
 }
 
 #[derive(PartialEq, Clone, Debug, Serialize, Deserialize)]
@@ -266,7 +254,7 @@ struct RegisterWriteConfigurations {
 
 #[derive(PartialEq, Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
-struct __FanControlConfigV2 {
+pub struct XmlFanControlConfigV2 {
     notebook_model: String,
     author: Option<String>,
     #[serde(default = "default_poll_interval")]
@@ -284,9 +272,9 @@ fn default_critic_temp() -> u8 {
     70
 }
 
-impl From<FanControlConfigV2> for __FanControlConfigV2 {
+impl From<FanControlConfigV2> for XmlFanControlConfigV2 {
     fn from(f: FanControlConfigV2) -> Self {
-        __FanControlConfigV2 {
+        XmlFanControlConfigV2 {
             notebook_model: f.notebook_model,
             author: f.author,
             ec_poll_interval: f.ec_poll_interval,
@@ -296,7 +284,7 @@ impl From<FanControlConfigV2> for __FanControlConfigV2 {
                 fan_configurations: f
                     .fan_configurations
                     .into_iter()
-                    .map(|t| __FanConfiguration::from(t))
+                    .map(|t| XmlFanConfiguration::from(t))
                     .collect(),
             },
             register_write_configurations: RegisterWriteConfigurations {
@@ -306,7 +294,7 @@ impl From<FanControlConfigV2> for __FanControlConfigV2 {
     }
 }
 
-#[derive(PartialEq, Clone, Debug, Default)]
+#[derive(PartialEq, Clone, Debug, Default, Serialize, Deserialize)]
 pub struct FanControlConfigV2 {
     pub notebook_model: String,
     pub author: Option<String>,
@@ -317,8 +305,8 @@ pub struct FanControlConfigV2 {
     pub register_write_configurations: Option<Vec<RegisterWriteConfiguration>>,
 }
 
-impl From<__FanControlConfigV2> for FanControlConfigV2 {
-    fn from(f: __FanControlConfigV2) -> Self {
+impl From<XmlFanControlConfigV2> for FanControlConfigV2 {
+    fn from(f: XmlFanControlConfigV2) -> Self {
         FanControlConfigV2 {
             notebook_model: f.notebook_model,
             author: f.author,
@@ -338,21 +326,54 @@ impl From<__FanControlConfigV2> for FanControlConfigV2 {
     }
 }
 
-impl Serialize for FanControlConfigV2 {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        __FanControlConfigV2::from(self.clone()).serialize(serializer)
+#[derive(PartialEq, Clone, Debug, Serialize, Deserialize)]
+struct TargetFanSpeeds {
+    #[serde(rename = "float")]
+    target_fan_speeds: Vec<f32>,
+}
+
+#[derive(PartialEq, Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct XmlNbfcServiceSettings {
+    settings_version: usize,
+    selected_config_id: String,
+    autostart: bool,
+    read_only: bool,
+    target_fan_speeds: TargetFanSpeeds,
+}
+
+impl From<NbfcServiceSettings> for XmlNbfcServiceSettings {
+    fn from(s: NbfcServiceSettings) -> Self {
+        XmlNbfcServiceSettings {
+            settings_version: s.settings_version,
+            selected_config_id: s.selected_config_id,
+            autostart: s.autostart,
+            read_only: s.read_only,
+            target_fan_speeds: TargetFanSpeeds {
+                target_fan_speeds: s.target_fan_speeds,
+            },
+        }
     }
 }
 
-impl<'de> Deserialize<'de> for FanControlConfigV2 {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        Ok(__FanControlConfigV2::deserialize(deserializer)?.into())
+#[derive(PartialEq, Clone, Debug, Serialize, Deserialize)]
+pub struct NbfcServiceSettings {
+    pub settings_version: usize,
+    pub selected_config_id: String,
+    pub autostart: bool,
+    pub read_only: bool,
+    pub target_fan_speeds: Vec<f32>,
+}
+
+impl From<XmlNbfcServiceSettings> for NbfcServiceSettings {
+    fn from(s: XmlNbfcServiceSettings) -> Self {
+        NbfcServiceSettings {
+            settings_version: s.settings_version,
+            selected_config_id: s.selected_config_id,
+            autostart: s.autostart,
+            read_only: s.read_only,
+            target_fan_speeds: s.target_fan_speeds.target_fan_speeds,
+        }
     }
 }
 
@@ -424,75 +445,6 @@ pub fn check_control_config(c: &FanControlConfigV2) -> Result<(), CheckControlCo
     }
 
     Ok(())
-}
-
-#[derive(PartialEq, Clone, Debug, Serialize, Deserialize)]
-struct TargetFanSpeeds {
-    #[serde(rename = "float")]
-    target_fan_speeds: Vec<f32>,
-}
-
-#[derive(PartialEq, Clone, Debug, Serialize, Deserialize)]
-#[serde(rename_all = "PascalCase")]
-struct __NbfcServiceSettings {
-    settings_version: usize,
-    selected_config_id: String,
-    autostart: bool,
-    read_only: bool,
-    target_fan_speeds: TargetFanSpeeds,
-}
-
-impl From<NbfcServiceSettings> for __NbfcServiceSettings {
-    fn from(s: NbfcServiceSettings) -> Self {
-        __NbfcServiceSettings {
-            settings_version: s.settings_version,
-            selected_config_id: s.selected_config_id,
-            autostart: s.autostart,
-            read_only: s.read_only,
-            target_fan_speeds: TargetFanSpeeds {
-                target_fan_speeds: s.target_fan_speeds,
-            },
-        }
-    }
-}
-
-#[derive(PartialEq, Clone, Debug)]
-pub struct NbfcServiceSettings {
-    pub settings_version: usize,
-    pub selected_config_id: String,
-    pub autostart: bool,
-    pub read_only: bool,
-    pub target_fan_speeds: Vec<f32>,
-}
-
-impl From<__NbfcServiceSettings> for NbfcServiceSettings {
-    fn from(s: __NbfcServiceSettings) -> Self {
-        NbfcServiceSettings {
-            settings_version: s.settings_version,
-            selected_config_id: s.selected_config_id,
-            autostart: s.autostart,
-            read_only: s.read_only,
-            target_fan_speeds: s.target_fan_speeds.target_fan_speeds,
-        }
-    }
-}
-
-impl Serialize for NbfcServiceSettings {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        __NbfcServiceSettings::from(self.clone()).serialize(serializer)
-    }
-}
-
-impl<'de> Deserialize<'de> for NbfcServiceSettings {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        Ok(__NbfcServiceSettings::deserialize(deserializer)?.into())
-    }
 }
 
 //TODO: More tests
@@ -578,7 +530,8 @@ mod tests {
     </RegisterWriteConfigurations>
     </FanControlConfigV2>
         "##;
-        let parsed_config = from_str::<FanControlConfigV2>(config);
+        let parsed_config: FanControlConfigV2 =
+            from_str::<XmlFanControlConfigV2>(config).unwrap().into();
         let excepted_config = FanControlConfigV2 {
             notebook_model: "HP Envy X360 13-ag0xxx Ryzen-APU".to_string(),
             author: Some("Daniel Andersen".to_string()),
@@ -653,7 +606,6 @@ mod tests {
                 .to_vec(),
             ),
         };
-        let parsed_config = parsed_config.unwrap();
         assert!(parsed_config == excepted_config);
     }
 
@@ -695,7 +647,8 @@ mod tests {
   </FanConfigurations>
   <RegisterWriteConfigurations />
 </FanControlConfigV2>"##;
-        let parsed_config = from_str::<FanControlConfigV2>(config).unwrap();
+        let parsed_config = from_str::<XmlFanControlConfigV2>(config).unwrap();
+        let parsed_config = FanControlConfigV2::from(parsed_config);
         let excepted_config = FanControlConfigV2 {
             notebook_model: "Aspire 1810TZ".to_string(),
             author: None,
@@ -748,7 +701,7 @@ mod tests {
             .filter_map(|e| e.ok())
             .map(|e| std::fs::read_to_string(e.path()).unwrap())
             .for_each(|e| {
-                assert!(from_str::<FanControlConfigV2>(&e).is_ok());
+                assert!(from_str::<XmlFanControlConfigV2>(&e).is_ok());
             });
     }
 
@@ -765,8 +718,8 @@ mod tests {
 
     #[test]
     fn settings_xml_parse() {
-        let parsed_settings = from_str::<NbfcServiceSettings>(SETTINGS);
-        let parsed_settings = parsed_settings.unwrap();
+        let parsed_settings = from_str::<XmlNbfcServiceSettings>(SETTINGS).unwrap();
+        let parsed_settings = NbfcServiceSettings::from(parsed_settings);
         let excepted_settings = NbfcServiceSettings {
             settings_version: 0,
             selected_config_id: "HP ENVY x360 Convertible 13-ag0xxx".to_string(),

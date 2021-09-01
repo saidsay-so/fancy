@@ -6,6 +6,7 @@ use dbus::ffidisp::stdintf::org_freedesktop_dbus::PropertiesPropertiesChanged;
 use dbus::message::SignalArgs;
 use dbus::strings::{BusName, Path as DBusPath};
 use log::{debug, info};
+use nbfc_config as nbfc;
 use once_cell::sync::Lazy;
 use snafu::{ResultExt, Snafu};
 
@@ -19,7 +20,6 @@ mod bus;
 mod config;
 mod constants;
 mod ec_control;
-mod nbfc;
 mod state;
 mod temp;
 

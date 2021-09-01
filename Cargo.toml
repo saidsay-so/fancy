@@ -1,5 +1,5 @@
 [workspace]
-members = ["service", "cli"]
+members = ["service", "cli", "nbfc"]
 
 [profile.release]
 lto = "thin"
