@@ -3,5 +3,5 @@ members = ["service", "cli", "nbfc"]
 exclude = ["gui/src-tauri"]
 
 [profile.release]
-lto = "thin"
-# codegen-units = 1
+lto = "full"
+codegen-units = 1

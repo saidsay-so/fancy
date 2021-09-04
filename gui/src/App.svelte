@@ -1,65 +1,24 @@
 <script lang="ts">
-  import logo from './assets/svelte.png'
-  import Counter from './lib/Counter.svelte'
+  import Sidebar from "./components/Sidebar.svelte";
+  import Editor from "@/views/Editor.svelte";
+  import Dashboard from "@/views/Dashboard.svelte";
+
+  let currentView = Dashboard;
+  let views = [
+    { name: "Dashboard", icon: "dashboard", component: Dashboard },
+    { name: "Configuration Editor", icon: "edit", component: Editor },
+  ];
+
+  function handlePageChange(page) {
+    currentView = page;
+  }
 </script>
 
-<main>
-  <img src={logo} alt="Svelte Logo" />
-  <h1>Hello Typescript!</h1>
-
-  <Counter />
-
-  <p>
-    Visit <a href="https://svelte.dev">svelte.dev</a> to learn how to build Svelte
-    apps.
-  </p>
-
-  <p>
-    Check out <a href="https://github.com/sveltejs/kit#readme">SvelteKit</a> for
-    the officially supported framework, also powered by Vite!
-  </p>
-</main>
-
-<style>
-  :root {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-      Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  }
-
-  main {
-    text-align: center;
-    padding: 1em;
-    margin: 0 auto;
-  }
-
-  img {
-    height: 16rem;
-    width: 16rem;
-  }
-
-  h1 {
-    color: #ff3e00;
-    text-transform: uppercase;
-    font-size: 4rem;
-    font-weight: 100;
-    line-height: 1.1;
-    margin: 2rem auto;
-    max-width: 14rem;
-  }
-
-  p {
-    max-width: 14rem;
-    margin: 1rem auto;
-    line-height: 1.35;
-  }
-
-  @media (min-width: 480px) {
-    h1 {
-      max-width: none;
-    }
-
-    p {
-      max-width: none;
-    }
-  }
-</style>
+<div class="flex gap-2">
+  <aside class="h-full fixed w-44">
+    <Sidebar {views} bind:currentView />
+  </aside>
+  <main class="ml-48 flex-1 px-4 py-2">
+    <svelte:component this={currentView} on:page={handlePageChange} />
+  </main>
+</div>
