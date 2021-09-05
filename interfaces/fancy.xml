@@ -4,16 +4,17 @@
 <!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN" "https://specifications.freedesktop.org/dbus/introspect-latest.dtd">
 
 <node>
-    <interface name="com.musikid.fancy">
-        <property name="FansSpeeds" type="a{sd}" access="read"></property>
-        <property name="TargetFansSpeeds" type="ad" access="readwrite"></property>
-        <method name="SetTargetFanSpeed">
-          <arg name="index" direction="in" type="y" />
-          <arg name="speed" direction="in" type="d" />
-        </method>
-        <property name="Config" type="s" access="readwrite"></property>
-        <property name="Auto" type="b" access="readwrite"></property>
-        <property name="Critical" type="b" access="read"></property>
-        <property name="Temperatures" type="a{sd}" access="read"></property>
-    </interface>
+  <interface name="com.musikid.fancy">
+    <property name="FansSpeeds" type="a{sd}" access="read"></property>
+    <property name="TargetFansSpeeds" type="ad" access="readwrite"></property>
+    <property name="PollInterval" type="t" access="read"></property>
+    <method name="SetTargetFanSpeed">
+      <arg name="index" direction="in" type="y" />
+      <arg name="speed" direction="in" type="d" />
+    </method>
+    <property name="Config" type="s" access="readwrite"></property>
+    <property name="Auto" type="b" access="readwrite"></property>
+    <property name="Critical" type="b" access="read"></property>
+    <property name="Temperatures" type="a{sd}" access="read"></property>
+  </interface>
 </node>

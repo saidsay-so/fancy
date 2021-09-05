@@ -94,6 +94,8 @@ fn main() -> Result<()> {
 
     let fan_config = get_fan_config(Rc::clone(&state), &dbus_conn);
 
+    *state.poll_interval.borrow_mut() = fan_config.ec_poll_interval.clone();
+
     let dev_path = state.ec_access_mode.borrow().to_path();
 
     let ec_dev = std::fs::OpenOptions::new()
@@ -140,6 +142,8 @@ fn main() -> Result<()> {
                                 target_fans_speeds.clear();
 
                                 let conf = load_control_config(&*config).unwrap();
+                                let mut interval = state.poll_interval.borrow_mut();
+                                *interval = conf.ec_poll_interval;
 
                                 ec_manager
                                     .lock()

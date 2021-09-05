@@ -38,6 +38,8 @@ impl From<DBusError> for MethodErr {
     }
 }
 
+type IFaceResult<T> = Result<T, MethodErr>;
+
 impl ComMusikidFancy for State {
     fn fans_speeds(&self) -> Result<HashMap<String, f64>, MethodErr> {
         Ok(self.fans_speeds.borrow().to_owned())
@@ -100,6 +102,9 @@ impl ComMusikidFancy for State {
     fn temperatures(&self) -> Result<HashMap<String, f64>, MethodErr> {
         Ok(self.temps.borrow().to_owned())
     }
+    fn poll_interval(&self) -> IFaceResult<u64> {
+        Ok(*self.poll_interval.borrow())
+    }
 }
 
 /// Create the D-Bus connection to listen incoming requests.
@@ -151,6 +156,7 @@ mod tests {
             critical: RefCell::new(false),
             config: RefCell::new(dummy_config),
             temps: RefCell::new(dummy_temps.clone()),
+            poll_interval: RefCell::new(0),
             ..Default::default()
         };
 
@@ -163,6 +169,7 @@ mod tests {
         assert_eq!(state.critical().unwrap(), false);
         assert_eq!(state.auto().unwrap(), true);
         assert_eq!(state.temperatures().unwrap(), dummy_temps);
+        assert_eq!(state.poll_interval().unwrap(), 0);
     }
 
     #[test]

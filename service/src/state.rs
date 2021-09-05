@@ -18,6 +18,7 @@ pub(crate) struct State {
     pub config: RefCell<String>,
     pub temps: RefCell<HashMap<String, f64>>,
     pub temp_compute: RefCell<TempComputeMethod>,
+    pub poll_interval: RefCell<u64>,
 }
 impl From<ServiceConfig> for State {
     fn from(s: ServiceConfig) -> Self {
@@ -30,6 +31,7 @@ impl From<ServiceConfig> for State {
             config: RefCell::new(s.selected_fan_config),
             temps: RefCell::new(HashMap::new()),
             temp_compute: RefCell::new(s.temp_compute),
+            poll_interval: RefCell::new(0),
         }
     }
 }
