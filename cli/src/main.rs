@@ -73,7 +73,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(matches) = matches.subcommand_matches("get") {
         if let Some(_) = matches.subcommand_matches("speeds") {
             let fans_speeds = proxy.fans_speeds()?;
-            for (name, speed) in fans_speeds {
+            let names = proxy.fans_names()?;
+            for (name, speed) in names.iter().zip(fans_speeds) {
                 println!("{}: {:.1}%", name, speed);
             }
         }

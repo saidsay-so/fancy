@@ -106,6 +106,9 @@ impl ComMusikidFancy for State {
     fn poll_interval(&self) -> IFaceResult<u64> {
         Ok(*self.poll_interval.borrow())
     }
+    fn fans_names(&self) -> Result<Vec<String>, dbus_tree::MethodErr> {
+        Ok(self.fans_names.borrow().to_owned())
+    }
 }
 
 /// Create the D-Bus connection to listen incoming requests.
@@ -158,6 +161,7 @@ mod tests {
             config: RefCell::new(dummy_config),
             temps: RefCell::new(dummy_temps.clone()),
             poll_interval: RefCell::new(0),
+            fans_names: RefCell::new(vec!["dummy".to_string()]),
             ..Default::default()
         };
 
@@ -171,6 +175,7 @@ mod tests {
         assert_eq!(state.auto().unwrap(), true);
         assert_eq!(state.temperatures().unwrap(), dummy_temps);
         assert_eq!(state.poll_interval().unwrap(), 0);
+        assert_eq!(state.fans_names().unwrap(), vec!["dummy".to_string()]);
     }
 
     #[test]

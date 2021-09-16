@@ -114,11 +114,19 @@ fn main() -> Result<()> {
 
     let ec_manager = ECManager::new(ec_dev);
     let ec_manager = Rc::from(Mutex::new(ec_manager));
-    ec_manager
-        .lock()
-        .unwrap()
-        .refresh_control_config(fan_config)
-        .context(ECIO {})?;
+
+    {
+        let mut ec_manager = ec_manager.lock().unwrap();
+        ec_manager
+            .refresh_control_config(fan_config)
+            .context(ECIO {})?;
+
+        *state.fans_names.borrow_mut() = ec_manager
+            .fan_configs
+            .iter()
+            .map(|f| f.name.to_string())
+            .collect();
+    }
 
     *state.ec_access_mode.borrow_mut() = ECAccessMode::from(dev_path);
 
@@ -146,11 +154,14 @@ fn main() -> Result<()> {
                                 let mut interval = state.poll_interval.borrow_mut();
                                 *interval = conf.ec_poll_interval;
 
-                                ec_manager
-                                    .lock()
-                                    .unwrap()
-                                    .refresh_control_config(conf)
-                                    .unwrap();
+                                let mut ec_manager = ec_manager.lock().unwrap();
+                                ec_manager.refresh_control_config(conf).unwrap();
+
+                                *state.fans_names.borrow_mut() = ec_manager
+                                    .fan_configs
+                                    .iter()
+                                    .map(|f| f.name.to_string())
+                                    .collect();
 
                                 *target_fans_speeds = target_fans_speeds_clone;
                             }
