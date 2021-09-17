@@ -41,7 +41,7 @@ impl From<DBusError> for MethodErr {
 type IFaceResult<T> = Result<T, MethodErr>;
 
 impl ComMusikidFancy for State {
-    fn fans_speeds(&self) -> Result<HashMap<String, f64>, MethodErr> {
+    fn fans_speeds(&self) -> Result<Vec<f64>, MethodErr> {
         Ok(self.fans_speeds.borrow().to_owned())
     }
     fn target_fans_speeds(&self) -> Result<Vec<f64>, MethodErr> {
@@ -142,13 +142,7 @@ mod tests {
 
     #[test]
     fn getters() {
-        let dummy_fans_speeds: HashMap<String, f64> = vec![
-            ("Dummy0".to_owned(), 50.),
-            ("Dummy1".to_owned(), 35.),
-            ("Dummy2".to_owned(), 23.),
-        ]
-        .into_iter()
-        .collect();
+        let dummy_fans_speeds = vec![50., 35., 23.];
         let dummy_target_fans_speeds = vec![90., 85., 75.];
         let dummy_temps: HashMap<String, f64> = vec![("CPU".to_owned(), 26.)].into_iter().collect();
         let dummy_config = String::from("Dummy config");

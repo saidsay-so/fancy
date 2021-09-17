@@ -95,6 +95,8 @@ fn main() -> Result<()> {
 
     let fan_config = get_fan_config(Rc::clone(&state), &dbus_conn);
 
+    *state.fans_speeds.borrow_mut() = vec![0.0; fan_config.fan_configurations.len()];
+
     *state.poll_interval.borrow_mut() = fan_config.ec_poll_interval.clone();
 
     let dev_path = state.ec_access_mode.borrow().to_path();
@@ -113,6 +115,13 @@ fn main() -> Result<()> {
     };
 
     let ec_manager = ECManager::new(ec_dev);
+
+    *state.fans_names.borrow_mut() = ec_manager
+        .fan_configs
+        .iter()
+        .map(|f| f.name.to_string())
+        .collect();
+
     let ec_manager = Rc::from(Mutex::new(ec_manager));
 
     {
@@ -146,7 +155,7 @@ fn main() -> Result<()> {
                                 let config = state.config.borrow();
                                 info!("Swapping configuration to '{}'", &*config);
 
-                                let mut target_fans_speeds = state.fans_speeds.borrow_mut();
+                                let mut target_fans_speeds = state.target_fans_speeds.borrow_mut();
                                 let target_fans_speeds_clone = target_fans_speeds.clone();
                                 target_fans_speeds.clear();
 
@@ -156,6 +165,9 @@ fn main() -> Result<()> {
 
                                 let mut ec_manager = ec_manager.lock().unwrap();
                                 ec_manager.refresh_control_config(conf).unwrap();
+
+                                *state.fans_speeds.borrow_mut() =
+                                    vec![0.0; ec_manager.fan_configs.len()];
 
                                 *state.fans_names.borrow_mut() = ec_manager
                                     .fan_configs
@@ -266,10 +278,7 @@ fn main_loop<T: RW>(
         let mut fans_speeds = state.fans_speeds.borrow_mut();
 
         for i in 0..ec_manager.fan_configs.len() {
-            fans_speeds.insert(
-                ec_manager.fan_configs[i].name.to_owned(),
-                ec_manager.read_fan_speed(i).context(ECIO {})?,
-            );
+            fans_speeds[i] = ec_manager.read_fan_speed(i).context(ECIO {})?;
             debug!("Fans speeds: {:#?}", fans_speeds);
 
             // If there is a target fan speed set by the user

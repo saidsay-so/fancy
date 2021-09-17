@@ -11,7 +11,7 @@ use std::collections::HashMap;
 /// the configuration.
 pub(crate) struct State {
     pub ec_access_mode: RefCell<ECAccessMode>,
-    pub fans_speeds: RefCell<HashMap<String, f64>>,
+    pub fans_speeds: RefCell<Vec<f64>>,
     pub target_fans_speeds: RefCell<Vec<f64>>,
     pub manual_set_target_speeds: RefCell<bool>,
     pub auto: RefCell<bool>,
@@ -26,7 +26,7 @@ impl From<ServiceConfig> for State {
     fn from(s: ServiceConfig) -> Self {
         State {
             ec_access_mode: RefCell::new(s.ec_access_mode),
-            fans_speeds: RefCell::new(HashMap::new()),
+            fans_speeds: RefCell::new(Vec::new()),
             target_fans_speeds: RefCell::new(s.target_fans_speeds),
             manual_set_target_speeds: RefCell::new(false),
             auto: RefCell::new(s.auto),
