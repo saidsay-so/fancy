@@ -5,7 +5,7 @@ INSTALL ?= install
 
 all: cli service man
 
-.PHONY: cli service man
+.PHONY: cli service man uninstall install test clean
 
 man:
 	# Get the list of configurations supported out-of-box

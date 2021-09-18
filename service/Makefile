@@ -19,7 +19,7 @@ all:
 	pandoc --standalone --to man extra/fancyd.8.md -o fancyd.8
 	gzip -f fancyd.8
 
-.PHONY: test
+.PHONY: test install uninstall clean
 
 test:
 	cargo test --release --locked

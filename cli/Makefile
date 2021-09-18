@@ -14,7 +14,7 @@ all:
 	pandoc --standalone --to man extra/fancy.1.md -o fancy.1
 	gzip -f fancy.1
 
-.PHONY: test
+.PHONY: test install uninstall clean
 
 test:
 	cargo test --release --locked
