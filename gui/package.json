@@ -1,39 +1,40 @@
 {
-	"name": "gui",
-	"version": "0.4.0",
-	"type": "module",
-	"scripts": {
-		"dev": "vite",
-		"build": "vite build",
-		"check": "svelte-check --tsconfig ./tsconfig.json",
-		"lint": "eslint --ext .ts,.svelte .",
-		"serve": "vite preview",
-		"tauri": "tauri"
-	},
-	"devDependencies": {
-		"@sveltejs/vite-plugin-svelte": "^1.0.0-next.24",
-		"@tauri-apps/cli": "^1.0.0-beta.10",
-		"@tsconfig/svelte": "^2.0.1",
-		"@types/tailwindcss": "^2.2.1",
-		"@typescript-eslint/eslint-plugin": "^4.31.1",
-		"@typescript-eslint/parser": "^4.31.1",
-		"autoprefixer": "^10.3.4",
-		"cssnano": "^5.0.8",
-		"eslint": "^7.32.0",
-		"eslint-config-airbnb-base": "^14.2.1",
-		"eslint-plugin-import": "^2.24.2",
-		"eslint-plugin-svelte3": "^3.2.1",
-		"postcss": "^8.3.6",
-		"postcss-load-config": "^3.1.0",
-		"svelte": "^3.42.6",
-		"svelte-check": "^2.2.6",
-		"svelte-preprocess": "^4.9.4",
-		"tailwindcss": "^2.2.15",
-		"tslib": "^2.3.1",
-		"typescript": "^4.4.3",
-		"vite": "^2.5.10"
-	},
-	"dependencies": {
-		"@tauri-apps/api": "^1.0.0-beta.8"
-	}
+  "name": "gui",
+  "version": "0.4.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "prebuild": "rm -rf dist/",
+    "build": "vite build",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "lint": "eslint --ext .ts,.svelte .",
+    "serve": "vite preview",
+    "tauri": "tauri"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^1.0.0-next.24",
+    "@tauri-apps/cli": "^1.0.0-beta.10",
+    "@tsconfig/svelte": "^2.0.1",
+    "@types/tailwindcss": "^2.2.1",
+    "@typescript-eslint/eslint-plugin": "^4.31.1",
+    "@typescript-eslint/parser": "^4.31.1",
+    "autoprefixer": "^10.3.4",
+    "cssnano": "^5.0.8",
+    "eslint": "^7.32.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.24.2",
+    "eslint-plugin-svelte3": "^3.2.1",
+    "postcss": "^8.3.6",
+    "postcss-load-config": "^3.1.0",
+    "svelte": "^3.42.6",
+    "svelte-check": "^2.2.6",
+    "svelte-preprocess": "^4.9.4",
+    "tailwindcss": "^2.2.15",
+    "tslib": "^2.3.1",
+    "typescript": "^4.4.3",
+    "vite": "^2.5.10"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^1.0.0-beta.8"
+  }
 }

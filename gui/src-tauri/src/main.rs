@@ -109,6 +109,7 @@ fn main() {
       get_config,
       get_critical,
       get_names,
+      get_poll_interval,
       get_speeds,
       get_target_speeds,
       get_temps,

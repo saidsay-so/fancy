@@ -64,6 +64,13 @@ pub(super) async fn get_names(
 }
 
 #[tauri::command]
+pub(super) async fn get_poll_interval(
+  state: tauri::State<'_, Arc<RwLock<State<'_>>>>,
+) -> CmdResult<u64> {
+  prop!(state, poll_interval)
+}
+
+#[tauri::command]
 pub(super) async fn get_speeds(
   state: tauri::State<'_, Arc<RwLock<State<'_>>>>,
 ) -> CmdResult<Vec<f64>> {
