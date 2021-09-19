@@ -3,183 +3,90 @@
   windows_subsystem = "windows"
 )]
 
+mod cmd;
+mod error;
 mod interface;
 mod state;
+
+use cmd::*;
+use error::{Error, JsError};
 use interface::*;
 use state::*;
 
-use std::collections::HashMap;
 use std::convert::TryInto;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use futures::{select, StreamExt};
+use tauri::async_runtime::RwLock;
 use tauri::Manager;
 
-#[tauri::command]
-fn get_config(state: tauri::State<Arc<RwLock<State>>>) -> String {
-  let state = state.read().unwrap();
-  state.config.clone()
-}
-
-macro_rules! prop_getter {
-  ($state: expr, $send_msg: path, $recv_msg: path) => {{
-    $state.msg_sender.send($send_msg).unwrap();
-    match $state.msg_receiver.recv().unwrap() {
-      $recv_msg(t) => t,
-      _ => unreachable!(),
+macro_rules! zbus_try {
+  ($state: expr, $app: expr, $conn: expr) => {
+    match $conn {
+      Ok(c) => c,
+      Err(e) => {
+        $app
+          .emit_all(
+            "connection_error",
+            JsError::new(Error::ConnectionRefused(e.to_string()).to_string(), true),
+          )
+          .unwrap();
+        $state.write().await.set_connection_error(e);
+        return;
+      }
     }
-  }};
-}
-
-#[tauri::command]
-fn get_poll_interval(state: tauri::State<Arc<RwLock<State>>>) -> u64 {
-  let state = state.read().unwrap();
-  prop_getter!(state, Msg::GetPollInterval, Msg::PollInterval)
-}
-
-#[tauri::command]
-fn get_temps(state: tauri::State<Arc<RwLock<State>>>) -> HashMap<String, f64> {
-  let state = state.read().unwrap();
-  prop_getter!(state, Msg::GetTemps, Msg::Temps)
-}
-
-#[tauri::command]
-fn get_speeds(state: tauri::State<Arc<RwLock<State>>>) -> Vec<f64> {
-  let state = state.read().unwrap();
-  prop_getter!(state, Msg::GetSpeeds, Msg::Speeds)
-}
-
-#[tauri::command]
-fn get_target_speeds(state: tauri::State<Arc<RwLock<State>>>) -> Vec<f64> {
-  let state = state.read().unwrap();
-  prop_getter!(state, Msg::GetTargetSpeeds, Msg::TargetSpeeds)
-}
-
-#[tauri::command]
-fn get_critical(state: tauri::State<Arc<RwLock<State>>>) -> bool {
-  let state = state.read().unwrap();
-  prop_getter!(state, Msg::GetCritical, Msg::Critical)
-}
-
-#[tauri::command]
-fn get_names(state: tauri::State<Arc<RwLock<State>>>) -> Vec<String> {
-  let state = state.read().unwrap();
-  prop_getter!(state, Msg::GetNames, Msg::Names)
-}
-
-#[tauri::command]
-fn get_auto(state: tauri::State<Arc<RwLock<State>>>) -> bool {
-  let state = state.read().unwrap();
-  prop_getter!(state, Msg::GetAuto, Msg::Auto)
-}
-
-#[tauri::command]
-fn set_auto(state: tauri::State<Arc<RwLock<State>>>, auto: bool) {
-  let state = state.read().unwrap();
-  state.msg_sender.send(Msg::SetAuto(auto)).unwrap();
-}
-
-#[tauri::command]
-fn set_target_speed(state: tauri::State<Arc<RwLock<State>>>, index: u8, speed: f64) {
-  let state = state.read().unwrap();
-  state
-    .msg_sender
-    .send(Msg::SetTargetSpeed(index, speed))
-    .unwrap();
+  };
 }
 
 fn main() {
-  let (client_send, backend_recv) = flume::bounded(1);
-  let (backend_send, client_recv) = flume::bounded(1);
-  let state = State::new(client_send, client_recv);
+  let state = State::new();
   let state = Arc::from(RwLock::from(state));
 
   let state = state.clone();
-  let backend_recv = backend_recv.clone();
-  let backend_send = backend_send.clone();
   tauri::Builder::default()
     .manage(state.clone())
     .setup(move |app| {
       let app = app.handle();
       let state = state.clone();
-      let backend_recv = backend_recv.clone();
-      let backend_send = backend_send.clone();
 
       tauri::async_runtime::spawn(async move {
-        let conn = zbus::azync::Connection::system()
+        let conn = zbus_try!(state, app, zbus::azync::Connection::system().await);
+        let proxy = zbus_try!(
+          state,
+          app,
+          AsyncFancyProxy::builder(&conn)
+            .cache_properties(false)
+            .build()
+            .await
+        );
+        state.write().await.set_proxy(proxy);
+
+        let signal_conn = zbus_try!(state, app, zbus::azync::Connection::system().await);
+        let changes_proxy = zbus_try!(state, app, AsyncFancyProxy::new(&signal_conn).await);
+        let mut target_changes = changes_proxy
+          .receive_target_fans_speeds_changed()
           .await
-          .expect("could not create the connection");
-        let signal_conn = zbus::azync::Connection::system().await.unwrap();
-        let proxy = AsyncFancyProxy::builder(&conn)
-          .cache_properties(false)
-          .build()
-          .await
-          .unwrap();
-        let changed_proxy = AsyncFancyProxy::new(&signal_conn).await.unwrap();
-        let mut target_changes = proxy.receive_target_fans_speeds_changed().await.fuse();
-        let mut config_changes = changed_proxy.receive_config_changed().await.fuse();
-        let mut auto_changes = changed_proxy.receive_auto_changed().await.fuse();
+          .fuse();
+        let mut config_changes = changes_proxy.receive_config_changed().await.fuse();
+        let mut auto_changes = changes_proxy.receive_auto_changed().await.fuse();
 
         {
-          state.write().unwrap().config = proxy.config().await.unwrap();
-          state.write().unwrap().poll_interval = proxy.poll_interval().await.unwrap();
+          state.write().await.config = changes_proxy.config().await.unwrap();
+          state.write().await.poll_interval = changes_proxy.poll_interval().await.unwrap();
         }
 
-        let mut rx_stream = backend_recv.into_stream().fuse();
         loop {
           select! {
-            msg = rx_stream.next() => {
-              if let Some(msg) = msg {
-                match msg {
-                  Msg::GetPollInterval => backend_send
-                    .send_async(Msg::PollInterval(proxy.poll_interval().await.unwrap()))
-                    .await
-                    .unwrap(),
-                  Msg::GetTemps => backend_send
-                    .send_async(Msg::Temps(proxy.temperatures().await.unwrap()))
-                    .await
-                    .unwrap(),
-                  Msg::GetSpeeds => backend_send
-                    .send_async(Msg::Speeds(proxy.fans_speeds().await.unwrap()))
-                    .await
-                    .unwrap(),
-                  Msg::GetTargetSpeeds => backend_send
-                    .send_async(Msg::TargetSpeeds(proxy.target_fans_speeds().await.unwrap()))
-                    .await
-                    .unwrap(),
-                  Msg::SetTargetSpeed(i, s) => { 
-                    //TODO: Does not seem to fire the changed signal
-                    proxy.set_target_fan_speed(i, s).await.unwrap();
-                    app.emit_all("target_speeds_change", proxy.target_fans_speeds().await.unwrap()).unwrap();
-                  },
-                  Msg::GetCritical => backend_send
-                    .send_async(Msg::Critical(proxy.critical().await.unwrap()))
-                    .await
-                    .unwrap(),
-                  Msg::GetNames => backend_send
-                    .send_async(Msg::Names(proxy.fans_names().await.unwrap()))
-                    .await
-                    .unwrap(),
-                  Msg::GetAuto => backend_send
-                    .send_async(Msg::Auto(proxy.auto().await.unwrap()))
-                    .await
-                    .unwrap(),
-                  Msg::SetAuto(a) => proxy.set_auto(a).await.unwrap(),
-                  _ => unreachable!(),
-                };
-              }
-            },
             t = target_changes.next() => {
               if let Some(Some(t)) = t {
                 let target: Vec<f64> = t.try_into().unwrap();
-                println!("{:#?}", target);
                 app.emit_all("target_speeds_change", target).unwrap();
               }
             },
             c = config_changes.next() => {
               if let Some(Some(c)) = c {
                 let config: String = c.try_into().unwrap();
-                state.write().unwrap().config = config.clone();
+                state.write().await.config = config.clone();
                 app.emit_all("config_change", config).unwrap();
               }
             },
@@ -197,16 +104,19 @@ fn main() {
       Ok(())
     })
     .invoke_handler(tauri::generate_handler![
-      get_temps,
-      get_poll_interval,
+      // Getters
+      get_auto,
+      get_config,
+      get_critical,
+      get_names,
       get_speeds,
       get_target_speeds,
-      get_critical,
-      get_config,
-      get_names,
-      get_auto,
+      get_temps,
+      // Setters
+      set_auto,
       set_target_speed,
-      set_auto
+      // Misc
+      restart
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

@@ -1,40 +1,36 @@
-use std::collections::HashMap;
+use crate::interface::*;
 
 #[derive(Debug)]
-pub enum Msg {
-  GetTemps,
-  Temps(HashMap<String, f64>),
-  GetSpeeds,
-  Speeds(Vec<f64>),
-  GetPollInterval,
-  PollInterval(u64),
-  GetTargetSpeeds,
-  TargetSpeeds(Vec<f64>),
-  SetTargetSpeed(u8, f64),
-  GetCritical,
-  Critical(bool),
-  GetNames,
-  Names(Vec<String>),
-  GetAuto,
-  Auto(bool),
-  SetAuto(bool),
-}
-
-#[derive(Debug)]
-pub struct State {
+pub struct State<'a> {
   pub config: String,
   pub poll_interval: u64,
-  pub msg_sender: flume::Sender<Msg>,
-  pub msg_receiver: flume::Receiver<Msg>,
+  pub proxy: Option<AsyncFancyProxy<'a>>,
+  pub proxy_state: ProxyState,
 }
 
-impl State {
-  pub fn new(msg_sender: flume::Sender<Msg>, msg_receiver: flume::Receiver<Msg>) -> Self {
+#[derive(Debug)]
+pub enum ProxyState {
+  Uninitialized,
+  Initialized,
+  Error(zbus::Error),
+}
+
+impl<'a> State<'a> {
+  pub fn new() -> Self {
     State {
-      msg_receiver,
-      msg_sender,
+      proxy: None,
       poll_interval: 0,
       config: String::new(),
+      proxy_state: ProxyState::Uninitialized,
     }
+  }
+
+  pub fn set_proxy(&mut self, proxy: AsyncFancyProxy<'a>) {
+    self.proxy = Some(proxy);
+    self.proxy_state = ProxyState::Initialized;
+  }
+
+  pub fn set_connection_error(&mut self, proxy_err: zbus::Error) {
+    self.proxy_state = ProxyState::Error(proxy_err);
   }
 }
