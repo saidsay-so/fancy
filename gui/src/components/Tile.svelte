@@ -3,12 +3,15 @@
 
   export let title: string;
   export let value: string = null;
+  export let danger: boolean = false;
 </script>
 
 <article
-  transition:scale
-  class="bg-white shadow rounded-lg
-    px-4 py-6 flex flex-col gap-4 transition-shadow hover:shadow-lg"
+  in:scale
+  class="shadow rounded-lg
+    px-4 py-6 flex flex-col gap-4 transition-all hover:shadow-lg"
+  class:bg-white={!danger}
+  class:danger
 >
   <div class="flex justify-center">
     <h3 class="text-center flex-1">{title}</h3>
@@ -21,3 +24,9 @@
   {/if}
   <slot name="bottom" />
 </article>
+
+<style lang="postcss" scoped>
+  .danger {
+    @apply bg-gradient-to-br from-red-300 via-red-400 to-red-400 text-white;
+  }
+</style>

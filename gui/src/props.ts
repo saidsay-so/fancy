@@ -21,7 +21,8 @@ enum Commands {
 
 enum Event {
   CONFIG_CHANGE = 'config_change',
-  AUTO_CHANGE = 'auto_change'
+  AUTO_CHANGE = 'auto_change',
+  TARGET_SPEEDS_CHANGE = 'target_speeds_change'
 }
 
 const listenConfig = <T>(cmd: Commands, set: Subscriber<T>) => {
@@ -75,8 +76,6 @@ export const meanTemperature = derived(temperatures,
 
 export const fansSpeeds = readable([], (set) => propSubscriber(Commands.GET_SPEEDS, set));
 
-export const targetSpeeds = readable([], (set) => propSubscriber(Commands.GET_TARGET_SPEEDS, set));
-
 export const critical = readable(false, (set) => propSubscriber(Commands.GET_CRITICAL, set));
 
 export const fansNames = readable([], (set) => listenConfig(Commands.GET_NAMES, set));
@@ -90,17 +89,25 @@ export const setTargetSpeed = (index: number, s: number): void => {
   });
 };
 
+export const targetSpeeds = readable([], (set) => {
+  let unlisten: UnlistenFn;
+  invoke(Commands.GET_TARGET_SPEEDS).then(set);
+  listen<unknown[]>(Event.TARGET_SPEEDS_CHANGE, (ev) => set(ev.payload))
+    .then((un) => { unlisten = un; });
+  return unlisten;
+});
+
 const { subscribe: subAuto } = readable(false, (set) => {
   let unlisten: UnlistenFn;
   invoke(Commands.GET_AUTO).then(set);
-  listen<string>(Event.AUTO_CHANGE, (ev) => set(JSON.parse(ev.payload)))
+  listen<boolean>(Event.AUTO_CHANGE, (ev) => set(ev.payload))
     .then((un) => { unlisten = un; });
   return unlisten;
 });
 
 export const auto = {
   subscribe: subAuto,
-  set: (auto: boolean) => {
+  set: (auto: boolean): void => {
     invoke(Commands.SET_AUTO, { auto });
   },
 };

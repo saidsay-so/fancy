@@ -12,7 +12,7 @@
     fansNames,
     targetSpeeds,
     auto,
-  } from "../stores";
+  } from "../props";
   import { fly } from "svelte/transition";
 
   export let meanTemp = true;
@@ -63,7 +63,11 @@
   </div>
 
   {#if meanTemp}
-    <Tile title="Temperature" value={`${$meanTemperature.toFixed()} °C`} />
+    <Tile
+      title="Temperature"
+      danger={$critical}
+      value={`${$meanTemperature.toFixed()} °C`}
+    />
   {:else}
     <div class="grid grid-cols-3 gap-4">
       {#each Object.entries($temperatures) as [name, value] (name)}

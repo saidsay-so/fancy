@@ -2,11 +2,20 @@
   import Sidebar from "./components/Sidebar.svelte";
   import Editor from "@/views/Editor.svelte";
   import Dashboard from "@/views/Dashboard.svelte";
+  import type { SvelteComponent } from "svelte/internal";
 
   let currentView = Dashboard;
   let views = [
-    { name: "Dashboard", icon: "dashboard", component: Dashboard },
-    { name: "Configuration Editor", icon: "edit", component: Editor },
+    {
+      name: "Dashboard",
+      icon: "dashboard",
+      component: Dashboard,
+    },
+    {
+      name: "Configuration Editor",
+      icon: "edit",
+      component: Editor,
+    },
   ];
 
   function handlePageChange(page) {

@@ -9,6 +9,7 @@ use interface::*;
 use state::*;
 
 use std::collections::HashMap;
+use std::convert::TryInto;
 use std::sync::{Arc, RwLock};
 
 use futures::{select, StreamExt};
@@ -115,6 +116,7 @@ fn main() {
           .await
           .unwrap();
         let changed_proxy = AsyncFancyProxy::new(&signal_conn).await.unwrap();
+        let mut target_changes = proxy.receive_target_fans_speeds_changed().await.fuse();
         let mut config_changes = changed_proxy.receive_config_changed().await.fuse();
         let mut auto_changes = changed_proxy.receive_auto_changed().await.fuse();
 
@@ -145,7 +147,11 @@ fn main() {
                     .send_async(Msg::TargetSpeeds(proxy.target_fans_speeds().await.unwrap()))
                     .await
                     .unwrap(),
-                  Msg::SetTargetSpeed(i, s) => proxy.set_target_fan_speed(i, s).await.unwrap(),
+                  Msg::SetTargetSpeed(i, s) => { 
+                    //TODO: Does not seem to fire the changed signal
+                    proxy.set_target_fan_speed(i, s).await.unwrap();
+                    app.emit_all("target_speeds_change", proxy.target_fans_speeds().await.unwrap()).unwrap();
+                  },
                   Msg::GetCritical => backend_send
                     .send_async(Msg::Critical(proxy.critical().await.unwrap()))
                     .await
@@ -163,16 +169,23 @@ fn main() {
                 };
               }
             },
+            t = target_changes.next() => {
+              if let Some(Some(t)) = t {
+                let target: Vec<f64> = t.try_into().unwrap();
+                println!("{:#?}", target);
+                app.emit_all("target_speeds_change", target).unwrap();
+              }
+            },
             c = config_changes.next() => {
               if let Some(Some(c)) = c {
-                let config = c.downcast_ref::<str>().unwrap().to_string();
+                let config: String = c.try_into().unwrap();
                 state.write().unwrap().config = config.clone();
                 app.emit_all("config_change", config).unwrap();
               }
             },
             a = auto_changes.next() => {
               if let Some(Some(a)) = a {
-                let auto = a.downcast_ref::<bool>().unwrap();
+                let auto: bool = a.try_into().unwrap();
                 app.emit_all("auto_change", auto).unwrap();
               }
             },
