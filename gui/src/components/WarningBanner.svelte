@@ -4,7 +4,7 @@
   export let visible = false;
 </script>
 
-<header class="bg-gradient-to-r from-red-400 to-red-600 text-white">
+<header class="bg-red-500 text-white">
   {#if visible}
     <div class="flex">
       <h3
@@ -14,8 +14,8 @@
       </h3>
       <div class="p-3">
         <DefaultButton
-          defaultBg="bg-white"
-          hoverBg="bg-gray-400"
+          bg="bg-white"
+          hoverBg="bg-purple-500"
           extraClasses="text-black"
         >
           <i class="material-icons text-2xl">restart_alt</i>

@@ -42,11 +42,8 @@
     </div>
     <div class="flex justify-center">
       {#each $fansSpeeds.map( (s, i) => [$fansNames[i], s, $targetSpeeds[i], i] ) as [name, speed, target, i] (name)}
-        <Tile title={name}>
+        <Tile title={name} value={`${speed.toFixed()} %`}>
           <div slot="content" class="flex flex-col justify-center">
-            <h4 class="text-center text-lg font-light p-4">
-              {speed.toFixed()} %
-            </h4>
             {#if !$auto}
               <input
                 type="range"

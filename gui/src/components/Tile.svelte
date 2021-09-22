@@ -8,25 +8,24 @@
 
 <article
   in:scale
-  class="shadow rounded-lg
+  class="shadow rounded-lg bg-white
     px-4 py-6 flex flex-col gap-4 transition-all hover:shadow-lg"
-  class:bg-white={!danger}
-  class:danger
 >
   <div class="flex justify-center">
-    <h3 class="text-center flex-1">{title}</h3>
+    <h3 class="text-center text-gray-400 flex-1">{title}</h3>
     <slot name="top" />
   </div>
   {#if value}
-    <h4 class="text-center text-lg font-light">{value}</h4>
-  {:else}
-    <slot name="content" />
+    <h4 class="text-center text-2xl font-extrabold" class:danger>
+      {value}
+    </h4>
   {/if}
+  <slot name="content" />
   <slot name="bottom" />
 </article>
 
 <style lang="postcss" scoped>
   .danger {
-    @apply bg-gradient-to-br from-red-300 via-red-400 to-red-400 text-white;
+    @apply text-red-500;
   }
 </style>

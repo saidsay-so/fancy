@@ -29,11 +29,9 @@
     <Sidebar {views} bind:currentView />
   </aside>
   <main class="ml-44 flex-1">
+    <WarningBanner visible={true} />
     <div class="px-4 py-2">
       <svelte:component this={currentView} on:page={handlePageChange} />
     </div>
   </main>
-  <div class="absolute ml-44 left-2 bottom-5">
-    <WarningBanner visible={true} />
-  </div>
 </div>

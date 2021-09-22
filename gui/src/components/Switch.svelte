@@ -10,7 +10,7 @@
   >
     <div
       class="bg-white w-1/2 h-full rounded-full shadow-md transform duration-300 ease-in-out"
-      class:translate-x-85p={active}
+      class:translate-x-[85%]={active}
     />
   </div>
 </div>

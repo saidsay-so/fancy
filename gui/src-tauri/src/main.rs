@@ -71,8 +71,9 @@ fn main() {
         let mut auto_changes = changes_proxy.receive_auto_changed().await.fuse();
 
         {
-          state.write().await.config = changes_proxy.config().await.unwrap();
-          state.write().await.poll_interval = changes_proxy.poll_interval().await.unwrap();
+          let mut state = state.write().await;
+          state.config = changes_proxy.config().await.unwrap();
+          state.poll_interval = changes_proxy.poll_interval().await.unwrap();
         }
 
         loop {
@@ -86,7 +87,9 @@ fn main() {
             c = config_changes.next() => {
               if let Some(Some(c)) = c {
                 let config: String = c.try_into().unwrap();
-                state.write().await.config = config.clone();
+                let mut state = state.write().await;
+                state.config = changes_proxy.config().await.unwrap();
+                state.poll_interval = changes_proxy.poll_interval().await.unwrap();
                 app.emit_all("config_change", config).unwrap();
               }
             },
