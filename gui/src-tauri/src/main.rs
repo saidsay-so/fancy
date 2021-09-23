@@ -98,8 +98,7 @@ fn main() {
                 let auto: bool = a.try_into().unwrap();
                 app.emit_all("auto_change", auto).unwrap();
               }
-            },
-            default => {}
+            }
           }
         }
       });
