@@ -3,15 +3,26 @@ use thiserror::Error;
 
 use crate::state::ProxyState;
 
+use strum::{AsRefStr, Display};
+
 #[derive(Debug, Error)]
 pub enum Error {
   //TODO: add the zbus error
   #[error("connection to d-bus service has been refused: {0}")]
   ConnectionRefused(String),
-  #[error("A DBus error occured: {0}")]
-  DBusError(#[from] zbus::Error),
+  #[error("A DBus error occured for a command: {0}")]
+  CmdDBusError(zbus::Error),
+  #[error("A DBus error occured while listening to changes: {0}")]
+  ChangesDBusError(zbus::Error),
   #[error("connection has not been established yet")]
   UninitializedConnection,
+}
+
+#[derive(Display, AsRefStr, Debug)]
+#[strum(serialize_all = "snake_case")]
+pub enum ErrorEvent {
+  ConnectionError,
+  ProxyError,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

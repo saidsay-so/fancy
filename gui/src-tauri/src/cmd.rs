@@ -36,7 +36,7 @@ macro_rules! prop {
       proxy
         .$proxy_prop($( $arg ),*)
         .await
-        .map_err(Error::DBusError)
+        .map_err(Error::CmdDBusError)
         .map_err(|e| JsError::new((e).to_string(), true))
     } else {
       Err(generate_proxy_err(&state.proxy_state))
@@ -118,7 +118,7 @@ pub(super) async fn set_target_speed(
       proxy
         .target_fans_speeds()
         .await
-        .map_err(Error::DBusError)
+        .map_err(Error::CmdDBusError)
         .map_err(|e| JsError::new((e).to_string(), true))?,
     )
     .unwrap();

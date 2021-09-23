@@ -23,6 +23,7 @@ nbfc-config = { path = "../../nbfc" }
 flume = "0.10.9"
 futures = "0.3.17"
 thiserror = "1.0.29"
+strum = { version = "0.21", features = ["derive"] }
 
 [features]
 default = [ "custom-protocol" ]

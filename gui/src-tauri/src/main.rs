@@ -9,7 +9,7 @@ mod interface;
 mod state;
 
 use cmd::*;
-use error::{Error, JsError};
+use error::{Error, ErrorEvent, JsError};
 use interface::*;
 use state::*;
 
@@ -20,14 +20,17 @@ use futures::{select, StreamExt};
 use tauri::async_runtime::RwLock;
 use tauri::Manager;
 
-macro_rules! zbus_try {
+use std::convert::AsRef;
+use strum::{AsRefStr, Display};
+
+macro_rules! zbus_conn_try {
   ($state: expr, $app: expr, $conn: expr) => {
     match $conn {
       Ok(c) => c,
       Err(e) => {
         $app
           .emit_all(
-            "connection_error",
+            ErrorEvent::ConnectionError.as_ref(),
             JsError::new(Error::ConnectionRefused(e.to_string()).to_string(), true),
           )
           .unwrap();
@@ -36,6 +39,31 @@ macro_rules! zbus_try {
       }
     }
   };
+}
+
+macro_rules! zbus_changes_try {
+  ($state: expr, $app: expr, $conn: expr) => {
+    match $conn {
+      Ok(c) => c,
+      Err(e) => {
+        $app
+          .emit_all(
+            ErrorEvent::ProxyError.as_ref(),
+            JsError::new(Error::ChangesDBusError(e).to_string(), true),
+          )
+          .unwrap();
+        return;
+      }
+    }
+  };
+}
+
+#[derive(Display, AsRefStr, Debug)]
+#[strum(serialize_all = "snake_case")]
+enum Changes {
+  TargetSpeedsChange,
+  ConfigChange,
+  AutoChange,
 }
 
 fn main() {
@@ -50,8 +78,8 @@ fn main() {
       let state = state.clone();
 
       tauri::async_runtime::spawn(async move {
-        let conn = zbus_try!(state, app, zbus::azync::Connection::system().await);
-        let proxy = zbus_try!(
+        let conn = zbus_conn_try!(state, app, zbus::azync::Connection::system().await);
+        let proxy = zbus_conn_try!(
           state,
           app,
           AsyncFancyProxy::builder(&conn)
@@ -61,8 +89,8 @@ fn main() {
         );
         state.write().await.set_proxy(proxy);
 
-        let signal_conn = zbus_try!(state, app, zbus::azync::Connection::system().await);
-        let changes_proxy = zbus_try!(state, app, AsyncFancyProxy::new(&signal_conn).await);
+        let signal_conn = zbus_conn_try!(state, app, zbus::azync::Connection::system().await);
+        let changes_proxy = zbus_conn_try!(state, app, AsyncFancyProxy::new(&signal_conn).await);
         let mut target_changes = changes_proxy
           .receive_target_fans_speeds_changed()
           .await
@@ -72,8 +100,8 @@ fn main() {
 
         {
           let mut state = state.write().await;
-          state.config = changes_proxy.config().await.unwrap();
-          state.poll_interval = changes_proxy.poll_interval().await.unwrap();
+          state.config = zbus_changes_try!(state, app, changes_proxy.config().await);
+          state.poll_interval = zbus_changes_try!(state, app, changes_proxy.poll_interval().await);
         }
 
         loop {
@@ -81,22 +109,22 @@ fn main() {
             t = target_changes.select_next_some() => {
               if let Some(t) = t {
                 let target: Vec<f64> = t.try_into().unwrap();
-                app.emit_all("target_speeds_change", target).unwrap();
+                app.emit_all(Changes::TargetSpeedsChange.as_ref(), target).unwrap();
               }
             },
             c = config_changes.select_next_some() => {
               if let Some(c) = c {
                 let config: String = c.try_into().unwrap();
                 let mut state = state.write().await;
-                state.config = changes_proxy.config().await.unwrap();
-                state.poll_interval = changes_proxy.poll_interval().await.unwrap();
-                app.emit_all("config_change", config).unwrap();
+                state.config = zbus_changes_try!(state, app, changes_proxy.config().await);
+                state.poll_interval = zbus_changes_try!(state, app, changes_proxy.poll_interval().await);
+                app.emit_all(Changes::ConfigChange.as_ref(), config).unwrap();
               }
             },
             a = auto_changes.select_next_some() => {
               if let Some(a) = a {
                 let auto: bool = a.try_into().unwrap();
-                app.emit_all("auto_change", auto).unwrap();
+                app.emit_all(Changes::AutoChange.as_ref(), auto).unwrap();
               }
             }
           }
