@@ -78,14 +78,14 @@ fn main() {
 
         loop {
           select! {
-            t = target_changes.next() => {
-              if let Some(Some(t)) = t {
+            t = target_changes.select_next_some() => {
+              if let Some(t) = t {
                 let target: Vec<f64> = t.try_into().unwrap();
                 app.emit_all("target_speeds_change", target).unwrap();
               }
             },
-            c = config_changes.next() => {
-              if let Some(Some(c)) = c {
+            c = config_changes.select_next_some() => {
+              if let Some(c) = c {
                 let config: String = c.try_into().unwrap();
                 let mut state = state.write().await;
                 state.config = changes_proxy.config().await.unwrap();
@@ -93,8 +93,8 @@ fn main() {
                 app.emit_all("config_change", config).unwrap();
               }
             },
-            a = auto_changes.next() => {
-              if let Some(Some(a)) = a {
+            a = auto_changes.select_next_some() => {
+              if let Some(a) = a {
                 let auto: bool = a.try_into().unwrap();
                 app.emit_all("auto_change", auto).unwrap();
               }
