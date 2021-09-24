@@ -1,5 +1,5 @@
 <script lang="ts">
-  import DefaultButton from "./DefaultButton.svelte";
+  import DefaultButton from './DefaultButton.svelte';
 
   export let views: {
     name: string;

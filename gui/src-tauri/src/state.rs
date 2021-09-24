@@ -3,7 +3,6 @@ use crate::{error::Error, interface::*};
 #[derive(Debug)]
 pub struct State<'a> {
   pub config: String,
-  pub poll_interval: u64,
   pub proxy: Option<AsyncFancyProxy<'a>>,
   pub last_error: Option<Error>,
   pub proxy_state: ProxyState,
@@ -20,7 +19,6 @@ impl<'a> State<'a> {
   pub fn new() -> Self {
     State {
       proxy: None,
-      poll_interval: 0,
       config: String::new(),
       last_error: None,
       proxy_state: ProxyState::Uninitialized,

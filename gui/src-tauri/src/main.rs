@@ -21,7 +21,7 @@ use tauri::async_runtime::RwLock;
 use tauri::Manager;
 
 use std::convert::AsRef;
-use strum::{AsRefStr, Display};
+use strum::AsRefStr;
 
 macro_rules! zbus_conn_try {
   ($state: expr, $app: expr, $conn: expr) => {
@@ -58,9 +58,9 @@ macro_rules! zbus_changes_try {
   };
 }
 
-#[derive(Display, AsRefStr, Debug)]
+#[derive(AsRefStr, Debug)]
 #[strum(serialize_all = "snake_case")]
-enum Changes {
+enum ChangesEvent {
   TargetSpeedsChange,
   ConfigChange,
   AutoChange,
@@ -87,7 +87,6 @@ fn main() {
             .build()
             .await
         );
-        state.write().await.set_proxy(proxy);
 
         let signal_conn = zbus_conn_try!(state, app, zbus::azync::Connection::system().await);
         let changes_proxy = zbus_conn_try!(state, app, AsyncFancyProxy::new(&signal_conn).await);
@@ -100,8 +99,8 @@ fn main() {
 
         {
           let mut state = state.write().await;
+          state.set_proxy(proxy);
           state.config = zbus_changes_try!(state, app, changes_proxy.config().await);
-          state.poll_interval = zbus_changes_try!(state, app, changes_proxy.poll_interval().await);
         }
 
         loop {
@@ -109,7 +108,7 @@ fn main() {
             t = target_changes.select_next_some() => {
               if let Some(t) = t {
                 let target: Vec<f64> = t.try_into().unwrap();
-                app.emit_all(Changes::TargetSpeedsChange.as_ref(), target).unwrap();
+                app.emit_all(ChangesEvent::TargetSpeedsChange.as_ref(), target).unwrap();
               }
             },
             c = config_changes.select_next_some() => {
@@ -117,14 +116,13 @@ fn main() {
                 let config: String = c.try_into().unwrap();
                 let mut state = state.write().await;
                 state.config = zbus_changes_try!(state, app, changes_proxy.config().await);
-                state.poll_interval = zbus_changes_try!(state, app, changes_proxy.poll_interval().await);
-                app.emit_all(Changes::ConfigChange.as_ref(), config).unwrap();
+                app.emit_all(ChangesEvent::ConfigChange.as_ref(), config).unwrap();
               }
             },
             a = auto_changes.select_next_some() => {
               if let Some(a) = a {
                 let auto: bool = a.try_into().unwrap();
-                app.emit_all(Changes::AutoChange.as_ref(), auto).unwrap();
+                app.emit_all(ChangesEvent::AutoChange.as_ref(), auto).unwrap();
               }
             }
           }

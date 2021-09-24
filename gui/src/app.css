@@ -14,6 +14,10 @@ h3 {
   @apply text-xl font-light;
 }
 
+.btn {
+  @apply text-white font-light rounded outline-none transition-all px-2 py-1;
+}
+
 input {
   outline: none;
 }

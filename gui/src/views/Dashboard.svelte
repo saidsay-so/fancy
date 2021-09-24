@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { fly } from "svelte/transition";
   import Tile from "@/components/Tile.svelte";
   import DefaultButton from "@/components/DefaultButton.svelte";
   import Switch from "@/components/Switch.svelte";
@@ -13,7 +14,6 @@
     targetSpeeds,
     auto,
   } from "../props";
-  import { fly } from "svelte/transition";
 
   export let meanTemp = true;
 

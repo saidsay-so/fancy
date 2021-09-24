@@ -1,13 +1,7 @@
 <script lang="ts">
-  export let extraClasses = "";
-  export let bg = "bg-purple-500";
-  export let hoverBg = "bg-purple-700";
-  $: hoverBg = `hover:${hoverBg}`;
+  export let extraClasses = '';
 </script>
 
-<button
-  class="text-white font-light rounded outline-none transition-all  px-2 py-1 {bg} {hoverBg} {extraClasses}"
-  on:click
->
+<button class="btn bg-purple-500 hover:bg-purple-700 {extraClasses}" on:click>
   <slot />
 </button>

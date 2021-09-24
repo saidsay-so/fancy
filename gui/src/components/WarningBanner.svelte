@@ -1,5 +1,7 @@
 <script lang="ts">
-  import DefaultButton from "./DefaultButton.svelte";
+  import { invoke } from '@tauri-apps/api/tauri';
+
+  import DefaultButton from './DefaultButton.svelte';
 
   export let visible = false;
 </script>
@@ -14,8 +16,7 @@
       </h3>
       <div class="p-3">
         <DefaultButton
-          bg="bg-white"
-          hoverBg="bg-purple-500"
+          on:click={() => invoke('restart')}
           extraClasses="text-black"
         >
           <i class="material-icons text-2xl">restart_alt</i>

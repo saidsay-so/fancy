@@ -4,6 +4,7 @@ use tauri::{AppHandle, Manager};
 
 use crate::error::{generate_proxy_err, Error, JsError};
 use crate::state::State;
+use crate::ChangesEvent;
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -114,7 +115,7 @@ pub(super) async fn set_target_speed(
   let proxy = &state.proxy.as_ref().unwrap();
   app
     .emit_all(
-      "target_speeds_change",
+      ChangesEvent::TargetSpeedsChange.as_ref(),
       proxy
         .target_fans_speeds()
         .await

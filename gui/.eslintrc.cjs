@@ -28,7 +28,8 @@ module.exports = {
         'import/no-duplicates': 'off',
         'import/no-mutable-exports': 'off',
         'import/no-unresolved' : 'off',
-        'import/prefer-default-export': 'off'
+        'import/prefer-default-export': 'off',
+        'import/no-extraneous-dependencies': ["error", {"devDependencies": true}]
       },
     },
   ],

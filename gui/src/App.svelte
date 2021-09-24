@@ -6,7 +6,7 @@
   import WarningBanner from "./components/WarningBanner.svelte";
 
   let currentView = Dashboard;
-  let views = [
+  const views = [
     {
       name: "Dashboard",
       icon: "dashboard",

@@ -3,7 +3,7 @@
 
   export let title: string;
   export let value: string = null;
-  export let danger: boolean = false;
+  export let danger = false;
 </script>
 
 <article
@@ -21,10 +21,9 @@
     </h4>
   {/if}
   <slot name="content" />
-  <slot name="bottom" />
 </article>
 
-<style lang="postcss" scoped>
+<style scoped>
   .danger {
     @apply text-red-500;
   }

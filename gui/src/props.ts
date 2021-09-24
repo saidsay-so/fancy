@@ -1,12 +1,10 @@
-/* eslint-disable import/prefer-default-export */
-/* eslint import/no-extraneous-dependencies: ["error", {"devDependencies": true}] */
 import { listen } from '@tauri-apps/api/event';
 import type { UnlistenFn } from '@tauri-apps/api/event';
 import { invoke } from '@tauri-apps/api/tauri';
 import { derived, readable } from 'svelte/store';
-import type { Subscriber, Unsubscriber } from 'svelte/store';
+import type { Subscriber } from 'svelte/store';
 
-enum Command {
+enum PropCommand {
     GET_POLL_INTERVAL = 'get_poll_interval',
     GET_TEMPS = 'get_temps',
     GET_SPEEDS = 'get_speeds',
@@ -25,7 +23,7 @@ enum Event {
   TARGET_SPEEDS_CHANGE = 'target_speeds_change',
 }
 
-const listenEvent = <T>(cmd: Command, event: Event, set: Subscriber<T>,
+const listenEvent = <T>(cmd: PropCommand, event: Event, set: Subscriber<T>,
   listener: (value: T) => void = set) => {
   invoke<T>(cmd).then(set);
 
@@ -36,12 +34,12 @@ const listenEvent = <T>(cmd: Command, event: Event, set: Subscriber<T>,
 };
 
 export const config = readable(null,
-  (set) => listenEvent(Command.GET_CONFIG, Event.CONFIG_CHANGE, set));
+  (set) => listenEvent(PropCommand.GET_CONFIG, Event.CONFIG_CHANGE, set));
 
 export const pollInterval = readable(1000);
 
 /** Subscribes to the changes for a prop using the poll interval. */
-const propSubscriber = <T>(cmd: Command, set: Subscriber<T>) => {
+const propSubscriber = <T>(cmd: PropCommand, set: Subscriber<T>) => {
   const cb = () => {
     invoke(cmd).then(set);
   };
@@ -58,7 +56,7 @@ const propSubscriber = <T>(cmd: Command, set: Subscriber<T>) => {
 };
 
 export const temperatures = readable({} as Record<string, number>,
-  (set) => propSubscriber(Command.GET_TEMPS, set));
+  (set) => propSubscriber(PropCommand.GET_TEMPS, set));
 
 export const meanTemperature = derived(temperatures,
   ($temperatures) => {
@@ -68,32 +66,32 @@ export const meanTemperature = derived(temperatures,
     return values.reduce((acc, t) => acc + t, 0) / values.length;
   });
 
-export const fansSpeeds = readable([], (set) => propSubscriber(Command.GET_SPEEDS, set));
+export const fansSpeeds = readable([], (set) => propSubscriber(PropCommand.GET_SPEEDS, set));
 
-export const critical = readable(false, (set) => propSubscriber(Command.GET_CRITICAL, set));
+export const critical = readable(false, (set) => propSubscriber(PropCommand.GET_CRITICAL, set));
 
 export const fansNames = readable([],
-  (set) => listenEvent(Command.GET_NAMES, Event.CONFIG_CHANGE, set,
-    () => invoke(Command.GET_NAMES).then(set)));
+  (set) => listenEvent(PropCommand.GET_NAMES, Event.CONFIG_CHANGE, set,
+    () => invoke(PropCommand.GET_NAMES).then(set)));
 
 export const setTargetSpeed = (index: number, s: number): void => {
   const speed = Math.max(0, Math.min(100, s));
 
-  invoke(Command.SET_TARGET_SPEED, {
+  invoke(PropCommand.SET_TARGET_SPEED, {
     index,
     speed,
   });
 };
 
 export const targetSpeeds = readable([],
-  (set) => listenEvent(Command.GET_TARGET_SPEEDS, Event.TARGET_SPEEDS_CHANGE, set));
+  (set) => listenEvent(PropCommand.GET_TARGET_SPEEDS, Event.TARGET_SPEEDS_CHANGE, set));
 
-const { subscribe: subAuto } = readable(false,
-  (set) => listenEvent(Command.GET_AUTO, Event.AUTO_CHANGE, set));
+const { subscribe: subAuto } = readable(undefined,
+  (set) => listenEvent(PropCommand.GET_AUTO, Event.AUTO_CHANGE, set));
 
 export const auto = {
   subscribe: subAuto,
   set: (auto: boolean): void => {
-    invoke(Command.SET_AUTO, { auto });
+    invoke(PropCommand.SET_AUTO, { auto });
   },
 };
