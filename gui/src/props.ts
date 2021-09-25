@@ -36,9 +36,11 @@ const listenEvent = <T>(cmd: PropCommand, event: Event, set: Subscriber<T>,
 export const config = readable(null,
   (set) => listenEvent(PropCommand.GET_CONFIG, Event.CONFIG_CHANGE, set));
 
-export const pollInterval = readable(1000);
+export const pollInterval = readable(1000,
+  (set) => listenEvent(PropCommand.GET_POLL_INTERVAL, Event.CONFIG_CHANGE, set,
+    () => invoke(PropCommand.GET_POLL_INTERVAL).then(set)));
 
-/** Subscribes to the changes for a prop using the poll interval. */
+/** Poll a prop using the poll interval. */
 const propSubscriber = <T>(cmd: PropCommand, set: Subscriber<T>) => {
   const cb = () => {
     invoke(cmd).then(set);
