@@ -73,6 +73,7 @@ impl ComMusikidFancy for State {
             return Err(MethodErr::invalid_arg("The speed is out of bounds"));
         }
         target_fans_speeds[index as usize] = speed;
+        *self.manual_set_target_speeds.borrow_mut() = true;
         Ok(())
     }
     fn config(&self) -> Result<String, MethodErr> {

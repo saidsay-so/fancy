@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+use dbus::channel::Sender;
 use dbus::ffidisp::stdintf::org_freedesktop_dbus::PropertiesPropertiesChanged;
 use dbus::message::SignalArgs;
 use dbus::strings::{BusName, Path as DBusPath};
@@ -212,6 +213,16 @@ fn main_loop<T: RW>(
             }
         };
         dbus_conn.process(timeout).context(DBus {})?;
+        if *state.manual_set_target_speeds.borrow() {
+            let mut prop_changed: PropertiesPropertiesChanged = Default::default();
+            prop_changed.changed_properties.insert(
+                "TargetFansSpeeds".into(),
+                dbus::arg::Variant(Box::new(state.target_fans_speeds.borrow().clone())),
+            );
+
+            let _ = dbus_conn.send(prop_changed.to_emit_message(&dbus::Path::from(OBJ_PATH_STR)));
+        }
+        *state.manual_set_target_speeds.borrow_mut() = false;
 
         let mut ec_manager = ec_manager.lock().unwrap();
 
