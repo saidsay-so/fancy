@@ -175,18 +175,18 @@ fn get_fan_config(
     state: Rc<State>,
     dbus_conn: &dbus::blocking::LocalConnection,
 ) -> nbfc::FanControlConfigV2 {
-    let mut fan_config = state.config.borrow();
-    if fan_config.trim().is_empty() {
+    if state.config.borrow().trim().is_empty() {
         // Blocking the process until a valid configuration is provided.
         loop {
             dbus_conn.process(Duration::from_millis(1000)).unwrap();
-            fan_config = state.config.borrow();
+            let fan_config = state.config.borrow();
             if !fan_config.trim().is_empty() {
                 break;
             }
         }
     }
 
+    let fan_config = state.config.borrow();
     info!("Loading fan control configuration '{}'", &fan_config);
 
     load_control_config(&*fan_config).unwrap()
