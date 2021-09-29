@@ -32,6 +32,7 @@ fn main() -> Result<(), anyhow::Error> {
                         .short("f")
                         .long("fans-speeds")
                         .takes_value(true)
+                        .multiple(true)
                         .value_name("TARGET_FAN_SPEEDS")
                         .conflicts_with("auto"),
                 )
