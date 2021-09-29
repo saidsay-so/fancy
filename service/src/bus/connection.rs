@@ -49,7 +49,8 @@ impl ComMusikidFancy for State {
     }
     fn set_target_fans_speeds(&self, value: Vec<f64>) -> Result<(), MethodErr> {
         let mut target_fans_speeds = self.target_fans_speeds.borrow_mut();
-        if value.len() != target_fans_speeds.len() {
+        let len = self.fans_speeds.borrow().len();
+        if value.len() != len {
             return Err(MethodErr::invalid_arg(
                 "The number of values is not equal to the number of fans.",
             ));
@@ -178,6 +179,7 @@ mod tests {
         // let dummy_config = String::from("Dummy config");
         let state = State {
             target_fans_speeds: RefCell::from(vec![0., 0., 0.]),
+            fans_speeds: RefCell::from(vec![0., 0., 0.]),
             ..Default::default()
         };
 
@@ -197,6 +199,7 @@ mod tests {
     fn set_target_fans_speeds() {
         let state = State {
             target_fans_speeds: RefCell::from(vec![0., 0., 0.]),
+            fans_speeds: RefCell::from(vec![0., 0., 0.]),
             ..Default::default()
         };
         let dummy_target_speeds = vec![3., 2., 10.];
