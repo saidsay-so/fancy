@@ -11,7 +11,7 @@ use interfaces::ComMusikidFancy;
 
 static CONTROL_CONFIGS_PATH: &str = "/etc/fancy/configs";
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), anyhow::Error> {
     let conn = Connection::new_system()?;
     let proxy = conn.with_proxy(
         "com.musikid.fancy",

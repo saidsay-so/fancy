@@ -10,6 +10,7 @@ license = "MPL-2.0"
 clap = "2.33.0"
 dbus = "0.9.0"
 bcmp = "0.4.1"
+anyhow = "1.0.44"
 
 [build-dependencies]
 dbus-codegen = "0.9.0"
