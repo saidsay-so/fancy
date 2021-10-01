@@ -1,6 +1,6 @@
 [package]
 name = "fancy-gui"
-version = "0.1.0"
+version = "0.4.0"
 description = "GUI for Fancy"
 authors = ["musikid <musikid@outlook.com>"]
 license = "MPL-2.0"
@@ -24,6 +24,8 @@ flume = "0.10.9"
 futures = "0.3.17"
 thiserror = "1.0.29"
 strum = { version = "0.21", features = ["derive"] }
+tokio = { version = "1.11.0", features = ["fs"] }
+quick-xml = { version = "0.22.0", features = ["serialize"] }
 
 [features]
 default = [ "custom-protocol" ]

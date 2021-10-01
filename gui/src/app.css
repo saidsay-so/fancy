@@ -14,24 +14,11 @@ h3 {
   @apply text-xl font-light;
 }
 
-.btn {
-  @apply text-white font-light rounded outline-none transition-all px-2 py-1;
+button {
+  @apply btn;
 }
 
-input {
-  outline: none;
-}
-
-input[type='range'] {
-  -webkit-appearance: none;
-}
-
-input[type='range']::-webkit-slider-runnable-track {
-  @apply border-solid border-indigo-300 bg-purple-700 rounded-xl;
-  border-width: 1px;
-}
-
-input[type='range']::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  @apply bg-white h-4 w-4 rounded-full transition-all;
+hr::before,
+hr::after {
+  content: none !important;
 }

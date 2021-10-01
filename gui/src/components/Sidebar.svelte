@@ -1,6 +1,4 @@
 <script lang="ts">
-  import DefaultButton from './DefaultButton.svelte';
-
   export let views: {
     name: string;
     icon: string;
@@ -13,15 +11,15 @@
   <ul>
     {#each views as view (view.name)}
       <li class="py-2">
-        <DefaultButton
+        <button
           on:click={() => {
             currentView = view.component;
           }}
-          extraClasses="w-full"
+          class="w-full"
         >
           <i class="material-icons w-full align-middle text-3xl">{view.icon}</i>
           {view.name}
-        </DefaultButton>
+        </button>
       </li>
     {/each}
   </ul>

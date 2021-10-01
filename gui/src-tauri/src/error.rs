@@ -7,13 +7,16 @@ use strum::{AsRefStr, Display};
 
 #[derive(Debug, Error)]
 pub enum Error {
-  //TODO: add the zbus error
   #[error("connection to d-bus service has been refused: {0}")]
   ConnectionRefused(String),
   #[error("A DBus error occured for a command: {0}")]
   CmdDBusError(zbus::Error),
   #[error("A DBus error occured while listening to changes: {0}")]
   ChangesDBusError(zbus::Error),
+  #[error("An I/O error occured: {0}")]
+  IoError(#[from] std::io::Error),
+  #[error("An error occured while parsing configuration \"{1}\": {0}")]
+  InvalidConfiguration(quick_xml::DeError, String),
   #[error("connection has not been established yet")]
   UninitializedConnection,
 }

@@ -4,6 +4,7 @@ use crate::{error::Error, interface::*};
 pub struct State<'a> {
   pub config: String,
   pub proxy: Option<AsyncFancyProxy<'a>>,
+  pub model: String,
   pub last_error: Option<Error>,
   pub proxy_state: ProxyState,
 }
@@ -20,6 +21,7 @@ impl<'a> State<'a> {
     State {
       proxy: None,
       config: String::new(),
+      model: String::new(),
       last_error: None,
       proxy_state: ProxyState::Uninitialized,
     }

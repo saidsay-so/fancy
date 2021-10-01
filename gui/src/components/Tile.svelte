@@ -3,28 +3,21 @@
 
   export let title: string;
   export let value: string = null;
-  export let danger = false;
 </script>
 
-<article
-  in:scale
-  class="shadow rounded-lg bg-white
-    px-4 py-6 flex flex-col gap-4 transition-all hover:shadow-lg"
->
-  <div class="flex justify-center">
-    <h3 class="text-center text-gray-400 flex-1">{title}</h3>
-    <slot name="top" />
+<article class="stat">
+  <div class="stat-figure">
+    <slot />
   </div>
-  {#if value}
-    <h4 class="text-center text-2xl font-extrabold" class:danger>
-      {value}
-    </h4>
-  {/if}
-  <slot name="content" />
+  <div class="stat-title">
+    <h3>{title}</h3>
+  </div>
+  <div class="stat-value">
+    <div class="flex flex-col gap-4">
+      {#if value}
+        {value}
+      {/if}
+      <slot name="content" />
+    </div>
+  </div>
 </article>
-
-<style scoped>
-  .danger {
-    @apply text-red-500;
-  }
-</style>

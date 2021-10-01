@@ -2,7 +2,6 @@
   import Sidebar from "./components/Sidebar.svelte";
   import Editor from "@/views/Editor.svelte";
   import Dashboard from "@/views/Dashboard.svelte";
-  import {} from "./error";
   import WarningBanner from "./components/WarningBanner.svelte";
 
   let currentView = Dashboard;
@@ -19,17 +18,17 @@
     },
   ];
 
-  function handlePageChange(page) {
-    currentView = page;
+  function handlePageChange(page: { detail: typeof Editor }) {
+    currentView = page.detail;
   }
 </script>
 
-<div class="flex gap-2">
+<div class="flex gap-2 overflow-x-hidden">
   <aside class="h-full fixed w-44">
     <Sidebar {views} bind:currentView />
   </aside>
   <main class="ml-44 flex-1">
-    <WarningBanner visible={true} />
+    <WarningBanner />
     <div class="px-4 py-2">
       <svelte:component this={currentView} on:page={handlePageChange} />
     </div>

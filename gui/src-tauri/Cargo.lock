@@ -805,17 +805,19 @@ checksum = "f7531096570974c3a9dcf9e4b8e1cede1ec26cf5046219fb3b9d897503b9be59"
 
 [[package]]
 name = "fancy-gui"
-version = "0.1.0"
+version = "0.4.0"
 dependencies = [
  "flume",
  "futures",
  "nbfc-config",
+ "quick-xml",
  "serde",
  "serde_json",
  "strum 0.21.0",
  "tauri",
  "tauri-build",
  "thiserror",
+ "tokio",
  "zbus 2.0.0-beta.6",
 ]
 
@@ -2297,6 +2299,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8533f14c8382aaad0d592c812ac3b826162128b65662331e1127b45c3d18536b"
 dependencies = [
  "memchr",
+ "serde",
 ]
 
 [[package]]

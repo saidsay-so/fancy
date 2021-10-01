@@ -1,6 +1,5 @@
 [workspace]
-members = ["service", "cli", "nbfc"]
-exclude = ["gui/src-tauri"]
+members = ["service", "cli", "nbfc", "gui/src-tauri"]
 
 [profile.release]
 lto = "full"

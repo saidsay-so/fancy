@@ -1,7 +1,6 @@
 <script lang="ts">
-  import { fly } from "svelte/transition";
+  import { createEventDispatcher } from "svelte";
   import Tile from "@/components/Tile.svelte";
-  import DefaultButton from "@/components/DefaultButton.svelte";
   import Switch from "@/components/Switch.svelte";
   import {
     config,
@@ -13,63 +12,95 @@
     fansNames,
     targetSpeeds,
     auto,
-  } from "../props";
+  } from "../stores/props";
+  import TilesGroup from "@/components/TilesGroup.svelte";
+  import ConfigChooser from "./ConfigChooser.svelte";
 
   export let meanTemp = true;
 
-  function handleSetSpeed(
+  const handleSetSpeed = (
     index: number,
-    ev: Event & { currentTarget: EventTarget & HTMLInputElement }
-  ) {
-    return setTargetSpeed(index, Number(ev.currentTarget.value));
-  }
+    ev: Event & { target: EventTarget & HTMLInputElement }
+  ) => setTargetSpeed(index, Number(ev.target.value));
+
+  const pageDispatcher = createEventDispatcher();
+
+  const handleConfig = (page) => pageDispatcher("page", page);
 </script>
 
-<div class="flex flex-col gap-6" transition:fly={{ x: 250 }}>
-  <Tile title="Configuration" value={$config}>
-    <DefaultButton slot="top">
-      <i class="material-icons align-top text-2xl">settings</i>
-    </DefaultButton>
-  </Tile>
+<div class="flex flex-col">
+  <TilesGroup>
+    <Tile title="Configuration">
+      <button on:click={handleConfig.bind(null, ConfigChooser)}>
+        <i class="material-icons align-top text-2xl">settings</i>
+      </button>
+      <h4
+        slot="content"
+        class="text-center text-2xl font-extrabold overflow-clip"
+      >
+        {$config}
+      </h4>
+    </Tile>
+  </TilesGroup>
 
-  <div class="flex flex-col gap-4">
-    <h2 class="text-center">Fans speeds</h2>
-    <div class="flex justify-center gap-2">
-      <h4 class="text-center">Automatic speeds</h4>
-      <div class="w-10 h-6">
-        <Switch bind:active={$auto} />
-      </div>
-    </div>
-    <div class="flex justify-center">
-      {#each $fansSpeeds.map( (s, i) => [$fansNames[i], s, $targetSpeeds[i], i] ) as [name, speed, target, i] (name)}
-        <Tile title={name} value={`${speed.toFixed()} %`}>
-          <div slot="content" class="flex flex-col justify-center">
-            {#if !$auto}
-              <input
-                type="range"
-                min="0"
-                max="100"
-                bind:value={target}
-                on:input={handleSetSpeed.bind(null, i)}
-              />
-            {/if}
-          </div>
-        </Tile>
-      {/each}
+  <div class="divider">Fans speeds</div>
+  <div class="flex justify-center gap-2">
+    <h4 class="text-center">Automatic speeds</h4>
+    <div class="w-10 h-6">
+      <Switch bind:checked={$auto} />
     </div>
   </div>
 
-  {#if meanTemp}
-    <Tile
-      title="Temperature"
-      danger={$critical}
-      value={`${$meanTemperature.toFixed()} °C`}
-    />
-  {:else}
-    <div class="grid grid-cols-3 gap-4">
+  <TilesGroup>
+    {#each $fansSpeeds.map( (s, i) => [$fansNames[i], s, $targetSpeeds[i], i] ) as [name, speed, target, i] (name)}
+      <Tile title={name}>
+        <div slot="content">
+          <h4
+            class="text-center text-3xl font-extrabold"
+            class:text-error={$critical}
+          >
+            {speed.toFixed()} %
+          </h4>
+          {#if !$auto}
+            <input
+              type="range"
+              min="0"
+              max="100"
+              class="range"
+              bind:value={target}
+              on:input={handleSetSpeed.bind(null, i)}
+            />
+          {/if}
+        </div>
+      </Tile>
+    {/each}
+  </TilesGroup>
+
+  <div class="divider">Temperatures</div>
+
+  <TilesGroup>
+    {#if meanTemp}
+      <Tile title="Mean temperature">
+        <h4
+          slot="content"
+          class="text-center text-4xl font-extrabold"
+          class:text-warning={$critical}
+        >
+          {$meanTemperature.toFixed()} °C
+        </h4>
+      </Tile>
+    {:else}
       {#each Object.entries($temperatures) as [name, value] (name)}
-        <Tile title={name} value={`${value.toFixed()} °C`} />
+        <Tile title={name}>
+          <h4
+            slot="content"
+            class="text-center text-3xl font-extrabold"
+            class:text-error={$critical}
+          >
+            {value.toFixed()} °C
+          </h4>
+        </Tile>
       {/each}
-    </div>
-  {/if}
+    {/if}
+  </TilesGroup>
 </div>

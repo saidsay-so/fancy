@@ -1,15 +1,27 @@
+use quick_xml::de::from_str as xml_from_str;
+use serde::{Deserialize, Serialize};
 use tauri::api::process::restart as tauri_restart;
 use tauri::async_runtime::RwLock;
 use tauri::{AppHandle, Manager};
+use tokio::fs::{read_dir, read_to_string};
 
 use crate::error::{generate_proxy_err, Error, JsError};
 use crate::state::State;
 use crate::ChangesEvent;
+use nbfc_config::{FanControlConfigV2, TemperatureThreshold, XmlFanControlConfigV2};
 
 use std::collections::HashMap;
 use std::sync::Arc;
 
 type CmdResult<T> = std::result::Result<T, JsError>;
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ConfigInfo {
+  name: String,
+  file_name: String,
+  author: Option<String>,
+  thresholds: HashMap<String, Vec<TemperatureThreshold>>,
+}
 
 #[tauri::command]
 pub(super) async fn get_config(
@@ -22,6 +34,62 @@ pub(super) async fn get_config(
   } else {
     Err(generate_proxy_err(&state.proxy_state))
   }
+}
+
+#[tauri::command]
+pub(super) async fn get_model(
+  state: tauri::State<'_, Arc<RwLock<State<'_>>>>,
+) -> CmdResult<String> {
+  let state = state.read().await;
+  Ok(state.model.clone())
+}
+
+#[tauri::command]
+pub(super) async fn get_configs_list() -> CmdResult<Vec<ConfigInfo>> {
+  let mut list = vec![];
+  let mut configs = read_dir("/etc/fancy/configs")
+    .await
+    .map_err(Error::IoError)
+    .map_err(|e| JsError::new(e.to_string(), false))?;
+
+  while let Some(file) = configs
+    .next_entry()
+    .await
+    .map_err(Error::IoError)
+    .map_err(|e| JsError::new(e.to_string(), false))?
+  {
+    let path = file.path();
+    let config = read_to_string(&path)
+      .await
+      .map_err(Error::IoError)
+      .map_err(|e| JsError::new(e.to_string(), false))?;
+    let config = xml_from_str::<XmlFanControlConfigV2>(&*config)
+      .map_err(|e| Error::InvalidConfiguration(e, path.to_string_lossy().to_string()))
+      .map_err(|e| JsError::new(e.to_string(), false))?;
+    let config = FanControlConfigV2::from(config);
+
+    list.push(ConfigInfo {
+      author: config.author,
+      name: config.notebook_model,
+      file_name: path.file_stem().unwrap().to_string_lossy().to_string(),
+      thresholds: config
+        .fan_configurations
+        .into_iter()
+        .scan(0, |i, mut fc| {
+          *i += 1;
+          fc.temperature_thresholds.sort_unstable();
+          Some((
+            fc.fan_display_name.unwrap_or(format!("Fan #{}", i)),
+            fc.temperature_thresholds,
+          ))
+        })
+        .collect(),
+    });
+  }
+
+  list.sort_unstable_by_key(|c| c.name.clone());
+
+  Ok(list)
 }
 
 macro_rules! prop {
@@ -43,6 +111,14 @@ macro_rules! prop {
       Err(generate_proxy_err(&state.proxy_state))
     }
   }};
+}
+
+#[tauri::command]
+pub(super) async fn set_config(
+  state: tauri::State<'_, Arc<RwLock<State<'_>>>>,
+  config: String,
+) -> CmdResult<()> {
+  prop!(state, set_config, &config)
 }
 
 #[tauri::command]

@@ -17,11 +17,12 @@ use std::convert::TryInto;
 use std::sync::Arc;
 
 use futures::{select, StreamExt};
+use strum::AsRefStr;
 use tauri::async_runtime::RwLock;
 use tauri::Manager;
+use tokio::fs::read_to_string;
 
 use std::convert::AsRef;
-use strum::AsRefStr;
 
 macro_rules! zbus_conn_try {
   ($state: expr, $app: expr, $conn: expr) => {
@@ -88,8 +89,7 @@ fn main() {
             .await
         );
 
-        let signal_conn = zbus_conn_try!(state, app, zbus::azync::Connection::system().await);
-        let changes_proxy = zbus_conn_try!(state, app, AsyncFancyProxy::new(&signal_conn).await);
+        let changes_proxy = zbus_conn_try!(state, app, AsyncFancyProxy::new(&conn).await);
         let mut target_changes = changes_proxy
           .receive_target_fans_speeds_changed()
           .await
@@ -100,6 +100,10 @@ fn main() {
         {
           let mut state = state.write().await;
           state.set_proxy(proxy);
+          // Get computer model
+          state.model = read_to_string("/sys/devices/virtual/dmi/id/product_name")
+            .await
+            .unwrap();
           state.config = zbus_changes_try!(state, app, changes_proxy.config().await);
         }
 
@@ -135,7 +139,9 @@ fn main() {
       // Getters
       get_auto,
       get_config,
+      get_configs_list,
       get_critical,
+      get_model,
       get_names,
       get_poll_interval,
       get_speeds,
@@ -143,6 +149,7 @@ fn main() {
       get_temps,
       // Setters
       set_auto,
+      set_config,
       set_target_speed,
       // Misc
       restart

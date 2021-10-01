@@ -22,10 +22,15 @@
     "cssnano": "^5.0.8",
     "eslint": "^7.32.0",
     "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-import": "^2.24.2",
+    "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-svelte3": "^3.2.1",
     "postcss": "^8.3.6",
     "postcss-load-config": "^3.1.0",
+    "prettier": "2.4.1",
+    "prettier-plugin-svelte": "^2.4.0",
+    "rollup-plugin-analyzer": "^4.0.0",
     "svelte": "^3.42.6",
     "svelte-check": "^2.2.6",
     "svelte-preprocess": "^4.9.4",
@@ -35,6 +40,7 @@
     "vite": "^2.5.10"
   },
   "dependencies": {
-    "@tauri-apps/api": "^1.0.0-beta.8"
+    "@tauri-apps/api": "^1.0.0-beta.8",
+    "daisyui": "^1.14.1"
   }
 }

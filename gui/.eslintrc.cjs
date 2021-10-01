@@ -4,12 +4,11 @@ module.exports = {
     es2021: true,
   },
   extends: [
-    'airbnb-base',
     'plugin:@typescript-eslint/recommended',
   ],
   parser: '@typescript-eslint/parser',
   parserOptions: {
-    ecmaVersion: 12,
+    ecmaVersion: 2019,
     sourceType: 'module',
     tsconfigRootDir: __dirname,
     project: ['./tsconfig.json'],
@@ -27,14 +26,16 @@ module.exports = {
         'import/first': 'off',
         'import/no-duplicates': 'off',
         'import/no-mutable-exports': 'off',
-        'import/no-unresolved' : 'off',
+        'import/no-unresolved': 'off',
         'import/prefer-default-export': 'off',
-        'import/no-extraneous-dependencies': ["error", {"devDependencies": true}]
+        'import/no-extraneous-dependencies': ['error', {'devDependencies': true}],
+        'no-restricted-syntax': 'off'
       },
     },
   ],
   rules: {
-    'no-shadow': 'off'
+    'no-shadow': 'off',
+    'prettier/prettier': 'error'
   },
   settings: {
     'svelte3/typescript': true,
