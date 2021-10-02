@@ -106,9 +106,9 @@ dependencies = [
 
 [[package]]
 name = "dbus"
-version = "0.9.4"
+version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "60b225f88dd3718253526c38bc333b9986b547a7580abf81186c9461647b2487"
+checksum = "de0a745c25b32caa56b82a3950f5fec7893a960f4c10ca3b02060b0c38d8c2ce"
 dependencies = [
  "libc",
  "libdbus-sys",
@@ -156,7 +156,7 @@ dependencies = [
 
 [[package]]
 name = "fancy-cli"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "anyhow",
  "bcmp",
@@ -167,7 +167,7 @@ dependencies = [
 
 [[package]]
 name = "fancy-service"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "dbus",
  "dbus-codegen",
@@ -259,7 +259,7 @@ checksum = "308cc39be01b73d0d18f82a0e7b2a3df85245f84af96fdddc5d202d27e47b86a"
 
 [[package]]
 name = "nbfc-config"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "quick-xml",
  "serde",

@@ -11,7 +11,11 @@ dch -r ""
 sed -i "s/pkgver=.*/pkgver=${VERSION}/" PKGBUILD
 sed -i '0,/version.*/s/version.*/version = "'"${VERSION}"'"/' **/Cargo.toml
 
+cargo update
+
 git add -A && git commit -m "chore(release): prepare for ${VERSION}"
+
+git cliff --out CHANGELOG.md
 
 export TEMPLATE="\
   {% for group, commits in commits | group_by(attribute=\"group\") %}
