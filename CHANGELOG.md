@@ -3,66 +3,295 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.5.0](https://github.com/musikid/fancy/compare/v0.4.0..v0.5.0) - 2021-10-02
 
-## [v0.4.0] - 2021-05-01
+### Bug Fixes
 
-### Fixed
+- Send change signal for target speeds
 
-- Restore target fans speeds after a configuration change.
+- Fix borrow error
 
-- Treat errors when loading service configuration.
+- Check len from fans_speeds instead
 
-- Check first if the temperature is higher than all thresholds.
+- Fix setting multiple fans speeds
 
-### Added
+- Update lockfile with releases
 
-- Support for choosing temperature computation method.
 
-## [v0.3.1] - 2021-04-21
+### Documentation
 
-### Fixed
+- Add instructions for AUR package
 
-- Fix path in the service's systemd file.
+- Improve README
 
-- Toggle `auto` to false when setting a target fan speed.
 
-## [v0.3.0] - 2021-04-14
+### Features
 
-### Added
+- Add poll interval to dbus interface
 
-- Conflict between `auto` and `target_fan_speeds` options for the CLI.
+- Get fans names
 
-- Support for setting fan speed by using the index.
+- Return only speeds for FansSpeeds
 
-- Support for `/dev/port`, allowing to install the service without installing
-  kernel modules (on systems where `/dev/port` can be accessed).
+- Use anyhow for error reporting
 
-### Changed
 
-- Refactoring code:
-  - `Arc` have been replaced by `Rc`, since the code is single-threaded now.
-  - `Mutex` and `RwLock` have been replaced by `RefCell` where appropriated.
-  - Remove `Unpin` trait.
+### Miscellaneous Tasks
 
-### Fixed
+- Use Duration::ZERO
 
-- Check the number of speeds provided to `set_target_fans_speeds`.
+- Fix imports
 
-## NB: Version before 0.3.0 were split between CLI and service !
+- Ignore gz file
 
-## [v0.2.0] - 2020-09-25
+- Add git-cliff changelog generator
 
-### Added
+- Add release script
 
-- Support of other sensors than the CPU one for temperature computation.
 
-## [v0.1.0]
+### Refactor
 
-Initial version.
+- Split nbfc serialize to its own module
 
-[v0.4.0]: https://github.com/musikid/fancy/compare/v0.3.1..v0.4.0
-[v0.3.1]: https://github.com/musikid/fancy/compare/v0.3.0..v0.3.1
-[v0.3.0]: https://github.com/musikid/fancy/compare/fancy-service-0.2.0..v0.3.0
-[v0.2.0]: https://github.com/musikid/fancy/compare/fancy-service-0.1.0...fancy-service-0.2.0
-[v0.1.0]: https://github.com/musikid/fancy/compare/fancy-service-0.1.0
+
+### Build
+
+- Fix systemd macro require
+
+- Fix spec changelog
+
+- Add PHONY targets
+
+- Generate changelog with rpkg
+
+
+## [0.4.0](https://github.com/musikid/fancy/compare/v0.3.1..v0.4.0) - 2021-05-09
+
+### Bug Fixes
+
+- Treat errors when loading config
+
+- Check first if temperature is high
+
+- Restore target speeds after change
+
+> Restore the target fans speeds after the configuration is changed.
+
+
+### CI
+
+- Remove Rust action
+
+> rustc and cargo should be in the Ubuntu repository (hopefully).
+
+
+### Documentation
+
+- Improve docs
+
+
+### Features
+
+- Add other temp computation methods
+
+> Add support for choosing the temperature computation method, between CPU
+sensor only and average of all sensors.
+
+
+### Miscellaneous Tasks
+
+- Update lockfile
+
+
+### Refactor
+
+- Improve docs and code structure
+
+- Use `From` trait for RawPort
+
+
+### Testing
+
+- Add test for config refresh
+
+- Improve `all_configs` test
+
+
+### Build
+
+- Remove systemd from deps
+
+- Lower required rust version
+
+- Update checksums
+
+- Use `write_all` in build script
+
+- Force gzip command in Makefiles
+
+- Fix copyrights
+
+- Release v0.4.0
+
+
+## [0.3.1](https://github.com/musikid/fancy/compare/v0.3.0..v0.3.1) - 2021-04-21
+
+### Bug Fixes
+
+- Correct path in systemd file
+
+- Set auto to false with target fan speed
+
+> Fixes the issue when a target fan speed was set (implying manual control)
+and `auto` could still be set to `true`.
+
+
+### Documentation
+
+- Add COPR badge and fix link in changelog
+
+- Improve README
+
+- Improve docs
+
+- Improve README
+
+
+### Miscellaneous Tasks
+
+- Update lockfile
+
+- Bump dependencies
+
+
+### Refactor
+
+- Fix imports
+
+
+### Testing
+
+- Re-enable `all_configs` test
+
+
+### Build
+
+- Fix packaging errors
+
+> According to lintian, Debian seems to prefer service files in
+/lib.
+It also add an override for the fancy-sleep.service, which has suspend
+as target.
+
+- Fix issue with config files
+
+> RPM requires to add `%config` macro for configuration files.
+
+- Add Rust to build dependencies
+
+- Add `--locked` flag to Makefiles
+
+> The flag `--locked` stops Cargo from updating dependencies
+
+- Add support for Arch packaging
+
+- Add test target to main Makefile
+
+- Change build dep from cargo to rust
+
+
+## [0.3.0](https://github.com/musikid/fancy/compare/..v0.3.0) - 2021-04-14
+
+### Bug Fixes
+
+- Check the number of speeds provided to `set_target_fans_speeds`
+
+- Fix test
+
+
+### CI
+
+- Update workflows
+
+- Install rust toolchain for all jobs
+
+- Remove unique build job
+
+> The build job was used to unify the build step.
+However, it doesn't work well with Debian packaging and does not improve
+so much the build time.
+
+- Create $DESTDIR for `make-archive` job
+
+> Fix the issue that made the job fail because $DESTDIR was not created.
+
+- Add support for building/uploading RPM package
+
+> Introduces a new job for building the RPM package and uploading it both
+to GitHub and to Fedora COPR repository.
+
+- Fix errors
+
+- Fix errors in workflow
+
+- Fix the same mistake again
+
+- Fix RPM build
+
+- Restore RPM package building for GitHub
+
+> It restores the `rpkg local` step because `rpkg build` only build source
+RPM to send it to COPR.
+
+
+### Documentation
+
+- Merge all changelogs into one
+
+- Improve docs
+
+- Improve
+
+
+### Features
+
+- Add function to set speed by index
+
+
+### Miscellaneous Tasks
+
+- Remove gui folder
+
+- Remove generated code from git
+
+
+### Refactor
+
+- More information to log
+
+
+### Build
+
+- Add Debian packaging for the project
+
+- Move man pages build to subfolders Makefile
+
+- Fix errors in Makefiles
+
+- Remove formatting of generated interface code
+
+- Add support for RPM packaging
+
+- Fix `mandir` variable in Makefile
+
+- Remove changelog in RPM .spec
+
+- Fix variable issues
+
+> The `prefix` variable wasn't expanded correctly, which led to wrong
+paths being written.
+
+- Add macro to get version for rpkg
+
+
+<!-- generated by git-cliff -->
