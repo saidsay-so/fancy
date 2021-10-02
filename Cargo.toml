@@ -1,6 +1,11 @@
 [workspace]
 members = ["service", "cli", "nbfc", "gui/src-tauri"]
 
+[profile.release.package."fancy-gui"]
+opt-level = "z"
+
 [profile.release]
-lto = "full"
+panic = "abort"
+lto = true
 codegen-units = 1
+opt-level = 3

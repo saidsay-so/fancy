@@ -3,9 +3,9 @@ use crate::{error::Error, interface::*};
 #[derive(Debug)]
 pub struct State<'a> {
   pub config: String,
-  pub proxy: Option<AsyncFancyProxy<'a>>,
+  pub proxy: Option<FancyProxy<'a>>,
   pub model: String,
-  pub last_error: Option<Error>,
+  pub _last_error: Option<Error>,
   pub proxy_state: ProxyState,
 }
 
@@ -22,7 +22,7 @@ impl<'a> State<'a> {
       proxy: None,
       config: String::new(),
       model: String::new(),
-      last_error: None,
+      _last_error: None,
       proxy_state: ProxyState::Uninitialized,
     }
   }
@@ -32,10 +32,10 @@ impl<'a> State<'a> {
   }
 
   pub fn _set_error(&mut self, err: Error) {
-    self.last_error = Some(err);
+    self._last_error = Some(err);
   }
 
-  pub fn set_proxy(&mut self, proxy: AsyncFancyProxy<'a>) {
+  pub fn set_proxy(&mut self, proxy: FancyProxy<'a>) {
     self.proxy = Some(proxy);
     self.proxy_state = ProxyState::Initialized;
   }

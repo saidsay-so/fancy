@@ -1,36 +1,57 @@
 <script lang="ts">
-  import Sidebar from "./components/Sidebar.svelte";
-  import Editor from "@/views/Editor.svelte";
-  import Dashboard from "@/views/Dashboard.svelte";
-  import WarningBanner from "./components/WarningBanner.svelte";
+  import { fade } from 'svelte/transition'
 
-  let currentView = Dashboard;
+  import Sidebar from './components/Sidebar.svelte'
+  import Editor from '@/views/Editor.svelte'
+  import Dashboard from '@/views/Dashboard.svelte'
+  import ErrorBanner from '@/components/ErrorBanner.svelte'
+  import { lastError } from './stores/error'
+  import Settings from '@/views/Settings.svelte'
+
+  let currentView = Dashboard
   const views = [
     {
-      name: "Dashboard",
-      icon: "dashboard",
+      name: 'Dashboard',
+      icon: 'dashboard',
       component: Dashboard,
     },
     {
-      name: "Configuration Editor",
-      icon: "edit",
+      name: 'Configuration Editor',
+      icon: 'edit',
       component: Editor,
     },
-  ];
+    {
+      name: 'Settings',
+      icon: 'settings',
+      component: Settings,
+    },
+  ]
 
   function handlePageChange(page: { detail: typeof Editor }) {
-    currentView = page.detail;
+    currentView = page.detail
   }
 </script>
 
 <div class="flex gap-2 overflow-x-hidden">
-  <aside class="h-full fixed w-44">
+  <aside class="h-screen fixed w-52">
     <Sidebar {views} bind:currentView />
   </aside>
-  <main class="ml-44 flex-1">
-    <WarningBanner />
+  <main class="ml-52 h-screen flex-1">
     <div class="px-4 py-2">
       <svelte:component this={currentView} on:page={handlePageChange} />
+
+      <div
+        transition:fade={{ duration: 1000 }}
+        class="absolute ml-52 flex justify-center z-10 m-auto left-0 right-0 bottom-8"
+      >
+        <div class="px-4">
+          <ErrorBanner
+            visible={$lastError}
+            message={$lastError?.message}
+            fatal={$lastError?.fatal ?? false}
+          />
+        </div>
+      </div>
     </div>
   </main>
 </div>

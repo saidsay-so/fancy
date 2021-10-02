@@ -29,10 +29,11 @@ macro_rules! zbus_conn_try {
     match $conn {
       Ok(c) => c,
       Err(e) => {
+        let js_err = Error::ConnectionRefused(e.to_string());
         $app
           .emit_all(
             ErrorEvent::ConnectionError.as_ref(),
-            JsError::new(Error::ConnectionRefused(e.to_string()).to_string(), true),
+            JsError::new(js_err.to_string(), js_err.as_ref().to_string(), true),
           )
           .unwrap();
         $state.write().await.set_connection_error(e);
@@ -42,15 +43,16 @@ macro_rules! zbus_conn_try {
   };
 }
 
-macro_rules! zbus_changes_try {
+macro_rules! zbus_proxy_try {
   ($state: expr, $app: expr, $conn: expr) => {
     match $conn {
       Ok(c) => c,
       Err(e) => {
+        let e = Error::ChangesDBusError(e);
         $app
           .emit_all(
             ErrorEvent::ProxyError.as_ref(),
-            JsError::new(Error::ChangesDBusError(e).to_string(), true),
+            JsError::new(e.to_string(), e.as_ref().to_string(), true),
           )
           .unwrap();
         return;
@@ -79,17 +81,17 @@ fn main() {
       let state = state.clone();
 
       tauri::async_runtime::spawn(async move {
-        let conn = zbus_conn_try!(state, app, zbus::azync::Connection::system().await);
-        let proxy = zbus_conn_try!(
+        let conn = zbus_conn_try!(state, app, zbus::Connection::system().await);
+        let proxy = zbus_proxy_try!(
           state,
           app,
-          AsyncFancyProxy::builder(&conn)
+          FancyProxy::builder(&conn)
             .cache_properties(false)
             .build()
             .await
         );
 
-        let changes_proxy = zbus_conn_try!(state, app, AsyncFancyProxy::new(&conn).await);
+        let changes_proxy = zbus_proxy_try!(state, app, FancyProxy::new(&conn).await);
         let mut target_changes = changes_proxy
           .receive_target_fans_speeds_changed()
           .await
@@ -104,7 +106,7 @@ fn main() {
           state.model = read_to_string("/sys/devices/virtual/dmi/id/product_name")
             .await
             .unwrap();
-          state.config = zbus_changes_try!(state, app, changes_proxy.config().await);
+          state.config = zbus_proxy_try!(state, app, changes_proxy.config().await);
         }
 
         loop {
@@ -119,7 +121,7 @@ fn main() {
               if let Some(c) = c {
                 let config: String = c.try_into().unwrap();
                 let mut state = state.write().await;
-                state.config = zbus_changes_try!(state, app, changes_proxy.config().await);
+                state.config = zbus_proxy_try!(state, app, changes_proxy.config().await);
                 app.emit_all(ChangesEvent::ConfigChange.as_ref(), config).unwrap();
               }
             },

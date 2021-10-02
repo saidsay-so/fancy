@@ -1,26 +1,74 @@
-<script>
-  import { getConfigsList, activeDetails, setConfig } from "../stores/config";
-  import { createEventDispatcher } from "svelte";
-  import ConfigDetails from "./ConfigDetails.svelte";
+<script lang="ts">
+  import {
+    getConfigsList,
+    activeDetails,
+    setConfig,
+    filteredConfigsList,
+    model,
+  } from '../stores/config'
+  import type { ConfigInfo } from '../stores/config'
+  import { createEventDispatcher } from 'svelte'
+  import { writeText } from '@tauri-apps/api/clipboard'
+  import ConfigDetails from './ConfigDetails.svelte'
+  import ConfigHeader from '@/components/ConfigHeader.svelte'
 
-  const pageDispatcher = createEventDispatcher().bind(null, "page");
+  const pageDispatcher = createEventDispatcher().bind(null, 'page')
+  let filterModel = true
+  let search = ''
+  let listStore = $getConfigsList
+  let filteredList = listStore
 
-  const setDetails = (details) => {
-    $activeDetails = details;
-    pageDispatcher(ConfigDetails);
-  };
-  const handleConfig = (path) => {
-    setConfig(path);
-  };
+  $: if (filterModel) {
+    listStore = $filteredConfigsList
+  } else {
+    listStore = $getConfigsList
+  }
+
+  $: filteredList = listStore.filter((c) =>
+    c.name.toLowerCase().includes(search.toLowerCase())
+  )
+
+  const setDetails = (details: ConfigInfo) => {
+    $activeDetails = details
+    pageDispatcher(ConfigDetails)
+  }
+
+  const handleConfigChange = (path: string) => setConfig(path)
+
+  const setModelSearch = () => {
+    search = $model.trim()
+    writeText(search).catch(() => {})
+  }
 </script>
 
-<header class="breadcrumbs">
-  <ul>
-    <li class="text-center">
-      <h2 class="link link-hover">Configurations</h2>
-    </li>
-  </ul>
-</header>
+<ConfigHeader />
+
+<div class="flex flex-col gap-4 mt-2 mb-6">
+  <div class="flex flex-row gap-2">
+    <p class="font-bold">Model: {$model}</p>
+    <button class="btn-xs btn-rounded" on:click={setModelSearch}
+      ><i class="material-icons">content_paste</i></button
+    >
+  </div>
+  <div class="flex gap-4">
+    <label for="filterModel">Filter only recommended</label>
+    <input
+      name="filterModel"
+      type="checkbox"
+      bind:checked={filterModel}
+      class="toggle toggle-primary"
+    />
+  </div>
+
+  <div class="form-control">
+    <input
+      type="text"
+      placeholder="Search"
+      class="input input-primary"
+      bind:value={search}
+    />
+  </div>
+</div>
 
 <div class="overflow-x-auto">
   <table class="table w-full table-compact">
@@ -32,7 +80,7 @@
       </tr>
     </thead>
     <tbody>
-      {#each $getConfigsList as config}
+      {#each filteredList as config (config.name)}
         <tr
           class="hover hover:cursor-pointer overflow-clip"
           on:click={setDetails.bind(null, config)}
@@ -47,15 +95,17 @@
                 config.author.length === 0}
             >
               {config.author === null || config.author.length === 0
-                ? "Unknown"
+                ? 'Unknown'
                 : config.author}
             </h5>
           </td>
           <td>
             <button
-              class="btn btn-primary pointer-events-auto"
-              on:click|stopPropagation={handleConfig.bind(null, config.path)}
-              >Apply</button
+              class="btn-primary"
+              on:click|stopPropagation={handleConfigChange.bind(
+                null,
+                config.name
+              )}>Apply</button
             >
           </td>
         </tr>

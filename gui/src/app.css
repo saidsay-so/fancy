@@ -2,12 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-h1 {
-  @apply text-6xl font-extrabold;
-}
-
 h2 {
-  @apply text-4xl font-bold;
+  @apply text-2xl font-bold;
 }
 
 h3 {
@@ -16,9 +12,4 @@ h3 {
 
 button {
   @apply btn;
-}
-
-hr::before,
-hr::after {
-  content: none !important;
 }

@@ -5,7 +5,7 @@ use tauri::async_runtime::RwLock;
 use tauri::{AppHandle, Manager};
 use tokio::fs::{read_dir, read_to_string};
 
-use crate::error::{generate_proxy_err, Error, JsError};
+use crate::error::{generate_proxy_err, Error, ErrorEvent, JsError};
 use crate::state::State;
 use crate::ChangesEvent;
 use nbfc_config::{FanControlConfigV2, TemperatureThreshold, XmlFanControlConfigV2};
@@ -17,8 +17,8 @@ type CmdResult<T> = std::result::Result<T, JsError>;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ConfigInfo {
+  model: String,
   name: String,
-  file_name: String,
   author: Option<String>,
   thresholds: HashMap<String, Vec<TemperatureThreshold>>,
 }
@@ -45,33 +45,42 @@ pub(super) async fn get_model(
 }
 
 #[tauri::command]
-pub(super) async fn get_configs_list() -> CmdResult<Vec<ConfigInfo>> {
+pub(super) async fn get_configs_list(app: AppHandle) -> CmdResult<Vec<ConfigInfo>> {
   let mut list = vec![];
   let mut configs = read_dir("/etc/fancy/configs")
     .await
     .map_err(Error::IoError)
-    .map_err(|e| JsError::new(e.to_string(), false))?;
+    .map_err(|e| JsError::new(e.to_string(), e.as_ref().to_string(), true))?;
 
   while let Some(file) = configs
     .next_entry()
     .await
     .map_err(Error::IoError)
-    .map_err(|e| JsError::new(e.to_string(), false))?
+    .map_err(|e| JsError::new(e.to_string(), e.as_ref().to_string(), true))?
   {
     let path = file.path();
     let config = read_to_string(&path)
       .await
       .map_err(Error::IoError)
-      .map_err(|e| JsError::new(e.to_string(), false))?;
-    let config = xml_from_str::<XmlFanControlConfigV2>(&*config)
-      .map_err(|e| Error::InvalidConfiguration(e, path.to_string_lossy().to_string()))
-      .map_err(|e| JsError::new(e.to_string(), false))?;
+      .map_err(|e| JsError::new(e.to_string(), e.as_ref().to_string(), true))?;
+
+    let config = match xml_from_str::<XmlFanControlConfigV2>(&*config) {
+      Ok(c) => c,
+      Err(e) => {
+        let e = Error::InvalidConfiguration(e, path.to_string_lossy().to_string());
+        let e = JsError::new(e.to_string(), e.as_ref().to_string(), false);
+        app
+          .emit_all(ErrorEvent::DeserializeError.as_ref(), e)
+          .unwrap();
+        continue;
+      }
+    };
     let config = FanControlConfigV2::from(config);
 
     list.push(ConfigInfo {
       author: config.author,
-      name: config.notebook_model,
-      file_name: path.file_stem().unwrap().to_string_lossy().to_string(),
+      model: config.notebook_model,
+      name: path.file_stem().unwrap().to_string_lossy().to_string(),
       thresholds: config
         .fan_configurations
         .into_iter()
@@ -93,20 +102,18 @@ pub(super) async fn get_configs_list() -> CmdResult<Vec<ConfigInfo>> {
 }
 
 macro_rules! prop {
-  // getter form
   ($state: expr, $proxy_prop: tt) => {
     prop!($state, $proxy_prop,)
   };
 
-  // setter form
   ($state: expr, $proxy_prop: tt, $( $arg: expr ),*) => {{
     let state = $state.read().await;
     if let Some(proxy) = &state.proxy {
       proxy
         .$proxy_prop($( $arg ),*)
         .await
-        .map_err(Error::CmdDBusError)
-        .map_err(|e| JsError::new((e).to_string(), true))
+        .map_err(|e| Error::CmdDBusError(e, stringify!($proxy_prop).to_string()))
+        .map_err(|e| JsError::new((e).to_string(), e.as_ref().to_string(), true))
     } else {
       Err(generate_proxy_err(&state.proxy_state))
     }
@@ -195,8 +202,8 @@ pub(super) async fn set_target_speed(
       proxy
         .target_fans_speeds()
         .await
-        .map_err(Error::CmdDBusError)
-        .map_err(|e| JsError::new((e).to_string(), true))?,
+        .map_err(|e| Error::CmdDBusError(e, "target_fans_speeds".to_string()))
+        .map_err(|e| JsError::new((e).to_string(), e.as_ref().to_string(), true))?,
     )
     .unwrap();
   Ok(())

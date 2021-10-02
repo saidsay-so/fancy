@@ -19,6 +19,7 @@ pub(crate) struct State {
     pub temps: RefCell<HashMap<String, f64>>,
     pub temp_compute: RefCell<TempComputeMethod>,
 }
+
 impl From<ServiceConfig> for State {
     fn from(s: ServiceConfig) -> Self {
         State {
@@ -33,6 +34,7 @@ impl From<ServiceConfig> for State {
         }
     }
 }
+
 impl State {
     pub fn as_service_config(&self) -> ServiceConfig {
         ServiceConfig {

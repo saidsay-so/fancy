@@ -11,7 +11,7 @@ module.exports = {
     ecmaVersion: 2019,
     sourceType: 'module',
     tsconfigRootDir: __dirname,
-    project: ['./tsconfig.json'],
+    project: ['./tsconfig.json', './tsconfig.misc.json'],
     extraFileExtensions: ['.svelte'],
   },
   plugins: [
@@ -20,7 +20,7 @@ module.exports = {
   ],
   overrides: [
     {
-      files: ['*.svelte'],
+      files: ['**/*.svelte'],
       processor: 'svelte3/svelte3',
       rules: {
         'import/first': 'off',
@@ -29,14 +29,9 @@ module.exports = {
         'import/no-unresolved': 'off',
         'import/prefer-default-export': 'off',
         'import/no-extraneous-dependencies': ['error', {'devDependencies': true}],
-        'no-restricted-syntax': 'off'
       },
     },
   ],
-  rules: {
-    'no-shadow': 'off',
-    'prettier/prettier': 'error'
-  },
   settings: {
     'svelte3/typescript': true,
   },

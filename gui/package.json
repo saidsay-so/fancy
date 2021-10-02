@@ -8,17 +8,18 @@
     "build": "vite build",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "lint": "eslint --ext .ts,.svelte .",
+    "format": "prettier --write 'src/**/*.{css,html,ts,svelte}'",
     "serve": "vite preview",
     "tauri": "tauri"
   },
   "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^1.0.0-next.24",
+    "@sveltejs/vite-plugin-svelte": "^1.0.0-next.27",
     "@tauri-apps/cli": "^1.0.0-beta.10",
     "@tsconfig/svelte": "^2.0.1",
     "@types/tailwindcss": "^2.2.1",
-    "@typescript-eslint/eslint-plugin": "^4.31.1",
-    "@typescript-eslint/parser": "^4.31.1",
-    "autoprefixer": "^10.3.4",
+    "@typescript-eslint/eslint-plugin": "^4.33.0",
+    "@typescript-eslint/parser": "^4.33.0",
+    "autoprefixer": "^10.3.7",
     "cssnano": "^5.0.8",
     "eslint": "^7.32.0",
     "eslint-config-airbnb-base": "^14.2.1",
@@ -26,21 +27,23 @@
     "eslint-plugin-import": "^2.24.2",
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-svelte3": "^3.2.1",
-    "postcss": "^8.3.6",
+    "postcss": "^8.3.9",
     "postcss-load-config": "^3.1.0",
     "prettier": "2.4.1",
     "prettier-plugin-svelte": "^2.4.0",
     "rollup-plugin-analyzer": "^4.0.0",
-    "svelte": "^3.42.6",
-    "svelte-check": "^2.2.6",
-    "svelte-preprocess": "^4.9.4",
-    "tailwindcss": "^2.2.15",
+    "svelte": "^3.43.1",
+    "svelte-check": "^2.2.7",
+    "svelte-preprocess": "^4.9.8",
+    "tailwindcss": "^2.2.16",
     "tslib": "^2.3.1",
     "typescript": "^4.4.3",
-    "vite": "^2.5.10"
+    "vite": "^2.6.5"
   },
   "dependencies": {
+    "@sveltejs/svelte-virtual-list": "^3.0.1",
     "@tauri-apps/api": "^1.0.0-beta.8",
-    "daisyui": "^1.14.1"
+    "daisyui": "^1.14.2",
+    "tauri-settings": "^0.1.1"
   }
 }
