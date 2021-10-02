@@ -19,7 +19,6 @@ jobs:
     runs-on: ubuntu-latest
     name: Build archive
     needs: create_release
-
     steps:
       - uses: actions/checkout@v2
 

@@ -24,3 +24,31 @@ jobs:
         with:
           command: test
           args: --all --all-features
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install required libraries
+        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev
+
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+
+      - uses: actions/checkout@v2
+
+      - name: Run tests
+        run: |
+          export CARGO_INCREMENTAL=0
+          export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
+          export RUSTDOCFLAGS="-Cpanic=abort"
+          curl -L https://github.com/mozilla/grcov/releases/latest/download/grcov-linux-x86_64.tar.bz2 | tar jxf -
+          cargo test --verbose $CARGO_OPTIONS
+          zip -0 ccov.zip $(find . \( -name "fancy*.gc*" \) -print)
+          ./grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore "/*" -o lcov.info
+      - name: Codecov
+        uses: codecov/codecov-action@v2.1.0
+        with:
+          files: lcov.info
