@@ -123,6 +123,7 @@ The project is licensed under MPL-2.0. You implicitly accept it when you send a 
 ## Contributing
 
 Please see [CONTRIBUTING.md](https://github.com/MusiKid/fancy/blob/master/CONTRIBUTING.md).
+You can also take a look at the [book](https://musikid.github.io/fancy/).
 
 ## Credits
 
