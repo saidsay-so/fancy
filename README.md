@@ -10,6 +10,7 @@
 [![Tests](https://github.com/MusiKid/fancy/actions/workflows/test.yml/badge.svg?branch=develop)](https://github.com/MusiKid/fancy/actions/workflows/test.yml)
 [![license](https://img.shields.io/badge/license-MPL--2.0-blue)](LICENSE)
 [![Copr build status](https://copr.fedorainfracloud.org/coprs/musikid/Fancy/package/fancy/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/musikid/Fancy/package/fancy/)
+[![Release](https://img.shields.io/github/v/release/musikid/fancy)](https://github.com/MusiKid/fancy/releases/latest)
 [![codecov](https://codecov.io/github/MusiKid/fancy/branch/develop/graph/badge.svg)](https://codecov.io/github/MusiKid/fancy)
 -------
 
