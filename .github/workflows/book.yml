@@ -19,7 +19,7 @@ jobs:
         with:
           mdbook-version: 'latest'
 
-      - run: cd book && mdbook build
+      - run: cd book && ./build_supported_list.sh && mdbook build
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
