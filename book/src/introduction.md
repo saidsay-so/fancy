@@ -46,9 +46,9 @@ make && sudo make install
 
 You can check if your computer model is supported by checking if a configuration
 exists in nbfc_configs (or maybe a similar model).
-You can also check the list below (built at @@@COMMIT@@@):
+You can also check the list below:
 
-{{ #include ../SUPPORTED_MODEL_LIST.md }}
+{{ #include ../GENERATED_MODEL_LIST.md }}
 
 [^linux-only]: *Well*, [NBFC](https://github.com/hirschmann/nbfc) is already *well* integrated
 with the Windows "ecosystem", since C# is more common on Windows.

@@ -89,6 +89,7 @@ impl Default for TempComputeMethod {
     }
 }
 
+// ANCHOR: ServiceConfig
 #[derive(Debug, Serialize, Deserialize, Default)]
 /// Stores the service configuration which can be written to the disk.
 pub(crate) struct ServiceConfig {
@@ -99,6 +100,8 @@ pub(crate) struct ServiceConfig {
     #[serde(default)]
     pub temp_compute: TempComputeMethod,
 }
+// ANCHOR_END: ServiceConfig
+
 impl From<NbfcServiceSettings> for ServiceConfig {
     fn from(s: NbfcServiceSettings) -> Self {
         ServiceConfig {

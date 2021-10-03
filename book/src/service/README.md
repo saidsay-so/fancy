@@ -1,6 +1,6 @@
 # Service
 
-The service does the communication part between hardware and software,
+The service does the communication between hardware and software,
 by sending the commands received from the D-Bus API to the ACPI.
 
 ## D-Bus API
