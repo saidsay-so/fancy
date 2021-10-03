@@ -109,8 +109,10 @@ That's the reason why I started to write `fancy`
 
 ### Linux ONLY?
 
-*Well*, [NBFC](https://github.com/hirschmann/nbfc) is already *well* integrated with the Windows "ecosystem", since C# is more common on Windows.
-It works very *well*, so go check it. If you want to provide Windows support, you are also *wel*come.
+*Well*, [NBFC](https://github.com/hirschmann/nbfc) is already *well* integrated
+with the Windows "ecosystem", since C# is more common on Windows.
+It works very *well*, so go check it. If you want to provide Windows support,
+you are also *wel*come.
 
 ## License
 
