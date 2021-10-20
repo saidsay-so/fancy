@@ -7,13 +7,16 @@ description = """This package provides the CLI for Fancy, a set of software to c
 license = "MPL-2.0"
 
 [dependencies]
-clap = "2.33.0"
+clap = "2.33"
 dbus = "0.9.0"
 bcmp = "0.4.1"
 anyhow = "1.0.44"
 
 [build-dependencies]
+clap = "2.33.3"
 dbus-codegen = "0.9.0"
+
+[features]
 
 [package.metadata.deb]
 depends = "$auto, dbus"

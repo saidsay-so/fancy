@@ -1,12 +1,14 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
-use clap::{crate_version, App, AppSettings, Arg, SubCommand};
+use clap::values_t;
 use dbus::blocking::Connection;
 
 use std::fs::read_dir;
 
+mod app;
 mod interfaces;
+use app::get_app;
 use interfaces::ComMusikidFancy;
 
 static CONTROL_CONFIGS_PATH: &str = "/etc/fancy/configs";
@@ -19,78 +21,22 @@ fn main() -> Result<(), anyhow::Error> {
         std::time::Duration::from_millis(1000),
     );
 
-    let matches = App::new("fancy")
-        .setting(AppSettings::SubcommandRequired)
-        .version(crate_version!())
-        .about(env!("CARGO_PKG_DESCRIPTION"))
-        .subcommand(
-            SubCommand::with_name("set")
-                .about("Set a value")
-                .arg(
-                    Arg::with_name("target_fans_speeds")
-                        .help("Set the fans speeds")
-                        .short("f")
-                        .long("fans-speeds")
-                        .takes_value(true)
-                        .multiple(true)
-                        .value_name("TARGET_FAN_SPEEDS")
-                        .conflicts_with("auto"),
-                )
-                .arg(
-                    Arg::with_name("config")
-                        .help("Set the config to use")
-                        .short("c")
-                        .long("config")
-                        .takes_value(true)
-                        .value_name("CONFIG"),
-                )
-                .arg(
-                    Arg::with_name("auto")
-                        .help("Set auto state")
-                        .short("a")
-                        .long("auto")
-                        .conflicts_with("target_fans_speeds"),
-                ),
-        )
-        .subcommand(
-            SubCommand::with_name("get")
-                .about("Get a value")
-                .subcommand(SubCommand::with_name("speeds").about("Get the fans speeds"))
-                .subcommand(SubCommand::with_name("temps").about("Get the temperatures"))
-                .subcommand(SubCommand::with_name("config").about("Get the current config"))
-                .subcommand(SubCommand::with_name("auto").about("Get auto-handle state")),
-        )
-        .subcommand(
-            SubCommand::with_name("list")
-                .about("Get a list of the available configs")
-                .arg(
-                    Arg::with_name("recommended")
-                        .long("recommended")
-                        .help("Filter to get only the recommended ones"),
-                ),
-        )
-        .get_matches();
+    let matches = get_app().get_matches();
 
     if let Some(matches) = matches.subcommand_matches("get") {
-        if let Some(_) = matches.subcommand_matches("speeds") {
+        if matches.is_present("speeds") {
             let fans_speeds = proxy.fans_speeds()?;
             let names = proxy.fans_names()?;
             for (name, speed) in names.iter().zip(fans_speeds) {
                 println!("{}: {:.1}%", name, speed);
             }
-        }
-
-        if let Some(_) = matches.subcommand_matches("config") {
+        } else if matches.is_present("config") {
             let config = proxy.config()?;
             println!("{}", config);
-        }
-
-        if let Some(_) = matches.subcommand_matches("auto") {
+        } else if matches.is_present("auto") {
             let auto = proxy.auto()?;
             println!("Auto-select thresholds: {}", auto);
-        }
-
-        if let Some(_) = matches.subcommand_matches("temps") {
+        } else if matches.is_present("temps") {
             let temps = proxy.temperatures()?;
             for (sensor, temp) in temps {
                 println!("{}: {:.1}°C", sensor, temp);
@@ -141,19 +87,17 @@ fn main() -> Result<(), anyhow::Error> {
         }
     } else if let Some(matches) = matches.subcommand_matches("set") {
         if matches.is_present("target_fans_speeds") {
-            let args = matches.values_of("target_fans_speeds").unwrap();
-            //TODO: Error handling
-            let speeds = args.map(|n| n.parse::<f64>().unwrap()).collect();
-
+            let speeds = values_t!(matches, "target_fans_speeds", f64)?;
             if !matches.is_present("auto") {
                 proxy.set_auto(false)?;
             }
 
-            proxy.set_target_fans_speeds(speeds)?;
+            for (speed, index) in speeds.into_iter().zip(0..) {
+                proxy.set_target_fan_speed(index, speed)?;
+            }
         }
 
-        if matches.is_present("config") {
-            let config = matches.value_of("config").unwrap();
+        if let Some(config) = matches.value_of("config") {
             proxy.set_config(config.to_owned())?;
         }
 

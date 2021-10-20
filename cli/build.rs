@@ -3,6 +3,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 use std::io::{Read, Write};
 
+include!("src/app.rs");
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     /*println!("cargo:rerun-if-changed=interfaces/fancy.xml");*/
 
@@ -23,6 +25,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut file = std::fs::File::create("src/interfaces.rs").unwrap();
     file.write_all("#![allow(unused_imports)]\n".as_bytes())?;
     file.write_all(code.as_bytes())?;
+
+    use clap::Shell;
+    use std::str::FromStr;
+
+    let outdir = std::env::var("OUT_DIR").unwrap();
+    let mut app = get_app();
+    for shell in Shell::variants() {
+        app.gen_completions("fancy", Shell::from_str(shell).unwrap(), &outdir);
+    }
 
     Ok(())
 }
