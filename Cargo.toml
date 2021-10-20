@@ -2,5 +2,6 @@
 members = ["service", "cli", "nbfc"]
 
 [profile.release]
-lto = "thin"
-# codegen-units = 1
+lto = true
+opt-level = 3
+codegen-units = 1
