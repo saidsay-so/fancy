@@ -26,7 +26,7 @@ install:
 
 uninstall:
 	rm $(DESTDIR)$(bindir)/$(NAME)
-	rm $(DESTDIR)$(mandir)/man1.fancy.1.gz
+	rm $(DESTDIR)$(mandir)/man1/fancy.1.gz
 
 clean:
 	rm -rf fancy.1.gz
