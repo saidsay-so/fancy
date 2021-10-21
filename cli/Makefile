@@ -7,6 +7,7 @@ mandir ?= $(prefix)/share/man
 INSTALL ?= install
 
 TARGET_NAME := fancy-cli
+TARGET_DIR := $(if $(realpath ../Cargo.toml), ../target, target)
 NAME := fancy
 
 all:
@@ -20,11 +21,12 @@ test:
 	cargo test --release --locked
 
 install:
-	[ -e "../Cargo.toml" ] && $(INSTALL) -Dm755 -s ../target/release/$(TARGET_NAME) $(DESTDIR)$(bindir)/$(NAME) || $(INSTALL) -Dm755 -s target/release/$(TARGET_NAME) $(DESTDIR)$(bindir)/$(NAME)
+	$(INSTALL) -Dm755 -s $(TARGET_DIR)/release/$(TARGET_NAME) $(DESTDIR)$(bindir)/$(NAME)
 	$(INSTALL) -Dm644 fancy.1.gz $(DESTDIR)$(mandir)/man1/fancy.1.gz
 
 uninstall:
 	rm $(DESTDIR)$(bindir)/$(NAME)
+	rm $(DESTDIR)$(mandir)/man1.fancy.1.gz
 
 clean:
 	rm -rf fancy.1.gz

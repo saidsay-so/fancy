@@ -12,6 +12,7 @@ UNITDIR := $(libdir)/systemd/system
 DBUSDIR := $(sysconfdir)/dbus-1/system.d
 
 TARGET_NAME := fancy-service
+TARGET_DIR := $(if $(realpath ../Cargo.toml), ../target, target)
 NAME := fancyd
 
 all:
@@ -25,7 +26,7 @@ test:
 	cargo test --release --locked
 
 install:
-	[ -e "../Cargo.toml" ] && $(INSTALL) -Dm744 -s ../target/release/$(TARGET_NAME) $(DESTDIR)$(bindir)/$(NAME) || $(INSTALL) -Dm744 -s target/release/$(TARGET_NAME) $(DESTDIR)$(bindir)/$(NAME)
+	$(INSTALL) -Dm744 -s $(TARGET_DIR)/release/$(TARGET_NAME) $(DESTDIR)$(bindir)/$(NAME)
 	$(INSTALL) -Dm644 extra/fancy.service $(DESTDIR)$(UNITDIR)/fancy.service
 	$(INSTALL) -Dm644 extra/fancy-sleep.service $(DESTDIR)$(UNITDIR)/fancy-sleep.service
 	$(INSTALL) -Dm644 extra/com.musikid.fancy.conf $(DESTDIR)$(DBUSDIR)/com.musikid.fancy.conf
@@ -34,6 +35,7 @@ install:
 
 uninstall:
 	rm $(DESTDIR)$(bindir)/$(NAME)
+	rm $(DESTDIR)$(mandir)/man8/fancyd.8.gz
 	rm $(DESTDIR)$(UNITDIR)/fancy.service
 	rm $(DESTDIR)$(UNITDIR)/fancy-sleep.service
 	rm $(DESTDIR)$(DBUSDIR)/com.musikid.fancy.conf
