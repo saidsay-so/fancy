@@ -15,8 +15,6 @@ cargo update
 
 git add -A && git commit -m "chore(release): prepare for ${VERSION}"
 
-git cliff --out CHANGELOG.md
-
 export TEMPLATE="\
   {% for group, commits in commits | group_by(attribute=\"group\") %}
   {{ group | upper_first }}\
@@ -27,3 +25,7 @@ export TEMPLATE="\
 "
 changelog=$(git cliff --unreleased --strip all)
 git tag -s -a "${GIT_VERSION}" -m "Release ${GIT_VERSION}" -m "${changelog}"
+
+git cliff --out CHANGELOG.md
+
+git add -A && git commit -m "chore(release): update changelog"
