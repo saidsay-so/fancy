@@ -2,7 +2,7 @@
 name = "fancy-service"
 version = "0.5.0"
 authors = ["Musikid <musikid@outlook.com>"]
-edition = "2018"
+edition = "2021"
 description = """This package provides the service for Fancy, a set of software to control laptop fans."""
 license = "MPL-2.0"
 
