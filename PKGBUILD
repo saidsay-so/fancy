@@ -10,7 +10,7 @@ depends=('dbus')
 optdepends=('systemd: manage the service')
 arch=('i686' 'x86_64')
 source=("$pkgname-$pkgver.tar.gz::https://github.com/MusiKid/$pkgname/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('ba4499af6e3b3a7afb4aa13a07142b0f873e950d0ae0785fa987cb78a099d757')
+sha256sums=('93557445a2a14ebc2e9db23b88f2cc39672d5f8724d2dd84979485e3aee9336b')
 url='https://github.com/MusiKid/fancy'
 license=('MPL2')
 
