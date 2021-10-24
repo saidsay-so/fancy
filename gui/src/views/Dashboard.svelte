@@ -19,7 +19,7 @@
   export let meanTemp = true
 
   const pageDispatcher = createEventDispatcher()
-const setTargetSpeed = (index, ev) => setTargetSpeed(index, ev)
+  const setTargetSpeed = (index, ev) => setTargetSpeed(index, ev)
   const handleConfig = (page) => pageDispatcher('page', page)
 </script>
 

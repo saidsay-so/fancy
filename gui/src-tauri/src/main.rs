@@ -82,7 +82,7 @@ fn main() {
 
       tauri::async_runtime::spawn(async move {
         let conn = zbus_conn_try!(state, app, zbus::Connection::system().await);
-        let proxy = zbus_proxy_try!(
+        let proxy = zbus_conn_try!(
           state,
           app,
           FancyProxy::builder(&conn)
