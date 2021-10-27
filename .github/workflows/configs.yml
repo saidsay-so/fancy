@@ -1,0 +1,29 @@
+name: Get NBFC configs
+
+on:
+  push:
+    branches:
+      - master
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          path: nbfc_configs
+
+      - uses: actions/checkout@v2
+        with:
+          repository: UraniumDonut/nbfc-revive
+          path: nbfc_head
+
+      - name: Copy config files
+        run: cp -R nbfc_head/Configs nbfc_configs
+
+      - uses: stefanzweifel/git-auto-commit-action@v4.1.2
+        with:
+          commit_message: Automatically add new configs
+          repository: nbfc_configs
