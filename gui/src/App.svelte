@@ -6,7 +6,6 @@
   import Dashboard from '@/views/Dashboard.svelte'
   import ErrorBanner from '@/components/ErrorBanner.svelte'
   import { lastError } from './stores/error'
-  import Settings from '@/views/Settings.svelte'
 
   let currentView = Dashboard
   const views = [
@@ -19,11 +18,6 @@
       name: 'Configuration Editor',
       icon: 'edit',
       component: Editor,
-    },
-    {
-      name: 'Settings',
-      icon: 'settings',
-      component: Settings,
     },
   ]
 

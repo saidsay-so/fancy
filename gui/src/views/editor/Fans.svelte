@@ -1,6 +1,7 @@
-<script>
+<script lang="ts">
   import RangeInput from '@/components/RangeInput.svelte'
-  import { fansNumber, fans } from '@/stores/editor/fans'
+  import FanConfigCard from '@/components/editor/FanConfigCard.svelte'
+  import { fansNumber, fans } from '../../stores/editor/fans'
 </script>
 
 <div class="form-control">
@@ -10,4 +11,12 @@
   <RangeInput min={1} bind:value={$fansNumber} range={1} />
 </div>
 
-{#each fans as fan}{/each}
+<div class="grid grid-cols-3 gap-4 my-4">
+  {@debug $fans}
+  {#each $fans as fan, i (i)}
+    <FanConfigCard
+      {...fan}
+      FanDisplayName={fan.FanDisplayName ?? `Fan #${i + 1}`}
+    />
+  {/each}
+</div>

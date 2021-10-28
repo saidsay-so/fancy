@@ -1,0 +1,15 @@
+{
+  "name": "nbfc-types",
+  "version": "1.0.0",
+  "description": "Typescript types for NBFC.",
+  "main": "index.d.ts",
+  "types": "index.d.ts",
+  "scripts": {
+    "test": " "
+  },
+  "author": "musikid",
+  "license": "MPL-2.0",
+  "devDependencies": {
+    "json-schema-to-typescript": "^10.1.5"
+  }
+}

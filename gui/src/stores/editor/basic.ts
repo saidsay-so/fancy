@@ -1,4 +1,5 @@
 import { writable } from 'svelte/store'
+import type { FanControlConfigV2 } from 'nbfc-types'
 import { model as computerModel } from '../config'
 
 export const configName = writable<string>('', (set) =>

@@ -27,6 +27,7 @@
     "eslint-plugin-import": "^2.24.2",
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-svelte3": "^3.2.1",
+    "nbfc-types": "file:../nbfc/ts-types",
     "postcss": "^8.3.9",
     "postcss-load-config": "^3.1.0",
     "prettier": "2.4.1",

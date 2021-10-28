@@ -6,9 +6,10 @@
 //! The XML variants are here to apply custom deserializing for XML format. They should be used as
 //! middlemen before saving/reading configs.
 
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "PascalCase")]
 #[serde(from = "String")]
 pub enum RegisterWriteMode {
@@ -33,7 +34,7 @@ impl Default for RegisterWriteMode {
     }
 }
 
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "PascalCase")]
 #[serde(from = "String")]
 pub enum RegisterWriteOccasion {
@@ -50,7 +51,7 @@ impl From<String> for RegisterWriteOccasion {
     }
 }
 
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "PascalCase")]
 #[serde(from = "String")]
 pub enum OverrideTargetOperation {
@@ -69,7 +70,7 @@ impl From<String> for OverrideTargetOperation {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "PascalCase")]
 pub struct TemperatureThreshold {
     pub up_threshold: u8,
@@ -93,7 +94,7 @@ impl Ord for TemperatureThreshold {
     }
 }
 
-#[derive(PartialEq, Clone, Debug, Serialize, Deserialize)]
+#[derive(PartialEq, Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "PascalCase")]
 pub struct FanSpeedPercentageOverride {
     pub fan_speed_percentage: f32,
@@ -101,7 +102,7 @@ pub struct FanSpeedPercentageOverride {
     pub target_operation: Option<OverrideTargetOperation>,
 }
 
-#[derive(PartialEq, Clone, Debug, Serialize, Deserialize)]
+#[derive(PartialEq, Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "PascalCase")]
 pub struct RegisterWriteConfiguration {
     #[serde(skip)] // Deprecated
@@ -201,7 +202,8 @@ impl From<FanConfiguration> for XmlFanConfiguration {
     }
 }
 
-#[derive(PartialEq, Clone, Debug, Serialize, Deserialize)]
+#[derive(PartialEq, Clone, Debug, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "PascalCase")]
 pub struct FanConfiguration {
     pub read_register: u8,
     pub write_register: u8,
@@ -294,7 +296,8 @@ impl From<FanControlConfigV2> for XmlFanControlConfigV2 {
     }
 }
 
-#[derive(PartialEq, Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(PartialEq, Clone, Debug, Default, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "PascalCase")]
 pub struct FanControlConfigV2 {
     pub notebook_model: String,
     pub author: Option<String>,
@@ -317,7 +320,7 @@ impl From<XmlFanControlConfigV2> for FanControlConfigV2 {
                 .fan_configurations
                 .fan_configurations
                 .into_iter()
-                .map(|t| FanConfiguration::from(t))
+                .map(FanConfiguration::from)
                 .collect(),
             register_write_configurations: f
                 .register_write_configurations
