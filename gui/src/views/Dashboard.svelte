@@ -19,7 +19,8 @@
   export let meanTemp = true
 
   const pageDispatcher = createEventDispatcher()
-  const setTargetSpeed = (index, ev) => setTargetSpeed(index, ev)
+  const handleSetTargetSpeed = (index, ev) =>
+    setTargetSpeed(index, ev.target.value)
   const handleConfig = (page) => pageDispatcher('page', page)
 </script>
 
@@ -57,7 +58,7 @@
               class:text-error={$critical}
             >
               {#if $fansSpeeds[i] !== undefined}
-                {$fansSpeeds[i].toFixed().padStart(3, ' ')} %
+                {$fansSpeeds[i].toFixed().padEnd(3)}%
               {/if}
             </h4>
             {#if !$auto}
@@ -67,7 +68,7 @@
                 max="100"
                 class="range"
                 value={$targetSpeeds[i]}
-                on:input={setTargetSpeed.bind(i)}
+                on:input={handleSetTargetSpeed.bind(null, i)}
               />
             {/if}
           </div>

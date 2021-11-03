@@ -15,6 +15,12 @@ fn main() {
     )
     .unwrap();
 
+    Command::new("npm")
+        .current_dir("./ts-types")
+        .arg("i")
+        .status()
+        .unwrap();
+
     Command::new("ts-types/node_modules/.bin/json2ts")
         .arg("ts-types/schema.json")
         .arg("ts-types/index.d.ts")

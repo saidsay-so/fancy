@@ -24,16 +24,9 @@
     <i class="material-icons pr-2">save</i>
     Save
   </button>
-
-  <button class="btn-ghost">
-    <i class="material-icons pr-2">delete</i>
-    Clean current
-  </button>
 </nav>
 
-<div class="my-4" />
-
-<div class="tabs mb-4">
+<div class="tabs my-4">
   {#each views as view (view.name)}
     <a
       class:tab-active={currentComponent === view.component}
@@ -43,4 +36,4 @@
   {/each}
 </div>
 
-<svelte:component this={currentComponent} />
+<svelte:component this={currentComponent} on:page />

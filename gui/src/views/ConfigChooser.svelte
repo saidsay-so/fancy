@@ -10,7 +10,7 @@
   import { createEventDispatcher } from 'svelte'
   import { writeText } from '@tauri-apps/api/clipboard'
   import ConfigDetails from './ConfigDetails.svelte'
-  import ConfigHeader from '@/components/ConfigHeader.svelte'
+  import ChildHeader from '@/components/ChildHeader.svelte'
 
   const pageDispatcher = createEventDispatcher().bind(null, 'page')
   let filterModel = true
@@ -41,7 +41,7 @@
   }
 </script>
 
-<ConfigHeader />
+<ChildHeader component={this} />
 
 <div class="flex flex-col gap-4 mt-2 mb-6">
   <div class="flex flex-row gap-2">

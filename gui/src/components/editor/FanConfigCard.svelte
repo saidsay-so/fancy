@@ -23,7 +23,7 @@
       </p>
     </div>
     <div class="card-actions justify-end">
-      <button class="btn-secondary">Edit</button>
+      <button on:click class="btn-secondary">Edit</button>
     </div>
   </div>
 </article>

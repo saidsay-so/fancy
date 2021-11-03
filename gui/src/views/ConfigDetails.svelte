@@ -1,7 +1,8 @@
 <script lang="ts">
   import { activeDetails } from '../stores/config'
   import type { Threshold } from '../stores/config'
-  import ConfigHeader from '@/components/ConfigHeader.svelte'
+  import ChildHeader from '@/components/ChildHeader.svelte'
+  import ConfigChooser from './ConfigChooser.svelte'
 
   let currentThreshold = null
 
@@ -10,7 +11,12 @@
   }
 </script>
 
-<ConfigHeader on:page name={$activeDetails.name} />
+<ChildHeader
+  on:page
+  parentName="Configurations"
+  component={ConfigChooser}
+  childName={$activeDetails.name}
+/>
 
 <div>
   <div class="divider"><h3>Metadata</h3></div>
@@ -80,7 +86,7 @@
   {/if}
 </div>
 
-<style scoped>
+<style lang="postcss" scoped>
   .step:hover:after {
     @apply bg-info text-base-100;
   }

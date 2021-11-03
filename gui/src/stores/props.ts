@@ -2,7 +2,7 @@ import { listen } from '@tauri-apps/api/event'
 import type { UnlistenFn } from '@tauri-apps/api/event'
 import { invoke } from '@tauri-apps/api/tauri'
 import { derived, readable, writable } from 'svelte/store'
-import type { Subscriber, Writable } from 'svelte/store'
+import type { Subscriber } from 'svelte/store'
 import { errors } from './error'
 import type { BackendError } from './error'
 
@@ -94,20 +94,15 @@ export const fansNames = readable<string[]>([], (set) =>
   )
 )
 
-export const setTargetSpeed = (index: number, s: number): void => {
-  const speed = Math.max(0, Math.min(100, s))
-  targetSpeeds.update((speeds) => [
-    ...speeds.slice(0, index),
-    speed,
-    ...speeds.slice(index + 1),
-  ])
-
-  invoke(PropCommand.SET_TARGET_SPEED, { speed, index }).catch(catchError)
-}
-
 export const targetSpeeds = writable<number[]>([], (set) =>
   listenEvent(PropCommand.GET_TARGET_SPEEDS, Event.TARGET_SPEEDS_CHANGE, set)
 )
+
+export const setTargetSpeed = (index: number, s: number): void => {
+  const speed = Math.max(0, Math.min(100, s))
+
+  invoke(PropCommand.SET_TARGET_SPEED, { speed, index }).catch(catchError)
+}
 
 const { subscribe: subAuto } = readable(undefined, (set) =>
   listenEvent(PropCommand.GET_AUTO, Event.AUTO_CHANGE, set)

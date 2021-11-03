@@ -8,6 +8,7 @@
     criticalTemp,
   } from '@/stores/editor/basic'
   import RangeInput from '@/components/RangeInput.svelte'
+  import InputUnit from '@/components/InputUnit.svelte'
 
   let lockModelForm = true
 </script>
@@ -82,5 +83,5 @@
   <label for="critical" class="label"
     ><span class="label-text">Critical temperature</span></label
   >
-  <RangeInput bind:value={$criticalTemp} range={10} />
+  <InputUnit bind:value={$criticalTemp} name="critical" unit="°C" min={0} />
 </div>

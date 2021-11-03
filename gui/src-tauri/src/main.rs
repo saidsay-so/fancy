@@ -18,7 +18,8 @@ use std::sync::Arc;
 
 use futures::{select, StreamExt};
 use strum::AsRefStr;
-use tauri::async_runtime::RwLock;
+use tauri::api::notification::Notification;
+use tauri::async_runtime::{spawn, RwLock};
 use tauri::Manager;
 use tokio::fs::read_to_string;
 
@@ -80,7 +81,7 @@ fn main() {
       let app = app.handle();
       let state = state.clone();
 
-      tauri::async_runtime::spawn(async move {
+      spawn(async move {
         let conn = zbus_conn_try!(state, app, zbus::Connection::system().await);
         let proxy = zbus_conn_try!(
           state,
@@ -121,7 +122,13 @@ fn main() {
               if let Some(c) = c {
                 let config: String = c.try_into().unwrap();
                 let mut state = state.write().await;
-                state.config = zbus_proxy_try!(state, app, changes_proxy.config().await);
+                state.config = config.clone();
+                Notification::new("com.musikid.fancy")
+                    .title("Fan control configuration changed")
+                    .body(format!("The configuration has been changed to <b>{}</b>!", &config))
+                    .icon("fancy")
+                    .show()
+                    .unwrap();
                 app.emit_all(ChangesEvent::ConfigChange.as_ref(), config).unwrap();
               }
             },

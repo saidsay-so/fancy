@@ -3,11 +3,15 @@
   export let timeout = 500
   export let range = 100
   export let min = 0
+  export let max = 10000
+  export let name = ''
 
   const increment = () => value++
   const decrement = () => value--
 
-  const longIncrement = () => (value += range)
+  const longIncrement = () => {
+    if (value + range <= max) value += range
+  }
   const longDecrement = () => {
     if (value - range >= min) value -= range
   }
@@ -16,8 +20,10 @@
 <div class="relative w-min">
   <input
     type="number"
+    {name}
+    {min}
+    {max}
     bind:value
-    name="poll_interval"
     class="input input-bordered pl-16 pr-16"
   />
   <button on:click={longDecrement} class="btn-secondary absolute top-0 left-0"
