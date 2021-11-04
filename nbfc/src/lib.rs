@@ -4,7 +4,7 @@
 
 //! This module contains structures for serializing and deserializing NBFC configuration.
 //! The XML variants are here to apply custom deserializing for XML format. They should be used as
-//! middlemen before saving/reading configs.
+//! middleware before saving/reading configs.
 
 use serde::{Deserialize, Serialize};
 
@@ -335,9 +335,12 @@ struct TargetFanSpeeds {
 #[derive(PartialEq, Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct XmlNbfcServiceSettings {
+    #[serde(default)]
     settings_version: usize,
     selected_config_id: String,
+    #[serde(default)]
     autostart: bool,
+    #[serde(default)]
     read_only: bool,
     target_fan_speeds: TargetFanSpeeds,
 }
@@ -358,9 +361,12 @@ impl From<NbfcServiceSettings> for XmlNbfcServiceSettings {
 
 #[derive(PartialEq, Clone, Debug, Serialize, Deserialize)]
 pub struct NbfcServiceSettings {
+    #[serde(default)]
     pub settings_version: usize,
     pub selected_config_id: String,
+    #[serde(default)]
     pub autostart: bool,
+    #[serde(default)]
     pub read_only: bool,
     pub target_fan_speeds: Vec<f32>,
 }
