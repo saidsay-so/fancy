@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+use dbus::arg::Variant;
+use dbus::blocking::LocalConnection;
 use dbus::channel::Sender;
 use dbus::ffidisp::stdintf::org_freedesktop_dbus::PropertiesPropertiesChanged;
 use dbus::message::SignalArgs;
@@ -9,12 +11,16 @@ use dbus::strings::{BusName, Path as DBusPath};
 use log::{debug, error, info};
 use nbfc_config as nbfc;
 use once_cell::sync::Lazy;
+use signal_hook::{consts::SIGTERM, flag::register};
 use snafu::{ResultExt, Snafu};
 
+use std::fs::OpenOptions;
 use std::path::Path;
 use std::rc::Rc;
-use std::sync::{atomic::AtomicBool, Arc, Mutex};
-
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc, Mutex,
+};
 use std::time::Duration;
 
 mod bus;
@@ -32,6 +38,7 @@ use config::{
 use constants::{BUS_NAME_STR, OBJ_PATH_STR};
 use ec_control::{ECManager, RawPort, RW};
 use state::State;
+use temp::Temperatures;
 
 const CRITICAL_INTERVAL: u8 = 10;
 
@@ -95,7 +102,7 @@ fn main() -> Result<()> {
     // We have to check if it's /dev/port because we have to "wrap" the file in this case.
     let is_raw_port = service_config.ec_access_mode == ECAccessMode::RawPort;
     let dev_path = service_config.ec_access_mode.to_path().clone();
-    let ec_dev = std::fs::OpenOptions::new()
+    let ec_dev = OpenOptions::new()
         .read(true)
         .write(true)
         .open(dev_path)
@@ -196,10 +203,7 @@ fn main() -> Result<()> {
 
 /// Get the fan configuration in the service config if applicable, else blocks the process until a
 /// valid one is provided.
-fn get_fan_config(
-    state: Rc<State>,
-    dbus_conn: &dbus::blocking::LocalConnection,
-) -> nbfc::FanControlConfigV2 {
+fn get_fan_config(state: Rc<State>, dbus_conn: &LocalConnection) -> nbfc::FanControlConfigV2 {
     if state.config.borrow().trim().is_empty() {
         // Blocking the process until a valid configuration is provided.
         loop {
@@ -218,14 +222,13 @@ fn get_fan_config(
 
 fn main_loop<T: RW>(
     ec_manager: Rc<Mutex<ECManager<T>>>,
-    dbus_conn: dbus::blocking::LocalConnection,
+    dbus_conn: LocalConnection,
     state: Rc<State>,
 ) -> Result<()> {
     let signal_received = Arc::new(AtomicBool::new(false));
-    signal_hook::flag::register(signal_hook::consts::SIGTERM, Arc::clone(&signal_received))
-        .context(Signal {})?;
+    register(SIGTERM, Arc::clone(&signal_received)).context(Signal {})?;
 
-    while !signal_received.load(std::sync::atomic::Ordering::Relaxed) {
+    while !signal_received.load(Ordering::Relaxed) {
         // We should normally use a timer (or convert service to async?) to call the function at an interval but instead of losing time,
         // we treat the D-Bus requests.
         let timeout = {
@@ -241,17 +244,17 @@ fn main_loop<T: RW>(
             let mut prop_changed: PropertiesPropertiesChanged = Default::default();
             prop_changed.changed_properties.insert(
                 "TargetFansSpeeds".into(),
-                dbus::arg::Variant(Box::new(state.target_fans_speeds.borrow().clone())),
+                Variant(Box::new(state.target_fans_speeds.borrow().clone())),
             );
 
-            let _ = dbus_conn.send(prop_changed.to_emit_message(&dbus::Path::from(OBJ_PATH_STR)));
+            let _ = dbus_conn.send(prop_changed.to_emit_message(&DBusPath::from(OBJ_PATH_STR)));
         }
         *state.manual_set_target_speeds.borrow_mut() = false;
 
         let mut ec_manager = ec_manager.lock().unwrap();
 
         // TODO: Find a way to optimize that
-        let current_temps = temp::Temperatures::get_temps().context(Sensor {})?;
+        let current_temps = Temperatures::get_temps().context(Sensor {})?;
         let mut state_temps = state.temps.borrow_mut();
         current_temps.update_map(&mut state_temps);
         debug!("Temperatures: {:#?}", state_temps);
