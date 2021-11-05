@@ -12,10 +12,13 @@
 [![Copr build status](https://copr.fedorainfracloud.org/coprs/musikid/Fancy/package/fancy/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/musikid/Fancy/package/fancy/)
 [![Release](https://img.shields.io/github/v/release/musikid/fancy)](https://github.com/MusiKid/fancy/releases/latest)
 [![codecov](https://codecov.io/github/MusiKid/fancy/branch/develop/graph/badge.svg)](https://codecov.io/github/MusiKid/fancy)
--------
+
+---
 
 Fancy is a set of software which allows you to control your laptop fans.
-It includes a service daemon to allow accessing to the [EC](https://en.wikipedia.org/wiki/Embedded_controller#Tasks) and controlling it through D-Bus, a CLI to send commands and a GUI (WIP). It works only on Linux and Windows support is not planned<sup>[1](#linux-only)</sup>.
+It includes a service daemon to allow accessing to the [EC](https://en.wikipedia.org/wiki/Embedded_controller#Tasks)
+and controlling it through D-Bus, a CLI to send commands and a GUI (WIP).
+It works only on Linux and Windows support is not planned<sup>[1](#linux-only)</sup>.
 
 ## Compatibility
 
@@ -90,7 +93,7 @@ You can then set the fan speed. For example, to make it silent:
 fancy set -f 0
 ```
 
-If you have more fans:
+Or if you have more fans:
 
 ```sh
 fancy set -f 0 0
@@ -100,6 +103,12 @@ Back again to automatic:
 
 ```sh
 fancy set -a
+```
+
+Back again to manual:
+
+```sh
+fancy set -m
 ```
 
 ## Documentation
@@ -120,25 +129,28 @@ That's the reason why I started to write `fancy`
 
 ### Linux ONLY?
 
-*Well*, [NBFC](https://github.com/hirschmann/nbfc) is already *well* integrated
+_Well_, [NBFC](https://github.com/hirschmann/nbfc) is already _well_ integrated
 with the Windows "ecosystem", since C# is more common on Windows.
-It works very *well*, so go check it. If you want to provide Windows support,
+It works very _well_, so go check it. If you want to provide Windows support,
 you are also *wel*come.
 
 ## License
 
 The project is licensed under MPL-2.0. You implicitly accept it when you send a pull request.
 
-*WARNING:* The configurations are from NBFC, which is under GPLv3 license.
+_WARNING:_ The configurations are from NBFC, which is under GPLv3 license.
 
 ## Contributing
 
 Please see [CONTRIBUTING.md](https://github.com/MusiKid/fancy/blob/master/CONTRIBUTING.md).
-You can also take a look at the [book](https://musikid.github.io/fancy/) section for details on the internal working.
+You can also take a look at the [book](https://musikid.github.io/fancy/)
+for details on the internal working.
 
 ## Credits
 
-Thanks to [@hirschmann](https://github.com/hirschmann/) for creating [NBFC](https://github.com/hirschmann/nbfc), where I shamelessly stolen some pieces of code (open source ¯\\_(ツ)_/¯), and all the contributors who created the configurations.
+Thanks to [@hirschmann](https://github.com/hirschmann/) for creating [NBFC](https://github.com/hirschmann/nbfc),
+where I shamelessly stolen some pieces of code (open source ¯\\_(ツ)_/¯),
+and all the contributors who created the configurations.
 
 ## Warning
 
