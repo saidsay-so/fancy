@@ -7,7 +7,7 @@ use snafu::{ResultExt, Snafu};
 
 use std::fs::File;
 use std::io::Read;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use crate::constants::ROOT_CONFIG_PATH;
 use crate::nbfc::{
@@ -19,11 +19,11 @@ static CONTROL_CONFIGS_DIR_PATH: Lazy<PathBuf> = Lazy::new(|| ROOT_CONFIG_PATH.j
 pub(crate) enum ControlConfigLoadError {
     #[snafu(display(
         "An IO error occured while trying to load fan control config `{}`: {}",
-        name.display(),
+        name,
         source
     ))]
     Loading {
-        name: PathBuf,
+        name: String,
         source: std::io::Error,
     },
 
@@ -37,16 +37,19 @@ pub(crate) enum ControlConfigLoadError {
     },
 }
 
-/// Loads the fan control configuration directly from configs folder.
-pub(crate) fn load_control_config<P: AsRef<Path>>(
-    name: P,
-) -> Result<FanControlConfigV2, ControlConfigLoadError> {
+fn get_xml_file_path<S: AsRef<str>>(name: S) -> PathBuf {
     let mut fan_config_path = CONTROL_CONFIGS_DIR_PATH.join(name.as_ref());
     fan_config_path.set_extension("xml");
 
-    test_load_control_config(&name)?;
+    fan_config_path
+}
 
-    let mut config_file = File::open(fan_config_path).context(Loading {
+/// Loads the fan control configuration directly from configs folder.
+pub(crate) fn load_control_config<S: AsRef<str>>(
+    name: S,
+) -> Result<FanControlConfigV2, ControlConfigLoadError> {
+    let path = get_xml_file_path(name.as_ref());
+    let mut config_file = File::open(path).context(Loading {
         name: name.as_ref(),
     })?;
 
@@ -58,28 +61,32 @@ pub(crate) fn load_control_config<P: AsRef<Path>>(
     let c = xml_from_str::<XmlFanControlConfigV2>(&buf)
         .context(ControlXmlDeserialize {})?
         .into();
-    check_control_config(&c).context(Check {
-        name: name.as_ref(),
-    })?;
+
     Ok(c)
 }
 
 /// Test if the fan control config provided can be loaded.
-pub(crate) fn test_load_control_config<P: AsRef<Path>>(
-    name: P,
+pub(crate) fn test_load_control_config<S: AsRef<str>>(
+    name: S,
 ) -> Result<(), ControlConfigLoadError> {
-    let mut fan_config_path = CONTROL_CONFIGS_DIR_PATH.join(name.as_ref());
-    fan_config_path.set_extension("xml");
+    let path = get_xml_file_path(name.as_ref());
 
-    File::open(fan_config_path)
+    File::open(path)
         .context(Loading {
             name: name.as_ref(),
         })
         .and_then(|mut f| {
-            let mut buf = [0u8; 1];
-            f.read_exact(&mut buf).context(Loading {
+            let mut buf = String::new();
+            f.read_to_string(&mut buf).context(Loading {
+                name: name.as_ref(),
+            })?;
+
+            let c = xml_from_str::<XmlFanControlConfigV2>(&buf)
+                .context(ControlXmlDeserialize {})?
+                .into();
+            check_control_config(&c).context(Check {
                 name: name.as_ref(),
             })
         })
-        .map(|_| ())
+        .map(|_| {})
 }

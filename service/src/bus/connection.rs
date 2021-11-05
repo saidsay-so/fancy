@@ -70,7 +70,7 @@ impl ComMusikidFancy for State {
                 index
             )));
         }
-        if 0. > speed || 100. < speed {
+        if !(0f64..=100f64).contains(&speed) {
             return Err(MethodErr::invalid_arg("The speed is out of bounds"));
         }
         target_fans_speeds[index as usize] = speed;
@@ -81,14 +81,12 @@ impl ComMusikidFancy for State {
         Ok(self.config.borrow().to_owned())
     }
     fn set_config(&self, value: String) -> Result<(), MethodErr> {
-        if test_load_control_config(&value).is_ok() {
-            *self.config.borrow_mut() = value;
-            Ok(())
-        } else {
-            Err(MethodErr::failed(&format!(
-                "`{}` is not in configs path.",
-                value
-            )))
+        match test_load_control_config(&value) {
+            Ok(_) => {
+                *self.config.borrow_mut() = value;
+                Ok(())
+            }
+            Err(e) => Err(MethodErr::failed(&e.to_string())),
         }
     }
     fn critical(&self) -> Result<bool, MethodErr> {
