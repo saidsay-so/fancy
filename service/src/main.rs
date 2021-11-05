@@ -6,7 +6,7 @@ use dbus::channel::Sender;
 use dbus::ffidisp::stdintf::org_freedesktop_dbus::PropertiesPropertiesChanged;
 use dbus::message::SignalArgs;
 use dbus::strings::{BusName, Path as DBusPath};
-use log::{debug, info};
+use log::{debug, error, info};
 use nbfc_config as nbfc;
 use once_cell::sync::Lazy;
 use snafu::{ResultExt, Snafu};
@@ -79,7 +79,12 @@ fn main() -> Result<()> {
             Using default values"
                 );
                 Ok(ServiceConfig {
-                    auto: true,
+                    ..Default::default()
+                })
+            }
+            config::service::ServiceConfigLoadError::NbfcSettingsXmlDeserialize { source: _ } => {
+                error!("{}", e);
+                Ok(ServiceConfig {
                     ..Default::default()
                 })
             }
@@ -210,7 +215,6 @@ fn get_fan_config(
     }
 
     let fan_config = state.config.borrow();
-    info!("Loading fan control configuration '{}'", &fan_config);
 
     load_control_config(&*fan_config).unwrap()
 }

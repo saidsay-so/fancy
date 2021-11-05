@@ -149,11 +149,8 @@ pub(crate) enum ServiceConfigLoadError {
     ))]
     LoadService { source: std::io::Error },
 
-    #[snafu(display(
-        "Error occured while deserializing NBFC service configuration: {}",
-        source
-    ))]
-    NbfcServiceXmlDeserialize { source: quick_xml::DeError },
+    #[snafu(display("Error occured while deserializing NBFC settings: {}", source))]
+    NbfcSettingsXmlDeserialize { source: quick_xml::DeError },
 
     #[snafu(display("Error occured while deserializing service configuration: {}", source))]
     TomlDeserialize { source: toml::de::Error },
@@ -181,7 +178,7 @@ impl ServiceConfig {
                 .context(LoadService {})?;
 
             xml_from_str::<NbfcServiceSettings>(&buf)
-                .context(NbfcServiceXmlDeserialize {})
+                .context(NbfcSettingsXmlDeserialize {})
                 .map(|e| e.into())
         } else {
             Err(ServiceConfigLoadError::NoConfig {})

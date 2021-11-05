@@ -1,3 +1,4 @@
+use log::info;
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
@@ -48,6 +49,8 @@ fn get_xml_file_path<S: AsRef<str>>(name: S) -> PathBuf {
 pub(crate) fn load_control_config<S: AsRef<str>>(
     name: S,
 ) -> Result<FanControlConfigV2, ControlConfigLoadError> {
+    info!("Loading fan control configuration '{}'", name.as_ref());
+
     let path = get_xml_file_path(name.as_ref());
     let mut config_file = File::open(path).context(Loading {
         name: name.as_ref(),
@@ -69,6 +72,8 @@ pub(crate) fn load_control_config<S: AsRef<str>>(
 pub(crate) fn test_load_control_config<S: AsRef<str>>(
     name: S,
 ) -> Result<(), ControlConfigLoadError> {
+    info!("Testing fan control configuration '{}'", name.as_ref());
+
     let path = get_xml_file_path(name.as_ref());
 
     File::open(path)
