@@ -32,10 +32,17 @@ pub fn get_app() -> App<'static, 'static> {
                 )
                 .arg(
                     Arg::with_name("auto")
-                        .help("Set auto state")
+                        .help("Enable automatic speed management")
                         .short("a")
                         .long("auto")
                         .conflicts_with("target_fans_speeds"),
+                )
+                .arg(
+                    Arg::with_name("manual")
+                        .help("Disable automatic speed management and follow target speeds")
+                        .short("m")
+                        .long("manual")
+                        .conflicts_with("auto"),
                 ),
         )
         .subcommand(

@@ -103,6 +103,8 @@ fn main() -> Result<(), anyhow::Error> {
 
         if matches.is_present("auto") {
             proxy.set_auto(true)?;
+        } else if matches.is_present("manual") {
+            proxy.set_auto(false)?;
         }
     }
 
