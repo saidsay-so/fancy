@@ -75,7 +75,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html" class="active"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="service/index.html"><strong aria-hidden="true">2.</strong> Service</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="service/configuration.html"><strong aria-hidden="true">2.1.</strong> Configuration</a></li></ol></li><li class="chapter-item expanded "><a href="fan-configuration.html"><strong aria-hidden="true">3.</strong> Fan Configuration</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html" class="active"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="models.html"><strong aria-hidden="true">2.</strong> Supported Models</a></li><li class="chapter-item expanded "><a href="service/index.html"><strong aria-hidden="true">3.</strong> Service</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="service/configuration.html"><strong aria-hidden="true">3.1.</strong> Configuration</a></li></ol></li><li class="chapter-item expanded "><a href="fan-configuration.html"><strong aria-hidden="true">4.</strong> Fan Configuration</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -161,235 +161,15 @@ sudo dnf install fancy
 cd fancy
 make &amp;&amp; sudo make install
 </code></pre>
-<h2 id="compatibility"><a class="header" href="#compatibility">Compatibility</a></h2>
-<p>You can check if your computer model is supported by checking if a configuration
-exists in nbfc_configs (or maybe a similar model).
-You can also check the list below:</p>
-<ul>
-<li>ASUS Vivobook X580VD</li>
-<li>Acer Aspire 1410</li>
-<li>Acer Aspire 1810T</li>
-<li>Acer Aspire 1810TZ</li>
-<li>Acer Aspire 1825PTZ</li>
-<li>Acer Aspire 5738G</li>
-<li>Acer Aspire 5745G</li>
-<li>Acer Aspire 5749</li>
-<li>Acer Aspire 5930</li>
-<li>Acer Aspire 7551G</li>
-<li>Acer Aspire 7735</li>
-<li>Acer Aspire 7740G</li>
-<li>Acer Aspire 7741G</li>
-<li>Acer Aspire E1-522</li>
-<li>Acer Aspire E1-772</li>
-<li>Acer Aspire E5-471G</li>
-<li>Acer Aspire E5-475G</li>
-<li>Acer Aspire E5-575G</li>
-<li>Acer Aspire E5-731</li>
-<li>Acer Aspire LT-10Q</li>
-<li>Acer Aspire One AO531h</li>
-<li>Acer Aspire One AO751h</li>
-<li>Acer Aspire One AOA110</li>
-<li>Acer Aspire One AOA150</li>
-<li>Acer Aspire S3</li>
-<li>Acer Aspire S7-191</li>
-<li>Acer Aspire S7-391</li>
-<li>Acer Aspire V13</li>
-<li>Acer Aspire V3-371</li>
-<li>Acer Aspire V3-571G</li>
-<li>Acer Aspire V5-551</li>
-<li>Acer Aspire V5-572G</li>
-<li>Acer Aspire VN7-572G V15 Nitro</li>
-<li>Acer Aspire VN7-572G V15 Nitro BE</li>
-<li>Acer Aspire VN7-591G V15 Nitro BE</li>
-<li>Acer Aspire VN7-791G V17 Nitro BE</li>
-<li>Acer Aspire VN7-792G V17 Nitro BE</li>
-<li>Acer Aspire VN7-793G V17 Nitro BE</li>
-<li>Acer Extensa 5220</li>
-<li>Acer Extensa 5630Z</li>
-<li>Acer LT-10Q</li>
-<li>Acer Predator 17 G9-793-782K</li>
-<li>Acer Predator G3-572</li>
-<li>Acer TravelMate 7730G</li>
-<li>Asus F5SR</li>
-<li>Asus G53SX</li>
-<li>Asus K43SD</li>
-<li>Asus K43U</li>
-<li>Asus K46C</li>
-<li>Asus K501LX</li>
-<li>Asus K501UX</li>
-<li>Asus M52VA</li>
-<li>Asus N550JV</li>
-<li>Asus N550JX</li>
-<li>Asus N551JB</li>
-<li>Asus N56JR</li>
-<li>Asus N56VZ</li>
-<li>Asus ROG G501JW</li>
-<li>Asus ROG G751JL</li>
-<li>Asus ROG G751JT</li>
-<li>Asus ROG G751JY</li>
-<li>Asus ROG G752VS</li>
-<li>Asus ROG G752VT</li>
-<li>Asus ROG G752VY</li>
-<li>Asus ROG G75VX</li>
-<li>Asus ROG GL702VM</li>
-<li>Asus ROG GL702ZC</li>
-<li>Asus Transformer 3 Pro</li>
-<li>Asus Vivobook S400CA</li>
-<li>Asus Vivobook TP301UA</li>
-<li>Asus X301A1</li>
-<li>Asus X540LA</li>
-<li>Asus Zenbook Flip UX360UAK</li>
-<li>Asus Zenbook Pro UX550VE</li>
-<li>Asus Zenbook UX21E</li>
-<li>Asus Zenbook UX301LA</li>
-<li>Asus Zenbook UX302LA</li>
-<li>Asus Zenbook UX310UA</li>
-<li>Asus Zenbook UX310UAK</li>
-<li>Asus Zenbook UX31A</li>
-<li>Asus Zenbook UX32A</li>
-<li>Asus Zenbook UX32LN</li>
-<li>Asus Zenbook UX32VD</li>
-<li>Asus Zenbook UX330UA</li>
-<li>Asus Zenbook UX410UQ</li>
-<li>Asus Zenbook UX430UA</li>
-<li>Asus Zenbook UX430UQ</li>
-<li>Asus Zenbook UX51VZA</li>
-<li>Asus Zenbook UX530U</li>
-<li>Dell Inspiron 7348</li>
-<li>Dell Inspiron 7375</li>
-<li>Dell Vostro 3350</li>
-<li>Dell XPS M1530</li>
-<li>Fujitsu ESPRIMO Mobile V5505</li>
-<li>Gateway AOA110</li>
-<li>Gateway AOA150</li>
-<li>Gateway LT31</li>
-<li>Gigabyte AERO 14KV8</li>
-<li>Gigabyte p35w v3</li>
-<li>HP 15-BW00x</li>
-<li>HP Compaq 15-s103tx</li>
-<li>HP Compaq 615</li>
-<li>HP Compaq 625</li>
-<li>HP Compaq 6530b</li>
-<li>HP Compaq 6735s Turion X2 RM-72</li>
-<li>HP Compaq 8710p</li>
-<li>HP Compaq Presario CQ40 Turion X2 RM-74</li>
-<li>HP Compaq nw9440</li>
-<li>HP ENVY m6 1206dx</li>
-<li>HP ENVY m6 Sleekbook</li>
-<li>HP ENVY m6-1254eo</li>
-<li>HP ENVY x360 Convertible 13-ag0xxx</li>
-<li>HP ENVY x360 Convertible 15-cn0xxx</li>
-<li>HP EliteBook 2560p</li>
-<li>HP EliteBook 2570p</li>
-<li>HP EliteBook 2760p</li>
-<li>HP EliteBook 840 G2</li>
-<li>HP EliteBook 8470p</li>
-<li>HP EliteBook 8560p</li>
-<li>HP EliteBook 8560w</li>
-<li>HP EliteBook 8760w</li>
-<li>HP EliteBook Folio 1040 G1</li>
-<li>HP EliteBook Folio 9470m</li>
-<li>HP EliteBook Folio 9470m_i5-3427u_bios-F.66</li>
-<li>HP Laptop 14-cm0xxx</li>
-<li>HP Laptop 14-dk0xxx</li>
-<li>HP Laptop 17-by1xxx</li>
-<li>HP Laptop 17-ca1xxx</li>
-<li>HP Notebook 15-ba010ng</li>
-<li>HP OMEN Notebook PC 15</li>
-<li>HP Pavilion 14-v066br</li>
-<li>HP Pavilion 17-ab240nd</li>
-<li>HP Pavilion HDX18</li>
-<li>HP Pavilion dv6</li>
-<li>HP Pavilion dv6 6190</li>
-<li>HP Pavilion x360 Convertible 14-dh1xxx</li>
-<li>HP Pavilion x360 Convertible 15-br0xx</li>
-<li>HP ProBook 430 G1</li>
-<li>HP ProBook 440 G3</li>
-<li>HP ProBook 450 G1</li>
-<li>HP ProBook 4520s</li>
-<li>HP ProBook 4530s</li>
-<li>HP ProBook 4535s</li>
-<li>HP ProBook 4540s</li>
-<li>HP ProBook 4710s</li>
-<li>HP ProBook 4720s</li>
-<li>HP ProBook 5330m</li>
-<li>HP ProBook 6455b</li>
-<li>HP ProBook 6460b</li>
-<li>HP ProBook 6465b</li>
-<li>HP ProBook 650 G1</li>
-<li>HP ProBook 650 G2</li>
-<li>HP ProBook 6550b</li>
-<li>HP ProBook 6560b</li>
-<li>HP Spectre x360 Convertible 13-ae0xx</li>
-<li>HP Spectre x360 Convertible 15-ch0xx</li>
-<li>HP ZBook 15</li>
-<li>HP ZBook 15 G3</li>
-<li>HP ZBook Studio G3</li>
-<li>Lenovo IdeaPad Y580</li>
-<li>Lenovo Ideapad 500S-13ISK</li>
-<li>Lenovo Ideapad 500S-14ISK</li>
-<li>Lenovo Ideapad 510s</li>
-<li>Lenovo Ideapad 710S</li>
-<li>Lenovo Ideapad U160</li>
-<li>Lenovo Ideapad U330p</li>
-<li>Lenovo Ideapad U430p</li>
-<li>Lenovo ThinkPad 13</li>
-<li>Lenovo ThinkPad Edge E520</li>
-<li>Lenovo ThinkPad Helix</li>
-<li>Lenovo ThinkPad L380 Yoga</li>
-<li>Lenovo ThinkPad L390 i7-8565U</li>
-<li>Lenovo ThinkPad T430s</li>
-<li>Lenovo ThinkPad T440s</li>
-<li>Lenovo ThinkPad T540p</li>
-<li>Lenovo ThinkPad x121e</li>
-<li>Lenovo ThinkPad x220i</li>
-<li>Lenovo ThinkPad x230</li>
-<li>Lenovo Thinkpad L530</li>
-<li>Lenovo U31-70</li>
-<li>Lenovo U41-70</li>
-<li>Lenovo V330-IKB(81AX)</li>
-<li>Lenovo V580</li>
-<li>Lenovo Yoga 11s</li>
-<li>Lenovo Yoga 13 2191</li>
-<li>Lenovo Yoga 2 13</li>
-<li>Lenovo Yoga 3 14</li>
-<li>Lenovo Yoga 510</li>
-<li>Lenovo Yoga 710</li>
-<li>Medion Akoya P6612</li>
-<li>Medion Akoya P6630</li>
-<li>Packard Bell AOA110</li>
-<li>Packard Bell AOA150</li>
-<li>Packard Bell DOA150</li>
-<li>Packard Bell DOTMA</li>
-<li>Packard Bell DOTMU</li>
-<li>Packard Bell DOTVR46</li>
-<li>Packard Bell ENBFT</li>
-<li>Packard Bell Easynote TJ65</li>
-<li>Razer Blade 14 2017</li>
-<li>RedmiBook 14 (TM1814)</li>
-<li>Sony Vaio SVE1711</li>
-<li>Sony Vaio SVE1713Y1E</li>
-<li>Sony Vaio SVF13N190X</li>
-<li>Sony Vaio SVF14N1C5E</li>
-<li>Sony Vaio SVT1312M1ES</li>
-<li>Sony Vaio VPCF12S1E</li>
-<li>Toshiba Satellite L740</li>
-<li>Toshiba Satellite L745</li>
-<li>Vestel Smartboard Series-14XXXX</li>
-<li>Xiaomi Mi Book (TM1613, TM1703)</li>
-</ul>
 <div class="footnote-definition" id="linux-only"><sup class="footnote-definition-label">1</sup>
-<p><em>Well</em>, <a href="https://github.com/hirschmann/nbfc">NBFC</a> is already <em>well</em> integrated
-with the Windows &quot;ecosystem&quot;, since C# is more common on Windows.
-It works very <em>well</em>, so go check it. If you want to provide Windows support,
-you are also <em>wel</em>come.</p>
+<p><em>Well</em>, <a href="https://github.com/hirschmann/nbfc">NBFC</a> is already <em>well</em> integrated with the Windows &quot;ecosystem&quot;, since C# is more common on Windows. It works very <em>well</em>, so go check it. If you want to provide Windows support, you are also <em>wel</em>come.</p>
 </div>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="next" href="service/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next" href="models.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         <div style="clear: both"></div>
@@ -398,7 +178,7 @@ you are also <em>wel</em>come.</p>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="next" href="service/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next" href="models.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

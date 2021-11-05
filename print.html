@@ -76,7 +76,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="service/index.html"><strong aria-hidden="true">2.</strong> Service</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="service/configuration.html"><strong aria-hidden="true">2.1.</strong> Configuration</a></li></ol></li><li class="chapter-item expanded "><a href="fan-configuration.html"><strong aria-hidden="true">3.</strong> Fan Configuration</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="models.html"><strong aria-hidden="true">2.</strong> Supported Models</a></li><li class="chapter-item expanded "><a href="service/index.html"><strong aria-hidden="true">3.</strong> Service</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="service/configuration.html"><strong aria-hidden="true">3.1.</strong> Configuration</a></li></ol></li><li class="chapter-item expanded "><a href="fan-configuration.html"><strong aria-hidden="true">4.</strong> Fan Configuration</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -162,10 +162,12 @@ sudo dnf install fancy
 cd fancy
 make &amp;&amp; sudo make install
 </code></pre>
-<h2 id="compatibility"><a class="header" href="#compatibility">Compatibility</a></h2>
-<p>You can check if your computer model is supported by checking if a configuration
-exists in nbfc_configs (or maybe a similar model).
-You can also check the list below:</p>
+<div class="footnote-definition" id="linux-only"><sup class="footnote-definition-label">1</sup>
+<p><em>Well</em>, <a href="https://github.com/hirschmann/nbfc">NBFC</a> is already <em>well</em> integrated with the Windows &quot;ecosystem&quot;, since C# is more common on Windows. It works very <em>well</em>, so go check it. If you want to provide Windows support, you are also <em>wel</em>come.</p>
+</div>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="supported-models"><a class="header" href="#supported-models">Supported models</a></h1>
+<p>You can check if your computer model is supported by running <code>fancy list --recommended</code>.</p>
+<p>Or, you can also check the list below:</p>
 <ul>
 <li>ASUS Vivobook X580VD</li>
 <li>Acer Aspire 1410</li>
@@ -379,12 +381,6 @@ You can also check the list below:</p>
 <li>Vestel Smartboard Series-14XXXX</li>
 <li>Xiaomi Mi Book (TM1613, TM1703)</li>
 </ul>
-<div class="footnote-definition" id="linux-only"><sup class="footnote-definition-label">1</sup>
-<p><em>Well</em>, <a href="https://github.com/hirschmann/nbfc">NBFC</a> is already <em>well</em> integrated
-with the Windows &quot;ecosystem&quot;, since C# is more common on Windows.
-It works very <em>well</em>, so go check it. If you want to provide Windows support,
-you are also <em>wel</em>come.</p>
-</div>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="service"><a class="header" href="#service">Service</a></h1>
 <p>The service does the communication between hardware and software,
 by sending the commands received from the D-Bus API to the ACPI.</p>
