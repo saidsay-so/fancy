@@ -78,6 +78,12 @@ fancy list --recommended
 fancy set -c "YOUR_COMPUTER_MODEL"
 ```
 
+Check if the config was correctly set:
+
+```sh
+fancy get config
+```
+
 You can then set the fan speed. For example, to make it silent:
 
 ```sh
@@ -95,6 +101,11 @@ Back again to automatic:
 ```sh
 fancy set -a
 ```
+
+## Documentation
+
+The available commands are detailed in the fancy(1) man file (`man fancy`).
+You can also take a look at the [book](https://musikid.github.io/fancy/).
 
 ## FAQ
 
@@ -123,7 +134,7 @@ The project is licensed under MPL-2.0. You implicitly accept it when you send a 
 ## Contributing
 
 Please see [CONTRIBUTING.md](https://github.com/MusiKid/fancy/blob/master/CONTRIBUTING.md).
-You can also take a look at the [book](https://musikid.github.io/fancy/).
+You can also take a look at the [book](https://musikid.github.io/fancy/) section for details on the internal working.
 
 ## Credits
 
