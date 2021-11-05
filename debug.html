@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Introduction - A Fancy Book</title>
+        <title>Debugging - A Fancy Book</title>
         <!-- Custom HTML head -->
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="">
@@ -75,7 +75,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html" class="active"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="models.html"><strong aria-hidden="true">2.</strong> Supported Models</a></li><li class="chapter-item expanded "><a href="debug.html"><strong aria-hidden="true">3.</strong> Debugging</a></li><li class="chapter-item expanded "><a href="service/index.html"><strong aria-hidden="true">4.</strong> Service</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="service/configuration.html"><strong aria-hidden="true">4.1.</strong> Configuration</a></li></ol></li><li class="chapter-item expanded "><a href="fan-configuration.html"><strong aria-hidden="true">5.</strong> Fan Configuration</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="models.html"><strong aria-hidden="true">2.</strong> Supported Models</a></li><li class="chapter-item expanded "><a href="debug.html" class="active"><strong aria-hidden="true">3.</strong> Debugging</a></li><li class="chapter-item expanded "><a href="service/index.html"><strong aria-hidden="true">4.</strong> Service</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="service/configuration.html"><strong aria-hidden="true">4.1.</strong> Configuration</a></li></ol></li><li class="chapter-item expanded "><a href="fan-configuration.html"><strong aria-hidden="true">5.</strong> Fan Configuration</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -134,42 +134,38 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="introduction"><a class="header" href="#introduction">Introduction</a></h1>
-<p>Fancy is a set of software which allows you to control your laptop fans.
-It includes a service daemon to allow accessing to the EC and controlling it through D-Bus,
-a CLI to send commands and a GUI (WIP).
-It works only on Linux and Windows support is not planned<sup class="footnote-reference"><a href="#linux-only">1</a></sup>.</p>
-<h2 id="installation"><a class="header" href="#installation">Installation</a></h2>
-<p><strong>NOTE: If you have Secure Boot enabled, you have to install <a href="https://github.com/MusiKid/acpi_ec"><code>acpi_ec</code></a> or disable it.</strong></p>
-<h4 id="arch-linux-thanks-to-a-hrefhttpsgithubcombachosevenbachosevena"><a class="header" href="#arch-linux-thanks-to-a-hrefhttpsgithubcombachosevenbachosevena">Arch Linux (thanks to @<a href="https://github.com/BachoSeven">BachoSeven</a>!)</a></h4>
-<pre><code class="language-sh">yay -S fancy
+                        <h1 id="debugging"><a class="header" href="#debugging">Debugging</a></h1>
+<p>To enable debugging the service, you can set the <code>RUST_LOG</code> variable to debug
+and check the logs.</p>
+<h2 id="systemd"><a class="header" href="#systemd">systemd</a></h2>
+<p>With systemd, you can do that by running <code>systemctl edit fancy.service</code>
+and edit the file like this:</p>
+<pre><code class="language-ini">### Editing /etc/systemd/system/fancy.service.d/override.conf
+### Anything between here and the comment below will become the new contents of the file
+[Service]
+# Replace debug by the appropriate level
+Environment=&quot;RUST_LOG=debug&quot;
+
+### Lines below this comment will be discarded
 </code></pre>
-<h4 id="debian"><a class="header" href="#debian">Debian</a></h4>
-<p>For now, you can find the <code>.deb</code> in the <a href="https://github.com/MusiKid/fancy/releases/latest">Releases</a>.</p>
-<!--
-```sh
-sudo add-apt-repository ppa:musikid/fancy
-sudo apt install fancy
-```
--->
-<h4 id="fedora"><a class="header" href="#fedora">Fedora</a></h4>
-<pre><code class="language-sh">sudo dnf copr enable musikid/Fancy
-sudo dnf install fancy
-</code></pre>
-<h4 id="for-other-distros"><a class="header" href="#for-other-distros">For other distros</a></h4>
-<pre><code class="language-sh">git clone https://github.com/MusiKid/fancy.git
-cd fancy
-make &amp;&amp; sudo make install
-</code></pre>
-<div class="footnote-definition" id="linux-only"><sup class="footnote-definition-label">1</sup>
-<p><em>Well</em>, <a href="https://github.com/hirschmann/nbfc">NBFC</a> is already <em>well</em> integrated with the Windows &quot;ecosystem&quot;, since C# is more common on Windows. It works very <em>well</em>, so go check it. If you want to provide Windows support, you are also <em>wel</em>come.</p>
-</div>
+<p>You can then check the logs by running <code>journalctl -xeu fancy.service</code>.
+If you want to follow the logs, you can run <code>journalctl -feu fancy.service</code>.</p>
+<h2 id="log-levels"><a class="header" href="#log-levels">Log levels</a></h2>
+<p>The possible log levels are:</p>
+<ul>
+<li>debug</li>
+<li>info</li>
+<li>trace</li>
+</ul>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="next" href="models.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="prev" href="models.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                            <a rel="next" href="service/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         <div style="clear: both"></div>
@@ -178,7 +174,10 @@ make &amp;&amp; sudo make install
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="next" href="models.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="prev" href="models.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                    <a rel="next" href="service/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

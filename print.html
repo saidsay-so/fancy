@@ -76,7 +76,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="models.html"><strong aria-hidden="true">2.</strong> Supported Models</a></li><li class="chapter-item expanded "><a href="service/index.html"><strong aria-hidden="true">3.</strong> Service</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="service/configuration.html"><strong aria-hidden="true">3.1.</strong> Configuration</a></li></ol></li><li class="chapter-item expanded "><a href="fan-configuration.html"><strong aria-hidden="true">4.</strong> Fan Configuration</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="models.html"><strong aria-hidden="true">2.</strong> Supported Models</a></li><li class="chapter-item expanded "><a href="debug.html"><strong aria-hidden="true">3.</strong> Debugging</a></li><li class="chapter-item expanded "><a href="service/index.html"><strong aria-hidden="true">4.</strong> Service</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="service/configuration.html"><strong aria-hidden="true">4.1.</strong> Configuration</a></li></ol></li><li class="chapter-item expanded "><a href="fan-configuration.html"><strong aria-hidden="true">5.</strong> Fan Configuration</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -380,6 +380,29 @@ make &amp;&amp; sudo make install
 <li>Toshiba Satellite L745</li>
 <li>Vestel Smartboard Series-14XXXX</li>
 <li>Xiaomi Mi Book (TM1613, TM1703)</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="debugging"><a class="header" href="#debugging">Debugging</a></h1>
+<p>To enable debugging the service, you can set the <code>RUST_LOG</code> variable to debug
+and check the logs.</p>
+<h2 id="systemd"><a class="header" href="#systemd">systemd</a></h2>
+<p>With systemd, you can do that by running <code>systemctl edit fancy.service</code>
+and edit the file like this:</p>
+<pre><code class="language-ini">### Editing /etc/systemd/system/fancy.service.d/override.conf
+### Anything between here and the comment below will become the new contents of the file
+[Service]
+# Replace debug by the appropriate level
+Environment=&quot;RUST_LOG=debug&quot;
+
+### Lines below this comment will be discarded
+</code></pre>
+<p>You can then check the logs by running <code>journalctl -xeu fancy.service</code>.
+If you want to follow the logs, you can run <code>journalctl -feu fancy.service</code>.</p>
+<h2 id="log-levels"><a class="header" href="#log-levels">Log levels</a></h2>
+<p>The possible log levels are:</p>
+<ul>
+<li>debug</li>
+<li>info</li>
+<li>trace</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="service"><a class="header" href="#service">Service</a></h1>
 <p>The service does the communication between hardware and software,
