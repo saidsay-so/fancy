@@ -98,14 +98,14 @@ impl<R: Read + Seek> ECReader<R> {
         let mut buf = [0u8; 2];
         let mut dev = (*self.ec_dev).borrow_mut();
 
-        debug!("Reading at offset {:?} the value {:?}", read_off, &buf);
-
         dev.seek(read_off)?;
         dev.read_exact(if self.read_words {
             &mut buf[..]
         } else {
             &mut buf[..=0]
         })?;
+
+        debug!("Reading at offset {:?} the value {:?}", read_off, &buf);
 
         if self.read_words {
             Ok(u16::from_le_bytes(buf))
