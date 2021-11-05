@@ -1,12 +1,10 @@
 % fancy(1) | Fancy CLI
 
-NAME
-====
+# NAME
 
 fancy - Fancy CLI
 
-SYNOPSIS
-========
+# SYNOPSIS
 
 `fancy get [speeds | temps | config]`
 
@@ -14,14 +12,12 @@ SYNOPSIS
 
 `fancy list [--recommended]`
 
-DESCRIPTION
-===========
+# DESCRIPTION
 
-fancy is the CLI of *fancy(7)*,
+fancy is the CLI of _fancy(7)_,
 a set of software which allows to control laptop fans.
 
-OPTIONS
-=======
+# OPTIONS
 
 #### SET
 
@@ -29,14 +25,16 @@ OPTIONS
 
 : Set fans speeds by percentage, between 0 and 100
 
-
 `-c, --config CONFIGURATION`
 
 : Set the configuration used by the daemon
 
-
 `-a, --auto`
 : Let the daemon automatically choose the speed, according to the temperature
+
+`-m, --manual`
+: Apply the defined target speeds while the temperature is not critical
+(meaning when the computer starts to burn your legs).
 
 #### GET
 
@@ -60,7 +58,6 @@ List all available configurations
 
 : List only recommended configurations
 
-BUGS
-====
+# BUGS
 
 Bugs can be reported at https://github.com/MusiKid/fancy
