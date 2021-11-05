@@ -94,18 +94,7 @@ fn main() -> Result<()> {
 
     // We have to check if it's /dev/port because we have to "wrap" the file in this case.
     let is_raw_port = service_config.ec_access_mode == ECAccessMode::RawPort;
-
-    let state = Rc::from(State::from(service_config));
-    let dbus_conn = create_dbus_conn(Rc::clone(&state)).expect("Failed to create D-Bus connection");
-
-    let fan_config = get_fan_config(Rc::clone(&state), &dbus_conn);
-
-    *state.fans_speeds.borrow_mut() = vec![0.0; fan_config.fan_configurations.len()];
-
-    *state.poll_interval.borrow_mut() = fan_config.ec_poll_interval;
-
-    let dev_path = state.ec_access_mode.borrow().to_path();
-
+    let dev_path = service_config.ec_access_mode.to_path().clone();
     let ec_dev = std::fs::OpenOptions::new()
         .read(true)
         .write(true)
@@ -119,6 +108,14 @@ fn main() -> Result<()> {
         Box::from(ec_dev) as Box<dyn RW>
     };
 
+    let state = Rc::from(State::from(service_config));
+    let dbus_conn = create_dbus_conn(Rc::clone(&state)).expect("Failed to create D-Bus connection");
+
+    let fan_config = get_fan_config(Rc::clone(&state), &dbus_conn);
+
+    *state.fans_speeds.borrow_mut() = vec![0.0; fan_config.fan_configurations.len()];
+
+    *state.poll_interval.borrow_mut() = fan_config.ec_poll_interval;
     let ec_manager = ECManager::new(ec_dev);
 
     *state.fans_names.borrow_mut() = ec_manager
