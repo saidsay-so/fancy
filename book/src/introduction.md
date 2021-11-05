@@ -41,16 +41,4 @@ cd fancy
 make && sudo make install
 ```
 
-
-## Compatibility
-
-You can check if your computer model is supported by checking if a configuration
-exists in nbfc_configs (or maybe a similar model).
-You can also check the list below:
-
-{{ #include ../GENERATED_MODEL_LIST.md }}
-
-[^linux-only]: *Well*, [NBFC](https://github.com/hirschmann/nbfc) is already *well* integrated
-with the Windows "ecosystem", since C# is more common on Windows.
-It works very *well*, so go check it. If you want to provide Windows support,
-you are also *wel*come.
+[^linux-only]: _Well_, [NBFC](https://github.com/hirschmann/nbfc) is already _well_ integrated with the Windows "ecosystem", since C# is more common on Windows. It works very _well_, so go check it. If you want to provide Windows support, you are also *wel*come.
