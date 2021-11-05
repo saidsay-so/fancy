@@ -284,7 +284,7 @@ impl From<FanControlConfigV2> for XmlFanControlConfigV2 {
                 fan_configurations: f
                     .fan_configurations
                     .into_iter()
-                    .map(|t| XmlFanConfiguration::from(t))
+                    .map(XmlFanConfiguration::from)
                     .collect(),
             },
             register_write_configurations: RegisterWriteConfigurations {
@@ -317,7 +317,7 @@ impl From<XmlFanControlConfigV2> for FanControlConfigV2 {
                 .fan_configurations
                 .fan_configurations
                 .into_iter()
-                .map(|t| FanConfiguration::from(t))
+                .map(FanConfiguration::from)
                 .collect(),
             register_write_configurations: f
                 .register_write_configurations
@@ -422,7 +422,7 @@ pub fn check_control_config(c: &FanControlConfigV2) -> Result<(), CheckControlCo
     if !c.fan_configurations.iter().all(|f| {
         f.temperature_thresholds
             .iter()
-            .any(|t| t.fan_speed == 100.0)
+            .any(|t| (t.fan_speed - 100.0).abs() < f32::EPSILON)
     }) {
         return Err(CheckControlConfigError::MaxFanSpeedThresholdRequired);
     }

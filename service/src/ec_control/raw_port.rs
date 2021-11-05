@@ -46,7 +46,7 @@ impl<T: RW> RawPort<T> {
 
             let mut value = [0u8; 1];
             self.inner.seek(COMMAND_PORT)?;
-            self.inner.read(&mut value)?;
+            self.inner.read_exact(&mut value)?;
 
             let mut value = value[0];
             // Invert the value for output buffer.

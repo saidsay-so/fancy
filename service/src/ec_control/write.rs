@@ -177,14 +177,14 @@ impl<W: Write + Seek> ECWriter<W> {
     fn write_value(&self, write_word: bool, write_off: SeekFrom, value: &[u8]) -> Result {
         debug!(
             "Writing {:?} to offset {:?}",
-            if write_word { &value[..] } else { &value[..=0] },
+            if write_word { &value } else { &value[..=0] },
             write_off
         );
 
         let mut dev = (*self.ec_dev).borrow_mut();
 
         dev.seek(write_off)?;
-        dev.write_all(if write_word { &value[..] } else { &value[..=0] })
+        dev.write_all(if write_word { &value } else { &value[..=0] })
     }
 }
 

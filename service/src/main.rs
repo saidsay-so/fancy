@@ -97,7 +97,7 @@ fn main() -> Result<()> {
 
     *state.fans_speeds.borrow_mut() = vec![0.0; fan_config.fan_configurations.len()];
 
-    *state.poll_interval.borrow_mut() = fan_config.ec_poll_interval.clone();
+    *state.poll_interval.borrow_mut() = fan_config.ec_poll_interval;
 
     let dev_path = state.ec_access_mode.borrow().to_path();
 
@@ -315,5 +315,5 @@ fn main_loop<T: RW>(
     // We exit the loop
     info!("Exiting");
     let mut ec_manager = ec_manager.lock().unwrap();
-    return ec_manager.reset_ec(true).context(ECIO {});
+    ec_manager.reset_ec(true).context(ECIO {})
 }
