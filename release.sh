@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 VERSION="${1:?Version number is missing}"
 GIT_VERSION="v${VERSION}"
 
