@@ -465,6 +465,8 @@ pub(crate) struct ServiceConfig {
     pub target_fans_speeds: Vec&lt;f64&gt;,
     #[serde(default)]
     pub temp_compute: TempComputeMethod,
+    #[serde(default)]
+    pub check_control_config: bool,
 }
 <span class="boring">}
 </span></code></pre></pre>
