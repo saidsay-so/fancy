@@ -96,6 +96,7 @@ fn main() -> Result<()> {
             }
             config::service::ServiceConfigLoadError::NbfcSettingsXmlDeserialize { source: _ } => {
                 error!("{}", e);
+                info!("Using default values");
                 Ok(ServiceConfig {
                     ..Default::default()
                 })
@@ -175,7 +176,11 @@ fn main() -> Result<()> {
                                 let conf = match load_control_config(&*config) {
                                     Ok(c) => c,
                                     Err(e) => {
-                                        error!("Error while swapping to `{}`: {}", &*config, e);
+                                        error!(
+                                            r#"Error while swapping to `{}`: {}
+                                        Keeping old configuration"#,
+                                            &*config, e
+                                        );
                                         return true;
                                     }
                                 };
@@ -185,7 +190,8 @@ fn main() -> Result<()> {
                                 let mut ec_manager = ec_manager.lock().unwrap();
                                 if let Err(e) = ec_manager.refresh_control_config(conf) {
                                     error!(
-                                        "Error while refreshing manager with config `{}`: {}",
+                                        r#"Error while refreshing manager with config `{}`: {}
+                                        Keeping old configuration"#,
                                         &*config, e
                                     );
                                 };
@@ -301,7 +307,10 @@ fn main_loop<T: RW>(
 
         for i in 0..ec_manager.fan_configs.len() {
             fans_speeds[i] = ec_manager.read_fan_speed(i).context(ECIO {})?;
-            debug!("Fans speeds: {:#?}", fans_speeds);
+            debug!(
+                "Fan speed for {} with index {}: {:#?}",
+                ec_manager.fan_configs[i].name, i, fans_speeds[i]
+            );
 
             // If there is a target fan speed set by the user
             let user_defined_speed =
@@ -311,8 +320,9 @@ fn main_loop<T: RW>(
                 ec_manager.write_fan_speed(i, 100.0).context(ECIO {})?;
             } else if user_defined_speed {
                 debug!(
-                    "Target fan speed for {}: {}",
+                    "Target fan speed for {} with index {}: {}",
                     ec_manager.fan_configs[i].name,
+                    i,
                     state.target_fans_speeds.borrow()[i]
                 );
                 ec_manager
@@ -323,7 +333,7 @@ fn main_loop<T: RW>(
             // Else, there is nothing to change.
             else if ec_manager.refresh_fan_threshold(current_temps.cpu_temp, i) {
                 let threshold = ec_manager.fan_configs[i].current_threshold;
-                debug!("Threshold: {:#?}", threshold);
+                debug!("Selected threshold #{}", threshold);
                 let value = ec_manager.fan_configs[i].thresholds[threshold]
                     .fan_speed
                     .into();
