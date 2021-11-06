@@ -3,6 +3,137 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Miscellaneous Tasks
+
+- Update changelog
+
+
+## [0.6.0](https://github.com/musikid/fancy/compare/v0.5.0..v0.6.0) - 2021-11-06
+
+### Bug Fixes
+
+- Move to fork of psutil
+
+- Make unused fields optional
+
+> Related to #12
+
+- Fix crash when given invalid config
+
+> The service now also returns what caused the error.
+
+Related to #15
+
+- Log after the value is read
+
+- Check config only when flag is set
+
+> Related to #18
+
+- Remove problematic `unwrap()`
+
+
+### CI
+
+- Add coverage
+
+- Add book worflow
+
+- Replace cargo-deny action
+
+- Fix test workflow
+
+- Fix book workflow
+
+- Fix toolchain version
+
+- Add release body
+
+
+### Documentation
+
+- Add coverage to README
+
+- Add book
+
+- Improve documentation
+
+- [skip ci] remove Codacy badge
+
+- Add release badge
+
+- Add a note for the book
+
+- Improve README
+
+- Add page for supported models
+
+- Add manual flag to man file
+
+- Add section for debugging
+
+- Add manual flag
+
+- Correct typo in debug section
+
+
+### Features
+
+- Add completions to build script
+
+- Add flag for manual speed management
+
+> Related to #18
+
+
+### Miscellaneous Tasks
+
+- [skip ci] switch to generated changelog
+
+- Update lockfile
+
+- Update lockfile
+
+- Update release script
+
+
+### Refactor
+
+- Move to edition 2021
+
+- Apply clippy suggestions
+
+- Improve logging
+
+- Reorder instructions
+
+
+### Styling
+
+- Use imports
+
+
+### Build
+
+- Add flags to improve performance
+
+- Update release script
+
+- Fix Makefile
+
+- Fix path in Makefile
+
+- Add completions to Makefile
+
+- Add completion files to spec file
+
+- Remove ununsed argument in Makefile
+
+- Change checksum
+
+
 ## [0.5.0](https://github.com/musikid/fancy/compare/v0.4.0..v0.5.0) - 2021-10-02
 
 ### Bug Fixes
