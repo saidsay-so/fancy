@@ -15,6 +15,8 @@ sed -i '0,/version.*/s/version.*/version = "'"${VERSION}"'"/' **/Cargo.toml
 
 cargo update
 
+git cliff --tag "$VERSION" --output CHANGELOG.md
+
 git add -A && git commit -m "chore(release): prepare for ${VERSION}"
 
 export TEMPLATE="\
@@ -27,7 +29,5 @@ export TEMPLATE="\
 "
 changelog=$(git cliff --unreleased --strip all)
 git tag -s -a "${GIT_VERSION}" -m "Release ${GIT_VERSION}" -m "${changelog}"
-
-git cliff --output CHANGELOG.md
 
 git add -A && git commit -m "chore(release): update changelog"
