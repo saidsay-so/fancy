@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+use config::nbfc_control::test_load_control_config;
 use dbus::arg::Variant;
 use dbus::blocking::LocalConnection;
 use dbus::channel::Sender;
@@ -239,8 +240,12 @@ fn get_fan_config(
         loop {
             dbus_conn.process(Duration::from_millis(1000)).unwrap();
             let fan_config = state.config.borrow();
-            if !fan_config.trim().is_empty() {
-                break;
+            match test_load_control_config(&*fan_config, false) {
+                Ok(_) => break,
+                Err(e) => error!(
+                    "The provided configuration `{}` cannot be loaded: {}",
+                    fan_config, e
+                ),
             }
         }
     }
