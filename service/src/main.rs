@@ -64,6 +64,11 @@ enum ServiceError {
     },
 
     #[snafu(display("{}", source))]
+    ControlConfigLoad {
+        source: config::nbfc_control::ControlConfigLoadError,
+    },
+
+    #[snafu(display("{}", source))]
     Sensor { source: temp::SensorError },
 
     #[snafu(display("{}", source))]
@@ -118,7 +123,7 @@ fn main() -> Result<()> {
     let state = Rc::from(State::from(service_config));
     let dbus_conn = create_dbus_conn(Rc::clone(&state)).expect("Failed to create D-Bus connection");
 
-    let fan_config = get_fan_config(Rc::clone(&state), &dbus_conn);
+    let fan_config = get_fan_config(Rc::clone(&state), &dbus_conn)?;
 
     *state.fans_speeds.borrow_mut() = vec![0.0; fan_config.fan_configurations.len()];
 
@@ -165,15 +170,25 @@ fn main() -> Result<()> {
                                 info!("Swapping configuration to '{}'", &*config);
 
                                 let mut target_fans_speeds = state.target_fans_speeds.borrow_mut();
-                                let target_fans_speeds_clone = target_fans_speeds.clone();
                                 target_fans_speeds.clear();
 
-                                let conf = load_control_config(&*config).unwrap();
+                                let conf = match load_control_config(&*config) {
+                                    Ok(c) => c,
+                                    Err(e) => {
+                                        error!("Error while swapping to `{}`: {}", &*config, e);
+                                        return true;
+                                    }
+                                };
                                 let mut interval = state.poll_interval.borrow_mut();
                                 *interval = conf.ec_poll_interval;
 
                                 let mut ec_manager = ec_manager.lock().unwrap();
-                                ec_manager.refresh_control_config(conf).unwrap();
+                                if let Err(e) = ec_manager.refresh_control_config(conf) {
+                                    error!(
+                                        "Error while refreshing manager with config `{}`: {}",
+                                        &*config, e
+                                    );
+                                };
 
                                 *state.fans_speeds.borrow_mut() =
                                     vec![0.0; ec_manager.fan_configs.len()];
@@ -183,15 +198,15 @@ fn main() -> Result<()> {
                                     .iter()
                                     .map(|f| f.name.to_string())
                                     .collect();
-
-                                *target_fans_speeds = target_fans_speeds_clone;
                             }
                             _ => {}
                         }
                     }
 
                     info!("Saving service configuration");
-                    state.as_service_config().save().unwrap();
+                    if let Err(e) = state.as_service_config().save() {
+                        error!("Error while saving service config: {}", e);
+                    };
                     true
                 },
             )
@@ -203,7 +218,10 @@ fn main() -> Result<()> {
 
 /// Get the fan configuration in the service config if applicable, else blocks the process until a
 /// valid one is provided.
-fn get_fan_config(state: Rc<State>, dbus_conn: &LocalConnection) -> nbfc::FanControlConfigV2 {
+fn get_fan_config(
+    state: Rc<State>,
+    dbus_conn: &LocalConnection,
+) -> Result<nbfc::FanControlConfigV2> {
     if state.config.borrow().trim().is_empty() {
         // Blocking the process until a valid configuration is provided.
         loop {
@@ -217,7 +235,7 @@ fn get_fan_config(state: Rc<State>, dbus_conn: &LocalConnection) -> nbfc::FanCon
 
     let fan_config = state.config.borrow();
 
-    load_control_config(&*fan_config).unwrap()
+    load_control_config(&*fan_config).context(ControlConfigLoad {})
 }
 
 fn main_loop<T: RW>(
