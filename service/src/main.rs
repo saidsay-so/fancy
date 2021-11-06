@@ -171,7 +171,7 @@ fn main() -> Result<()> {
                                 info!("Swapping configuration to '{}'", &*config);
 
                                 let mut target_fans_speeds = state.target_fans_speeds.borrow_mut();
-                                target_fans_speeds.clear();
+                                let old_target_fans_speeds = target_fans_speeds.clone();
 
                                 let conf = match load_control_config(&*config) {
                                     Ok(c) => c,
@@ -204,6 +204,12 @@ fn main() -> Result<()> {
                                     .iter()
                                     .map(|f| f.name.to_string())
                                     .collect();
+
+                                *target_fans_speeds = vec![0.0; ec_manager.fan_configs.len()];
+                                target_fans_speeds.splice(
+                                    0..old_target_fans_speeds.len(),
+                                    old_target_fans_speeds,
+                                );
                             }
                             _ => {}
                         }
