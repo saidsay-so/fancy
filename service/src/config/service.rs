@@ -99,6 +99,8 @@ pub(crate) struct ServiceConfig {
     pub target_fans_speeds: Vec<f64>,
     #[serde(default)]
     pub temp_compute: TempComputeMethod,
+    #[serde(default)]
+    pub check_control_config: bool,
 }
 // ANCHOR_END: ServiceConfig
 
@@ -110,6 +112,7 @@ impl From<NbfcServiceSettings> for ServiceConfig {
             auto: true, // Doesn't have the same meaning as in NBFC
             target_fans_speeds: s.target_fan_speeds.iter().map(|s| *s as f64).collect(),
             temp_compute: TempComputeMethod::default(),
+            check_control_config: false,
         }
     }
 }

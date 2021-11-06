@@ -19,7 +19,7 @@ static CONTROL_CONFIGS_DIR_PATH: Lazy<PathBuf> = Lazy::new(|| ROOT_CONFIG_PATH.j
 #[derive(Debug, Snafu)]
 pub(crate) enum ControlConfigLoadError {
     #[snafu(display(
-        "An IO error occured while trying to load fan control config `{}`: {}",
+        "Error occured while trying to load control config `{}`: {}",
         name,
         source
     ))]
@@ -28,12 +28,19 @@ pub(crate) enum ControlConfigLoadError {
         source: std::io::Error,
     },
 
-    #[snafu(display("Error occured while deserializing XML: {}", source))]
-    ControlXmlDeserialize { source: quick_xml::DeError },
+    #[snafu(display(
+        "Error occured while deserializing control config `{}`: {}",
+        name,
+        source
+    ))]
+    ControlXmlDeserialize {
+        name: String,
+        source: quick_xml::DeError,
+    },
 
-    #[snafu(display("Error occured while checking control config at `{}`: {}", name.display() , source))]
+    #[snafu(display("Error occured while checking control config `{}`: {}", name, source))]
     Check {
-        name: PathBuf,
+        name: String,
         source: CheckControlConfigError,
     },
 }
@@ -62,7 +69,9 @@ pub(crate) fn load_control_config<S: AsRef<str>>(
     })?;
 
     let c = xml_from_str::<XmlFanControlConfigV2>(&buf)
-        .context(ControlXmlDeserialize {})?
+        .context(ControlXmlDeserialize {
+            name: name.as_ref(),
+        })?
         .into();
 
     Ok(c)
@@ -71,6 +80,7 @@ pub(crate) fn load_control_config<S: AsRef<str>>(
 /// Test if the fan control config provided can be loaded.
 pub(crate) fn test_load_control_config<S: AsRef<str>>(
     name: S,
+    check_config: bool,
 ) -> Result<(), ControlConfigLoadError> {
     info!("Testing fan control configuration '{}'", name.as_ref());
 
@@ -87,8 +97,15 @@ pub(crate) fn test_load_control_config<S: AsRef<str>>(
             })?;
 
             let c = xml_from_str::<XmlFanControlConfigV2>(&buf)
-                .context(ControlXmlDeserialize {})?
+                .context(ControlXmlDeserialize {
+                    name: name.as_ref(),
+                })?
                 .into();
+
+            if !check_config {
+                return Ok(());
+            }
+
             check_control_config(&c).context(Check {
                 name: name.as_ref(),
             })

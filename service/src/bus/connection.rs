@@ -81,7 +81,7 @@ impl ComMusikidFancy for State {
         Ok(self.config.borrow().to_owned())
     }
     fn set_config(&self, value: String) -> Result<(), MethodErr> {
-        match test_load_control_config(&value) {
+        match test_load_control_config(&value, *self.check_control_config.borrow()) {
             Ok(_) => {
                 *self.config.borrow_mut() = value;
                 Ok(())
@@ -155,6 +155,7 @@ mod tests {
             temps: RefCell::new(dummy_temps.clone()),
             poll_interval: RefCell::new(0),
             fans_names: RefCell::new(vec!["dummy".to_string()]),
+            check_control_config: RefCell::new(false),
             ..Default::default()
         };
 

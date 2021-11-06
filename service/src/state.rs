@@ -21,6 +21,7 @@ pub(crate) struct State {
     pub temp_compute: RefCell<TempComputeMethod>,
     pub poll_interval: RefCell<u64>,
     pub fans_names: RefCell<Vec<String>>,
+    pub check_control_config: RefCell<bool>,
 }
 impl From<ServiceConfig> for State {
     fn from(s: ServiceConfig) -> Self {
@@ -36,6 +37,7 @@ impl From<ServiceConfig> for State {
             temp_compute: RefCell::new(s.temp_compute),
             poll_interval: RefCell::new(0),
             fans_names: RefCell::new(Vec::new()),
+            check_control_config: RefCell::new(false),
         }
     }
 }
@@ -47,6 +49,7 @@ impl State {
             target_fans_speeds: self.target_fans_speeds.borrow().to_owned(),
             selected_fan_config: self.config.borrow().to_owned(),
             temp_compute: *self.temp_compute.borrow(),
+            check_control_config: *self.check_control_config.borrow(),
         }
     }
 }
