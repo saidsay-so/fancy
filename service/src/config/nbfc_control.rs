@@ -4,7 +4,7 @@ use log::info;
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 use once_cell::sync::Lazy;
 use quick_xml::de::from_str as xml_from_str;
-use snafu::{ResultExt, Snafu};
+use snafu::{ensure, ResultExt, Snafu};
 
 use std::fs::File;
 use std::io::Read;
@@ -38,27 +38,34 @@ pub(crate) enum ControlConfigLoadError {
         source: quick_xml::DeError,
     },
 
+    #[snafu(display("The config {} contains invalid characters", name))]
+    InvalidChars { name: String },
+
     #[snafu(display("Error occured while checking control config `{}`: {}", name, source))]
     Check {
         name: String,
         source: CheckControlConfigError,
     },
 }
+const INVALID_CHARS: [char; 2] = ['.', '/'];
 
-fn get_xml_file_path<S: AsRef<str>>(name: S) -> PathBuf {
-    let mut fan_config_path = CONTROL_CONFIGS_DIR_PATH.join(name.as_ref());
+type Result<T> = std::result::Result<T, ControlConfigLoadError>;
+
+fn get_xml_file_path<S: AsRef<str>>(name: S) -> Result<PathBuf> {
+    let name = name.as_ref();
+    ensure!(!name.contains(&INVALID_CHARS[..]), InvalidChars { name });
+
+    let mut fan_config_path = CONTROL_CONFIGS_DIR_PATH.join(name);
     fan_config_path.set_extension("xml");
 
-    fan_config_path
+    Ok(fan_config_path)
 }
 
 /// Loads the fan control configuration directly from configs folder.
-pub(crate) fn load_control_config<S: AsRef<str>>(
-    name: S,
-) -> Result<FanControlConfigV2, ControlConfigLoadError> {
+pub(crate) fn load_control_config<S: AsRef<str>>(name: S) -> Result<FanControlConfigV2> {
     info!("Loading fan control configuration '{}'", name.as_ref());
 
-    let path = get_xml_file_path(name.as_ref());
+    let path = get_xml_file_path(name.as_ref())?;
     let mut config_file = File::open(path).context(Loading {
         name: name.as_ref(),
     })?;
@@ -78,13 +85,10 @@ pub(crate) fn load_control_config<S: AsRef<str>>(
 }
 
 /// Test if the fan control config provided can be loaded.
-pub(crate) fn test_load_control_config<S: AsRef<str>>(
-    name: S,
-    check_config: bool,
-) -> Result<(), ControlConfigLoadError> {
+pub(crate) fn test_load_control_config<S: AsRef<str>>(name: S, check_config: bool) -> Result<()> {
     info!("Testing fan control configuration '{}'", name.as_ref());
 
-    let path = get_xml_file_path(name.as_ref());
+    let path = get_xml_file_path(name.as_ref())?;
 
     File::open(path)
         .context(Loading {
