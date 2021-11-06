@@ -4,7 +4,7 @@
 
 Name:           {{{ git_dir_name }}}
 Version:        {{{ git_dir_version }}}
-Release:        2%{?dist}
+Release:        1%{?dist}
 Group:          System Environment/Base
 Summary:        Set of software to control laptop fans
 
