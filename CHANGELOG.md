@@ -3,11 +3,47 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.6.1](https://github.com/musikid/fancy/compare/v0.6.0..0.6.1) - 2021-11-06
+
+### Bug Fixes
+
+- Remove bug when setting target speed
+
+> The `target_fans_speeds`` Vec did not have a length.
+
+- Fix load config out of allowed path
+
+> The service potentially allowed a vulnerability when the given
+configuration name was a relative path.
+
+- Test config when setting first time
+
+> The fan configuration is tested directly when trying to set it instead
+of panicking when it is invalid
+
+
+### CI
+
+- Fix release job
+
 
 ### Miscellaneous Tasks
 
 - Update changelog
+
+- Exit when error occured in release script
+
+- Improve release script
+
+
+### Refactor
+
+- Improve logging
+
+
+### Build
+
+- Set release number to 1
 
 
 ## [0.6.0](https://github.com/musikid/fancy/compare/v0.5.0..v0.6.0) - 2021-11-06

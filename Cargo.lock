@@ -162,7 +162,7 @@ dependencies = [
 
 [[package]]
 name = "fancy-cli"
-version = "0.6.0"
+version = "0.6.1"
 dependencies = [
  "anyhow",
  "bcmp",
@@ -173,7 +173,7 @@ dependencies = [
 
 [[package]]
 name = "fancy-service"
-version = "0.6.0"
+version = "0.6.1"
 dependencies = [
  "dbus",
  "dbus-codegen",
@@ -274,7 +274,7 @@ dependencies = [
 
 [[package]]
 name = "nbfc-config"
-version = "0.6.0"
+version = "0.6.1"
 dependencies = [
  "quick-xml",
  "serde",
