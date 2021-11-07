@@ -68,7 +68,6 @@ impl<R: Read + Seek> ECReader<R> {
     }
 
     /// Read the speed value for the fan specified at `fan_index`.
-    //TODO: Check if the value is not out of the bounds
     pub fn read_speed_percent(&self, fan_index: usize) -> Result<f64> {
         let fan = &self.fans_read_config[fan_index];
         let read_off = SeekFrom::Start(fan.read_register as u64);
@@ -88,7 +87,7 @@ impl<R: Read + Seek> ECReader<R> {
                 * 100.0
         };
 
-        Ok(percentage)
+        Ok(percentage.clamp(0.0, 100.0))
     }
 
     /// Low-level read function.
