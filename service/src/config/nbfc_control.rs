@@ -196,7 +196,7 @@ impl ControlConfigLoader {
 #[cfg(test)]
 mod tests {
     use crate::nbfc::*;
-    use std::fs::read_to_string;
+    use std::{fs::read_to_string, panic};
 
     use super::*;
     use rstest::*;
@@ -213,6 +213,29 @@ mod tests {
         let mut loader = ControlConfigLoader::new(true);
         loader.add_path(&PathBuf::from("tests")).unwrap();
         loader
+    }
+
+    #[rstest]
+    fn invalid_name(not_follow_loader: ControlConfigLoader) {
+        let error = not_follow_loader.get_file_path("../relative_path");
+        let expected_err = InvalidChars {
+            name: "../relative_path",
+        }
+        .build();
+        match error {
+            Err(e) => assert_eq!(format!("{}", e), format!("{}", expected_err)),
+            _ => panic!("Incorrect error"),
+        }
+
+        let error = not_follow_loader.get_file_path("/absolute_path");
+        let expected_err = InvalidChars {
+            name: "/absolute_path",
+        }
+        .build();
+        match error {
+            Err(e) => assert_eq!(format!("{}", e), format!("{}", expected_err)),
+            _ => panic!("Incorrect error"),
+        }
     }
 
     #[rstest]
@@ -357,7 +380,7 @@ mod tests {
     }
 
     #[rstest]
-    fn test_config(follow_loader: ControlConfigLoader) {
+    fn test_and_check_config(follow_loader: ControlConfigLoader) {
         assert!(follow_loader
             .test_control_config("valid_json", false)
             .is_ok());
