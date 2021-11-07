@@ -9,7 +9,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
-#[serde(rename_all(deserialize = "PascalCase"))]
+#[serde(rename_all = "PascalCase")]
 #[serde(from = "String")]
 pub enum RegisterWriteMode {
     Set,
@@ -34,7 +34,7 @@ impl Default for RegisterWriteMode {
 }
 
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
-#[serde(rename_all(deserialize = "PascalCase"))]
+#[serde(rename_all = "PascalCase")]
 #[serde(from = "String")]
 pub enum RegisterWriteOccasion {
     OnWriteFanSpeed,
@@ -70,7 +70,7 @@ impl From<String> for OverrideTargetOperation {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(rename_all(deserialize = "PascalCase"))]
+#[serde(rename_all = "PascalCase")]
 pub struct TemperatureThreshold {
     pub up_threshold: u8,
     pub down_threshold: u8,
@@ -94,7 +94,7 @@ impl Ord for TemperatureThreshold {
 }
 
 #[derive(PartialEq, Clone, Debug, Serialize, Deserialize)]
-#[serde(rename_all(deserialize = "PascalCase"))]
+#[serde(rename_all = "PascalCase")]
 pub struct FanSpeedPercentageOverride {
     pub fan_speed_percentage: f32,
     pub fan_speed_value: u16,
@@ -102,7 +102,7 @@ pub struct FanSpeedPercentageOverride {
 }
 
 #[derive(PartialEq, Clone, Debug, Serialize, Deserialize)]
-#[serde(rename_all(deserialize = "PascalCase"))]
+#[serde(rename_all = "PascalCase")]
 pub struct RegisterWriteConfiguration {
     #[serde(skip)] // Deprecated
     pub write_mode: RegisterWriteMode,
@@ -202,7 +202,7 @@ impl From<FanConfiguration> for XmlFanConfiguration {
 }
 
 #[derive(PartialEq, Clone, Debug, Serialize, Deserialize)]
-#[serde(rename_all(deserialize = "PascalCase"))]
+#[serde(rename_all = "PascalCase")]
 pub struct FanConfiguration {
     pub read_register: u8,
     pub write_register: u8,
@@ -296,7 +296,7 @@ impl From<FanControlConfigV2> for XmlFanControlConfigV2 {
 }
 
 #[derive(PartialEq, Clone, Debug, Default, Serialize, Deserialize)]
-#[serde(rename_all(deserialize = "PascalCase"))]
+#[serde(rename_all = "PascalCase")]
 pub struct FanControlConfigV2 {
     pub notebook_model: String,
     pub author: Option<String>,
@@ -460,6 +460,160 @@ pub fn check_control_config(c: &FanControlConfigV2) -> Result<(), CheckControlCo
 mod tests {
     use super::*;
     use quick_xml::de::from_str;
+
+    #[test]
+    fn config_json() {
+        let config = r##"
+{
+  "NotebookModel": "HP Envy X360 13-ag0xxx Ryzen-APU",
+  "Author": "Daniel Andersen",
+  "EcPollInterval": 1000,
+  "ReadWriteWords": true,
+  "CriticalTemperature": 90,
+  "FanConfigurations": [
+    {
+      "ReadRegister": 149,
+      "WriteRegister": 148,
+      "MinSpeedValue": 175,
+      "MaxSpeedValue": 70,
+      "IndependentReadMinMaxValues": false,
+      "MinSpeedValueRead": 0,
+      "MaxSpeedValueRead": 0,
+      "ResetRequired": false,
+      "FanSpeedResetValue": 255,
+      "FanDisplayName": "CPU fan",
+      "TemperatureThresholds": [
+        {
+          "UpThreshold": 60,
+          "DownThreshold": 0,
+          "FanSpeed": 0.0
+        },
+        {
+          "UpThreshold": 63,
+          "DownThreshold": 48,
+          "FanSpeed": 10.0
+        },
+        {
+          "UpThreshold": 66,
+          "DownThreshold": 55,
+          "FanSpeed": 20.0
+        },
+        {
+          "UpThreshold": 68,
+          "DownThreshold": 59,
+          "FanSpeed": 50.0
+        },
+        {
+          "UpThreshold": 71,
+          "DownThreshold": 63,
+          "FanSpeed": 70.0
+        },
+        {
+          "UpThreshold": 90,
+          "DownThreshold": 67,
+          "FanSpeed": 100.0
+        }
+      ],
+      "FanSpeedPercentageOverrides": [
+        {
+          "FanSpeedPercentage": 0.0,
+          "FanSpeedValue": 255,
+          "TargetOperation": "ReadWrite"
+        }
+      ]
+    }
+  ],
+  "RegisterWriteConfigurations": [
+    {
+      "WriteMode": "Set",
+      "WriteOccasion": "OnInitialization",
+      "Register": 147,
+      "Value": 20,
+      "ResetRequired": true,
+      "ResetValue": 4,
+      "ResetWriteMode": "Set",
+      "Description": "Set EC to manual control"
+    }
+  ]
+}
+"##;
+        let parsed_config: FanControlConfigV2 = serde_json::de::from_str(config).unwrap();
+        let excepted_config = FanControlConfigV2 {
+            notebook_model: "HP Envy X360 13-ag0xxx Ryzen-APU".to_string(),
+            author: Some("Daniel Andersen".to_string()),
+            ec_poll_interval: 1000,
+            read_write_words: true,
+            critical_temperature: 90,
+            fan_configurations: [FanConfiguration {
+                read_register: 149,
+                write_register: 148,
+                min_speed_value: 175,
+                max_speed_value: 70,
+                independent_read_min_max_values: false,
+                min_speed_value_read: 0,
+                max_speed_value_read: 0,
+                reset_required: false,
+                fan_speed_reset_value: Some(255),
+                fan_display_name: Some("CPU fan".to_string()),
+                temperature_thresholds: [
+                    TemperatureThreshold {
+                        up_threshold: 0,
+                        down_threshold: 0,
+                        fan_speed: 0.0,
+                    },
+                    TemperatureThreshold {
+                        up_threshold: 60,
+                        down_threshold: 48,
+                        fan_speed: 10.0,
+                    },
+                    TemperatureThreshold {
+                        up_threshold: 63,
+                        down_threshold: 55,
+                        fan_speed: 20.0,
+                    },
+                    TemperatureThreshold {
+                        up_threshold: 66,
+                        down_threshold: 59,
+                        fan_speed: 50.0,
+                    },
+                    TemperatureThreshold {
+                        up_threshold: 68,
+                        down_threshold: 63,
+                        fan_speed: 70.0,
+                    },
+                    TemperatureThreshold {
+                        up_threshold: 71,
+                        down_threshold: 67,
+                        fan_speed: 100.0,
+                    },
+                ]
+                .to_vec(),
+                fan_speed_percentage_overrides: Some(
+                    [FanSpeedPercentageOverride {
+                        fan_speed_percentage: 0.0,
+                        fan_speed_value: 255,
+                        target_operation: Some(OverrideTargetOperation::ReadWrite),
+                    }]
+                    .to_vec(),
+                ),
+            }]
+            .to_vec(),
+            register_write_configurations: Some(
+                [RegisterWriteConfiguration {
+                    write_mode: RegisterWriteMode::Set,
+                    write_occasion: Some(RegisterWriteOccasion::OnInitialization),
+                    register: 147,
+                    value: 20,
+                    reset_required: true,
+                    reset_value: Some(4),
+                    reset_write_mode: None,
+                    description: Some("Set EC to manual control".to_string()),
+                }]
+                .to_vec(),
+            ),
+        };
+        assert_eq!(parsed_config, excepted_config);
+    }
 
     #[test]
     fn config_xml_parse_all_fields() {
