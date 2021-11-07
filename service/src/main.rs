@@ -195,6 +195,7 @@ fn main() -> Result<()> {
                                         Keeping old configuration",
                                         &*config, e
                                     );
+                                    return true;
                                 };
 
                                 *state.fans_speeds.borrow_mut() =
