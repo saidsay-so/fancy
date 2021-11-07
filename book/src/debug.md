@@ -1,6 +1,6 @@
 # Debugging
 
-To enable debugging the service, you can set the `RUST_LOG` variable
+To debug the service, you can set the `RUST_LOG` variable
 and check the logs.
 
 ## systemd
