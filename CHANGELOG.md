@@ -3,7 +3,68 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.1](https://github.com/musikid/fancy/compare/v0.6.0..0.6.1) - 2021-11-06
+## [0.7.0](https://github.com/musikid/fancy/compare/v0.6.1..0.7.0) - 2021-11-07
+
+### Bug Fixes
+
+- Keep old configuration for dbus
+
+- Early return when error occurs
+
+- Set NotebookModel field as mandatory
+
+
+### CI
+
+- Fix release job
+
+- Remove unused variable
+
+
+### Documentation
+
+- Fix typo
+
+- Add note about formats
+
+- Improve docs
+
+
+### Features
+
+- Add support for other formats
+
+> Would resolve #14
+
+- Deserialize fields as PascalCase
+
+
+### Miscellaneous Tasks
+
+- Improve release script
+
+
+### Refactor
+
+- Directly use dbus error type
+
+- Replace borrow_mut by replace
+
+- Improve changed props callback
+
+
+### Testing
+
+- Add tests for config loader
+
+- Add more tests
+
+- Add tests for json
+
+- Add test for invalid name
+
+
+## [0.6.1](https://github.com/musikid/fancy/compare/v0.6.0..v0.6.1) - 2021-11-06
 
 ### Bug Fixes
 
