@@ -5,7 +5,6 @@ use dbus::blocking::LocalConnection;
 use dbus_tree::{DataType, Factory, MethodErr};
 
 use super::interfaces::*;
-use crate::config::nbfc_control::test_load_control_config;
 use crate::constants::{BUS_NAME_STR, OBJ_PATH_STR};
 use crate::State;
 
@@ -68,7 +67,8 @@ impl ComMusikidFancy for State {
         Ok(self.config.borrow().to_owned())
     }
     fn set_config(&self, value: String) -> Result<(), MethodErr> {
-        match test_load_control_config(&value, *self.check_control_config.borrow()) {
+        let config_loader = self.config_loader.borrow();
+        match config_loader.test_control_config(&value, *self.check_control_config.borrow()) {
             Ok(_) => {
                 let old_config = Some(self.config.replace(value));
                 self.old_config.replace(old_config);

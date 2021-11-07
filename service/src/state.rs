@@ -1,6 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+use crate::config::nbfc_control::ControlConfigLoader;
 use crate::config::service::{ECAccessMode, ServiceConfig, TempComputeMethod};
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -24,6 +25,7 @@ pub(crate) struct State {
     pub poll_interval: RefCell<u64>,
     pub fans_names: RefCell<Vec<String>>,
     pub check_control_config: RefCell<bool>,
+    pub config_loader: RefCell<ControlConfigLoader>,
 }
 impl From<ServiceConfig> for State {
     fn from(s: ServiceConfig) -> Self {
@@ -41,6 +43,7 @@ impl From<ServiceConfig> for State {
             poll_interval: RefCell::new(0),
             fans_names: RefCell::new(Vec::new()),
             check_control_config: RefCell::new(false),
+            config_loader: RefCell::new(ControlConfigLoader::new(Vec::new())),
         }
     }
 }

@@ -2,7 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-use config::nbfc_control::test_load_control_config;
 use dbus::arg::Variant;
 use dbus::blocking::LocalConnection;
 use dbus::channel::Sender;
@@ -32,11 +31,8 @@ mod state;
 mod temp;
 
 use bus::connection::create_dbus_conn;
-use config::{
-    nbfc_control::load_control_config,
-    service::{ECAccessMode, ServiceConfig, TempComputeMethod},
-};
-use constants::{BUS_NAME_STR, OBJ_PATH_STR};
+use config::service::{ECAccessMode, ServiceConfig, TempComputeMethod};
+use constants::{BUS_NAME_STR, CONTROL_CONFIGS_DIR_PATH, OBJ_PATH_STR};
 use ec_control::{ECManager, RawPort, RW};
 use state::State;
 use temp::Temperatures;
@@ -123,6 +119,10 @@ fn main() -> Result<()> {
     };
 
     let state = Rc::from(State::from(service_config));
+    state
+        .config_loader
+        .borrow_mut()
+        .add_path(CONTROL_CONFIGS_DIR_PATH.clone());
     let dbus_conn = create_dbus_conn(Rc::clone(&state)).context(DBus {})?;
 
     let fan_config = get_fan_config(Rc::clone(&state), &dbus_conn)?;
@@ -180,7 +180,8 @@ fn main() -> Result<()> {
                                 let mut target_fans_speeds = state.target_fans_speeds.borrow_mut();
                                 let old_target_fans_speeds = target_fans_speeds.clone();
 
-                                let conf = match load_control_config(&*config) {
+                                let config_loader = state.config_loader.borrow();
+                                let conf = match config_loader.load_control_config(&*config) {
                                     Ok(c) => c,
                                     Err(e) => {
                                         error!(
@@ -239,7 +240,7 @@ fn main() -> Result<()> {
     main_loop(ec_manager, dbus_conn, state)
 }
 
-/// Get the fan configuration in the service config if applicable, else blocks the process until a
+/// Get the fan configuration in the `state` if applicable, else blocks the process until a
 /// valid one is provided.
 fn get_fan_config(
     state: Rc<State>,
@@ -250,7 +251,8 @@ fn get_fan_config(
         loop {
             dbus_conn.process(Duration::from_millis(1000)).unwrap();
             let fan_config = state.config.borrow();
-            match test_load_control_config(&*fan_config, false) {
+            let config_loader = state.config_loader.borrow();
+            match config_loader.test_control_config(&*fan_config, false) {
                 Ok(_) => break,
                 Err(e) => error!(
                     "The provided configuration `{}` cannot be loaded: {}",
@@ -261,8 +263,11 @@ fn get_fan_config(
     }
 
     let fan_config = state.config.borrow();
+    let config_loader = state.config_loader.borrow();
 
-    load_control_config(&*fan_config).context(ControlConfigLoad {})
+    config_loader
+        .load_control_config(&*fan_config)
+        .context(ControlConfigLoad {})
 }
 
 fn main_loop<T: RW>(
