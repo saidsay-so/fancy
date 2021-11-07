@@ -19,6 +19,8 @@ jobs:
         with:
           config: cliff.toml
           args: -vv --latest --strip header
+        env:
+          OUTPUT: CHANGELOG.md
 
       - name: Set the release body
         id: release
