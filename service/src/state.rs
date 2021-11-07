@@ -43,7 +43,7 @@ impl From<ServiceConfig> for State {
             poll_interval: RefCell::new(0),
             fans_names: RefCell::new(Vec::new()),
             check_control_config: RefCell::new(false),
-            config_loader: RefCell::new(ControlConfigLoader::new(Vec::new())),
+            config_loader: RefCell::new(ControlConfigLoader::new(false)),
         }
     }
 }
