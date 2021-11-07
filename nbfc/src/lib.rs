@@ -256,7 +256,7 @@ struct RegisterWriteConfigurations {
 #[derive(PartialEq, Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct XmlFanControlConfigV2 {
-    notebook_model: Option<String>,
+    notebook_model: String,
     author: Option<String>,
     #[serde(default = "default_poll_interval")]
     ec_poll_interval: u64,
@@ -298,7 +298,7 @@ impl From<FanControlConfigV2> for XmlFanControlConfigV2 {
 #[derive(PartialEq, Clone, Debug, Default, Serialize, Deserialize)]
 #[serde(rename_all(deserialize = "PascalCase"))]
 pub struct FanControlConfigV2 {
-    pub notebook_model: Option<String>,
+    pub notebook_model: String,
     pub author: Option<String>,
     pub ec_poll_interval: u64,
     pub read_write_words: bool,
@@ -541,7 +541,7 @@ mod tests {
         let parsed_config: FanControlConfigV2 =
             from_str::<XmlFanControlConfigV2>(config).unwrap().into();
         let excepted_config = FanControlConfigV2 {
-            notebook_model: Some("HP Envy X360 13-ag0xxx Ryzen-APU".to_string()),
+            notebook_model: "HP Envy X360 13-ag0xxx Ryzen-APU".to_string(),
             author: Some("Daniel Andersen".to_string()),
             ec_poll_interval: 1000,
             read_write_words: true,
@@ -658,7 +658,7 @@ mod tests {
         let parsed_config = from_str::<XmlFanControlConfigV2>(config).unwrap();
         let parsed_config = FanControlConfigV2::from(parsed_config);
         let excepted_config = FanControlConfigV2 {
-            notebook_model: Some("Aspire 1810TZ".to_string()),
+            notebook_model: "Aspire 1810TZ".to_string(),
             author: None,
             ec_poll_interval: 3000,
             read_write_words: false,

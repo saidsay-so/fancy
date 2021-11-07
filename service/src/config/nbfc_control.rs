@@ -258,7 +258,7 @@ mod tests {
         assert_eq!(path, PathBuf::from("tests/follow/json/valid_json.json"));
 
         let excepted_config = FanControlConfigV2 {
-            notebook_model: Some("HP Envy X360 13-ag0xxx Ryzen-APU".to_string()),
+            notebook_model: "HP Envy X360 13-ag0xxx Ryzen-APU".to_string(),
             author: Some("Daniel Andersen".to_string()),
             ec_poll_interval: 1000,
             read_write_words: true,
