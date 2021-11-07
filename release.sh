@@ -29,5 +29,3 @@ export TEMPLATE="\
 "
 changelog=$(git cliff --unreleased --strip all)
 git tag -s -a "${GIT_VERSION}" -m "Release ${GIT_VERSION}" -m "${changelog}"
-
-git add -A && git commit -m "chore(release): update changelog"
