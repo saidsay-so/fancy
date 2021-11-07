@@ -9,7 +9,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
-#[serde(rename_all = "PascalCase")]
+#[serde(rename_all(deserialize = "PascalCase"))]
 #[serde(from = "String")]
 pub enum RegisterWriteMode {
     Set,
@@ -34,7 +34,7 @@ impl Default for RegisterWriteMode {
 }
 
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
-#[serde(rename_all = "PascalCase")]
+#[serde(rename_all(deserialize = "PascalCase"))]
 #[serde(from = "String")]
 pub enum RegisterWriteOccasion {
     OnWriteFanSpeed,
@@ -70,7 +70,7 @@ impl From<String> for OverrideTargetOperation {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(rename_all = "PascalCase")]
+#[serde(rename_all(deserialize = "PascalCase"))]
 pub struct TemperatureThreshold {
     pub up_threshold: u8,
     pub down_threshold: u8,
@@ -94,7 +94,7 @@ impl Ord for TemperatureThreshold {
 }
 
 #[derive(PartialEq, Clone, Debug, Serialize, Deserialize)]
-#[serde(rename_all = "PascalCase")]
+#[serde(rename_all(deserialize = "PascalCase"))]
 pub struct FanSpeedPercentageOverride {
     pub fan_speed_percentage: f32,
     pub fan_speed_value: u16,
@@ -102,7 +102,7 @@ pub struct FanSpeedPercentageOverride {
 }
 
 #[derive(PartialEq, Clone, Debug, Serialize, Deserialize)]
-#[serde(rename_all = "PascalCase")]
+#[serde(rename_all(deserialize = "PascalCase"))]
 pub struct RegisterWriteConfiguration {
     #[serde(skip)] // Deprecated
     pub write_mode: RegisterWriteMode,
@@ -202,6 +202,7 @@ impl From<FanConfiguration> for XmlFanConfiguration {
 }
 
 #[derive(PartialEq, Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all(deserialize = "PascalCase"))]
 pub struct FanConfiguration {
     pub read_register: u8,
     pub write_register: u8,
@@ -255,7 +256,7 @@ struct RegisterWriteConfigurations {
 #[derive(PartialEq, Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct XmlFanControlConfigV2 {
-    notebook_model: String,
+    notebook_model: Option<String>,
     author: Option<String>,
     #[serde(default = "default_poll_interval")]
     ec_poll_interval: u64,
@@ -295,8 +296,9 @@ impl From<FanControlConfigV2> for XmlFanControlConfigV2 {
 }
 
 #[derive(PartialEq, Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all(deserialize = "PascalCase"))]
 pub struct FanControlConfigV2 {
-    pub notebook_model: String,
+    pub notebook_model: Option<String>,
     pub author: Option<String>,
     pub ec_poll_interval: u64,
     pub read_write_words: bool,
@@ -539,7 +541,7 @@ mod tests {
         let parsed_config: FanControlConfigV2 =
             from_str::<XmlFanControlConfigV2>(config).unwrap().into();
         let excepted_config = FanControlConfigV2 {
-            notebook_model: "HP Envy X360 13-ag0xxx Ryzen-APU".to_string(),
+            notebook_model: Some("HP Envy X360 13-ag0xxx Ryzen-APU".to_string()),
             author: Some("Daniel Andersen".to_string()),
             ec_poll_interval: 1000,
             read_write_words: true,
@@ -656,7 +658,7 @@ mod tests {
         let parsed_config = from_str::<XmlFanControlConfigV2>(config).unwrap();
         let parsed_config = FanControlConfigV2::from(parsed_config);
         let excepted_config = FanControlConfigV2 {
-            notebook_model: "Aspire 1810TZ".to_string(),
+            notebook_model: Some("Aspire 1810TZ".to_string()),
             author: None,
             ec_poll_interval: 3000,
             read_write_words: false,
