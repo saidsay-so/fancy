@@ -122,7 +122,8 @@ fn main() -> Result<()> {
     state
         .config_loader
         .borrow_mut()
-        .add_path(CONTROL_CONFIGS_DIR_PATH.clone());
+        .add_path(&CONTROL_CONFIGS_DIR_PATH)
+        .context(ControlConfigLoad {})?;
     let dbus_conn = create_dbus_conn(Rc::clone(&state)).context(DBus {})?;
 
     let fan_config = get_fan_config(Rc::clone(&state), &dbus_conn)?;
