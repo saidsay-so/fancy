@@ -24,19 +24,34 @@ fn main() -> Result<(), anyhow::Error> {
     let matches = get_app().get_matches();
 
     if let Some(matches) = matches.subcommand_matches("get") {
-        if matches.is_present("speeds") {
+        if matches.is_present("speeds") || matches.is_present("status") {
+            if matches.is_present("status") {
+                println!("Fans speeds");
+            }
             let fans_speeds = proxy.fans_speeds()?;
             let names = proxy.fans_names()?;
             for (name, speed) in names.iter().zip(fans_speeds) {
                 println!("{}: {:.1}%", name, speed);
             }
-        } else if matches.is_present("config") {
+        }
+        if matches.is_present("config") || matches.is_present("status") {
+            if matches.is_present("status") {
+                print!("\nConfig: ");
+            }
             let config = proxy.config()?;
             println!("{}", config);
-        } else if matches.is_present("auto") {
+        }
+        if matches.is_present("auto") || matches.is_present("status") {
+            if matches.is_present("status") {
+                print!("\nAuto-select thresholds: ");
+            }
             let auto = proxy.auto()?;
-            println!("Auto-select thresholds: {}", auto);
-        } else if matches.is_present("temps") {
+            println!("{}", auto);
+        }
+        if matches.is_present("temps") || matches.is_present("status") {
+            if matches.is_present("status") {
+                println!("\nTemperatures");
+            }
             let temps = proxy.temperatures()?;
             for (sensor, temp) in temps {
                 println!("{}: {:.1}°C", sensor, temp);

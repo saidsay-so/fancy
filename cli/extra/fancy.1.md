@@ -6,7 +6,7 @@ fancy - Fancy CLI
 
 # SYNOPSIS
 
-`fancy get [speeds | temps | config]`
+`fancy get [speeds | temps | config | auto | status]`
 
 `fancy set [-f FAN_SPEED [FAN_SPEEDS ...] | -a] [-c CONFIGURATION]`
 
@@ -49,6 +49,14 @@ a set of software which allows to control laptop fans.
 `fancy get config`
 
 : Get current configuration
+
+`fancy get auto`
+
+: Get automatic speed management state
+
+`fancy get status`
+
+: Get summary
 
 #### LIST
 
