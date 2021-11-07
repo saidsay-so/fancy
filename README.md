@@ -113,8 +113,8 @@ fancy set -m
 
 ## Documentation
 
-The available commands are detailed in the fancy(1) man file (`man fancy`).
-You can also take a look at the [book](https://musikid.github.io/fancy/).
+You can take a look at the [book](https://musikid.github.io/fancy/).
+For the CLI, the available commands are detailed in the fancy(1) man file (`man fancy`).
 
 ## FAQ
 
@@ -136,7 +136,8 @@ you are also *wel*come.
 
 ## License
 
-The project is licensed under MPL-2.0. You implicitly accept it when you send a pull request.
+The project is licensed under MPL-2.0.
+You implicitly accept it when you send a pull request.
 
 _WARNING:_ The configurations are from NBFC, which is under GPLv3 license.
 
