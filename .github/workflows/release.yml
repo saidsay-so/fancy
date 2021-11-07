@@ -84,7 +84,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Install required packages
-        run: dnf install -y rpkg copr-cli && dnf install 'dnf-command(builddep)' && dnf builddep -y $(rpkg spec | cut -d':' -f2 | tr -d '[:space:]')
+        run: dnf install -y rpkg copr-cli 'dnf-command(builddep)' && dnf builddep -y $(rpkg spec | cut -d':' -f2 | tr -d '[:space:]')
 
       - name: Save COPR config
         env:
