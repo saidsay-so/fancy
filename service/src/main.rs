@@ -127,16 +127,20 @@ fn main() -> Result<()> {
 
     let fan_config = get_fan_config(Rc::clone(&state), &dbus_conn)?;
 
-    *state.fans_speeds.borrow_mut() = vec![0.0; fan_config.fan_configurations.len()];
+    state
+        .fans_speeds
+        .replace(vec![0.0; fan_config.fan_configurations.len()]);
 
-    *state.poll_interval.borrow_mut() = fan_config.ec_poll_interval;
+    state.poll_interval.replace(fan_config.ec_poll_interval);
     let ec_manager = ECManager::new(ec_dev);
 
-    *state.fans_names.borrow_mut() = ec_manager
-        .fan_configs
-        .iter()
-        .map(|f| f.name.to_string())
-        .collect();
+    state.fans_names.replace(
+        ec_manager
+            .fan_configs
+            .iter()
+            .map(|f| f.name.to_string())
+            .collect(),
+    );
 
     let ec_manager = Rc::from(Mutex::new(ec_manager));
 
@@ -146,14 +150,16 @@ fn main() -> Result<()> {
             .refresh_control_config(fan_config)
             .context(ECIO {})?;
 
-        *state.fans_names.borrow_mut() = ec_manager
-            .fan_configs
-            .iter()
-            .map(|f| f.name.to_string())
-            .collect();
+        state.fans_names.replace(
+            ec_manager
+                .fan_configs
+                .iter()
+                .map(|f| f.name.to_string())
+                .collect(),
+        );
     }
 
-    *state.ec_access_mode.borrow_mut() = ECAccessMode::from(dev_path);
+    state.ec_access_mode.replace(ECAccessMode::from(dev_path));
 
     {
         // We have to clone the references to move them to the closure.
@@ -293,7 +299,7 @@ fn main_loop<T: RW>(
 
             let _ = dbus_conn.send(prop_changed.to_emit_message(&DBusPath::from(OBJ_PATH_STR)));
         }
-        *state.manual_set_target_speeds.borrow_mut() = false;
+        state.manual_set_target_speeds.replace(false);
 
         let mut ec_manager = ec_manager.lock().unwrap();
 
