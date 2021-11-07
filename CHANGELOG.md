@@ -3,7 +3,21 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.7.0](https://github.com/musikid/fancy/compare/v0.6.1..0.7.0) - 2021-11-07
+## [0.7.1](https://github.com/musikid/fancy/compare/v0.7.0..0.7.1) - 2021-11-07
+
+### CI
+
+- Fix fedora job
+
+- Add codecov config to ignore cli folder
+
+
+### Features
+
+- Add status subcommand
+
+
+## [0.7.0](https://github.com/musikid/fancy/compare/v0.6.1..v0.7.0) - 2021-11-07
 
 ### Bug Fixes
 
@@ -19,6 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix release job
 
 - Remove unused variable
+
+- Revert "remove unused variable"
 
 
 ### Documentation
