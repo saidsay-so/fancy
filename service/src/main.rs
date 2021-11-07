@@ -178,8 +178,8 @@ fn main() -> Result<()> {
                                     Ok(c) => c,
                                     Err(e) => {
                                         error!(
-                                            r#"Error while swapping to `{}`: {}
-                                        Keeping old configuration"#,
+                                            "Error while swapping to `{}`: {}
+                                        Keeping old configuration",
                                             &*config, e
                                         );
                                         return true;
@@ -191,8 +191,8 @@ fn main() -> Result<()> {
                                 let mut ec_manager = ec_manager.lock().unwrap();
                                 if let Err(e) = ec_manager.refresh_control_config(conf) {
                                     error!(
-                                        r#"Error while refreshing manager with config `{}`: {}
-                                        Keeping old configuration"#,
+                                        "Error while refreshing manager with config `{}`: {}
+                                        Keeping old configuration",
                                         &*config, e
                                     );
                                 };
@@ -211,6 +211,8 @@ fn main() -> Result<()> {
                                     0..old_target_fans_speeds.len(),
                                     old_target_fans_speeds,
                                 );
+
+                                state.old_config.take();
                             }
                             _ => {}
                         }
@@ -275,6 +277,12 @@ fn main_loop<T: RW>(
             }
         };
         dbus_conn.process(timeout).context(DBus {})?;
+
+        // If the config have not been changed in the callback, we keep the old configuration
+        if let Some(old_config) = state.old_config.take() {
+            state.config.replace(old_config);
+        }
+
         if *state.manual_set_target_speeds.borrow() {
             let mut prop_changed: PropertiesPropertiesChanged = Default::default();
             prop_changed.changed_properties.insert(

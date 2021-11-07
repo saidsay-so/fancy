@@ -70,7 +70,8 @@ impl ComMusikidFancy for State {
     fn set_config(&self, value: String) -> Result<(), MethodErr> {
         match test_load_control_config(&value, *self.check_control_config.borrow()) {
             Ok(_) => {
-                *self.config.borrow_mut() = value;
+                let old_config = Some(self.config.replace(value));
+                self.old_config.replace(old_config);
                 Ok(())
             }
             Err(e) => Err(MethodErr::failed(&e.to_string())),

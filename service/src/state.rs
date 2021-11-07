@@ -14,6 +14,8 @@ pub(crate) struct State {
     pub fans_speeds: RefCell<Vec<f64>>,
     pub target_fans_speeds: RefCell<Vec<f64>>,
     pub manual_set_target_speeds: RefCell<bool>,
+    /// Used when an error occured while trying to change the configuration.
+    pub old_config: RefCell<Option<String>>,
     pub auto: RefCell<bool>,
     pub critical: RefCell<bool>,
     pub config: RefCell<String>,
@@ -30,6 +32,7 @@ impl From<ServiceConfig> for State {
             fans_speeds: RefCell::new(Vec::new()),
             target_fans_speeds: RefCell::new(s.target_fans_speeds),
             manual_set_target_speeds: RefCell::new(false),
+            old_config: RefCell::new(None),
             auto: RefCell::new(s.auto),
             critical: RefCell::new(false),
             config: RefCell::new(s.selected_fan_config),
