@@ -191,8 +191,7 @@ fn main() -> Result<()> {
                                         return true;
                                     }
                                 };
-                                let mut interval = state.poll_interval.borrow_mut();
-                                *interval = conf.ec_poll_interval;
+                                state.poll_interval.replace(conf.ec_poll_interval);
 
                                 let mut ec_manager = ec_manager.lock().unwrap();
                                 if let Err(e) = ec_manager.refresh_control_config(conf) {
@@ -204,21 +203,23 @@ fn main() -> Result<()> {
                                     return true;
                                 };
 
-                                *state.fans_speeds.borrow_mut() =
-                                    vec![0.0; ec_manager.fan_configs.len()];
+                                let fans_count = ec_manager.fan_configs.len();
 
-                                *state.fans_names.borrow_mut() = ec_manager
-                                    .fan_configs
-                                    .iter()
-                                    .map(|f| f.name.to_string())
-                                    .collect();
+                                state.fans_speeds.replace(vec![0.0; fans_count]);
 
-                                *target_fans_speeds = vec![0.0; ec_manager.fan_configs.len()];
-                                target_fans_speeds.splice(
-                                    0..old_target_fans_speeds.len(),
-                                    old_target_fans_speeds,
+                                state.fans_names.replace(
+                                    ec_manager
+                                        .fan_configs
+                                        .iter()
+                                        .map(|f| f.name.to_string())
+                                        .collect(),
                                 );
 
+                                *target_fans_speeds = vec![0.0; fans_count];
+
+                                target_fans_speeds.splice(0..fans_count, old_target_fans_speeds);
+
+                                // We remove the old config when there is no error
                                 state.old_config.take();
                             }
                             _ => {}
