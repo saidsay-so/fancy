@@ -250,12 +250,12 @@ mod tests {
         assert!(not_follow_loader
             .add_path(&PathBuf::from("tests/follow"))
             .unwrap());
-        assert!(not_follow_loader.get_file_path("valid").is_err());
+        assert!(not_follow_loader.get_file_path("valid_json").is_err());
 
-        assert!(follow_loader.get_file_path("valid").is_ok());
+        assert!(follow_loader.get_file_path("valid_json").is_ok());
 
-        let (path, deserializer) = follow_loader.get_file_path("valid").unwrap();
-        assert_eq!(path, PathBuf::from("tests/follow/json/valid.json"));
+        let (path, deserializer) = follow_loader.get_file_path("valid_json").unwrap();
+        assert_eq!(path, PathBuf::from("tests/follow/json/valid_json.json"));
 
         let excepted_config = FanControlConfigV2 {
             notebook_model: Some("HP Envy X360 13-ag0xxx Ryzen-APU".to_string()),
@@ -331,16 +331,44 @@ mod tests {
                 .to_vec(),
             ),
         };
+
         assert_eq!(
-            deserializer("valid", read_to_string(&path).unwrap()).unwrap(),
+            deserializer("valid_json", read_to_string(&path).unwrap()).unwrap(),
+            excepted_config
+        );
+
+        assert_eq!(
+            follow_loader.load_control_config("valid_json").unwrap(),
+            excepted_config
+        );
+
+        let (path, deserializer) = follow_loader.get_file_path("valid_xml").unwrap();
+        assert_eq!(path, PathBuf::from("tests/follow/xml/valid_xml.xml"));
+
+        assert_eq!(
+            deserializer("valid_xml", read_to_string(&path).unwrap()).unwrap(),
+            excepted_config
+        );
+
+        assert_eq!(
+            follow_loader.load_control_config("valid_xml").unwrap(),
             excepted_config
         );
     }
 
     #[rstest]
     fn test_config(follow_loader: ControlConfigLoader) {
-        assert!(follow_loader.test_control_config("valid", false).is_ok());
-        assert!(follow_loader.test_control_config("valid", true).is_ok());
+        assert!(follow_loader
+            .test_control_config("valid_json", false)
+            .is_ok());
+        assert!(follow_loader
+            .test_control_config("valid_json", true)
+            .is_ok());
+
+        assert!(follow_loader
+            .test_control_config("valid_xml", false)
+            .is_ok());
+        assert!(follow_loader.test_control_config("valid_xml", true).is_ok());
 
         assert!(follow_loader.test_control_config("invalid", false).is_err());
         assert!(follow_loader.test_control_config("invalid", true).is_err());
