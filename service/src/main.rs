@@ -123,7 +123,7 @@ fn main() -> Result<()> {
     };
 
     let state = Rc::from(State::from(service_config));
-    let dbus_conn = create_dbus_conn(Rc::clone(&state)).expect("Failed to create D-Bus connection");
+    let dbus_conn = create_dbus_conn(Rc::clone(&state)).context(DBus {})?;
 
     let fan_config = get_fan_config(Rc::clone(&state), &dbus_conn)?;
 

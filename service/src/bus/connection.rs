@@ -3,7 +3,6 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 use dbus::blocking::LocalConnection;
 use dbus_tree::{DataType, Factory, MethodErr};
-use snafu::{ResultExt, Snafu};
 
 use super::interfaces::*;
 use crate::config::nbfc_control::test_load_control_config;
@@ -24,18 +23,6 @@ impl DataType for TData {
     type Property = ();
     type Method = ();
     type Signal = ();
-}
-
-#[derive(Debug, Snafu)]
-pub(crate) enum DBusError {
-    #[snafu(display("An error occured with D-Bus: {}", source))]
-    DBus { source: dbus::Error },
-}
-
-impl From<DBusError> for MethodErr {
-    fn from(e: DBusError) -> Self {
-        MethodErr::failed(&e)
-    }
 }
 
 type IFaceResult<T> = Result<T, MethodErr>;
@@ -111,7 +98,7 @@ impl ComMusikidFancy for State {
 }
 
 /// Create the D-Bus connection to listen incoming requests.
-pub(crate) fn create_dbus_conn(data: Rc<State>) -> Result<LocalConnection, DBusError> {
+pub(crate) fn create_dbus_conn(data: Rc<State>) -> Result<LocalConnection, dbus::Error> {
     let fac = Factory::new_fn::<TData>();
     let tree = fac
         .tree(Rc::clone(&data))
@@ -126,9 +113,8 @@ pub(crate) fn create_dbus_conn(data: Rc<State>) -> Result<LocalConnection, DBusE
         // This path is for debugging
         .add(fac.object_path("/", ()).introspectable());
 
-    let c = LocalConnection::new_system().context(DBus {})?;
-    c.request_name(BUS_NAME_STR, true, true, false)
-        .context(DBus {})?;
+    let c = LocalConnection::new_system()?;
+    c.request_name(BUS_NAME_STR, true, true, false)?;
     tree.start_receive(&c);
 
     Ok(c)
