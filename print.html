@@ -471,8 +471,15 @@ pub(crate) struct ServiceConfig {
 <span class="boring">}
 </span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="fan-configuration"><a class="header" href="#fan-configuration">Fan Configuration</a></h1>
-<p>Fan configurations from NBFC are fully supported.
-It is possible to create/edit them with the GUI (coming soon!).</p>
+<p>It is possible to create/edit them with the GUI (coming soon!).</p>
+<h2 id="path"><a class="header" href="#path">Path</a></h2>
+<p>Configurations should be located at <code>/etc/fancy/configs</code>.
+It will soon be possible to add them from other locations.</p>
+<h2 id="formats"><a class="header" href="#formats">Formats</a></h2>
+<p>Fan configurations from NBFC, nbfc-revive and nbfc-linux are fully supported
+(which means XML and JSON). It is possible to add support for virtually
+every format, if there is enough demand for it (and a Serde package!).
+Open an issue if you think that it would be <strong>really useful</strong> to add another format.</p>
 
                     </main>
 
