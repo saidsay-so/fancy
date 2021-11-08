@@ -89,7 +89,7 @@ impl PartialEq for TemperatureThreshold {
 impl Eq for TemperatureThreshold {}
 impl Ord for TemperatureThreshold {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.down_threshold.cmp(&other.down_threshold)
+        self.up_threshold.cmp(&other.up_threshold)
     }
 }
 
