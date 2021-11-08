@@ -111,7 +111,9 @@ impl<T: RW> ECManager<T> {
             && temp <= thresholds[*current].up_threshold
         {
             return false;
-        } else if temp <= thresholds[1].down_threshold {
+        } else if matches!(thresholds.iter().find(|t| t.down_threshold != 0), Some(thr) if temp <= thr.down_threshold)
+            || thresholds.len() == 1
+        {
             *current = 0;
         } else if let Ok(i) = thresholds.binary_search_by(|el| match el {
             _t if _t.down_threshold > temp => Ordering::Greater,
