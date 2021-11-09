@@ -257,6 +257,7 @@ mod tests {
             "tests",
             "tests/follow",
             "tests/follow/json",
+            "tests/follow/xml",
             "tests/not_follow",
         ];
 
