@@ -42,6 +42,10 @@ a set of software which allows to control laptop fans.
 
 : Get fans speeds
 
+`fancy get target-speeds`
+
+: Get fans target speeds
+
 `fancy get temps`
 
 : Get temperatures
