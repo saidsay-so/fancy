@@ -34,6 +34,16 @@ fn main() -> Result<(), anyhow::Error> {
                 println!("{}: {:.1}%", name, speed);
             }
         }
+        if matches.is_present("target-speeds") || matches.is_present("status") {
+            if matches.is_present("status") {
+                println!("\nTarget speeds");
+            }
+            let speeds = proxy.target_fans_speeds()?;
+            let names = proxy.fans_names()?;
+            for (speed, name) in speeds.iter().zip(names) {
+                println!("{}: {:.1}%", name, speed);
+            }
+        }
         if matches.is_present("config") || matches.is_present("status") {
             if matches.is_present("status") {
                 print!("\nConfig: ");

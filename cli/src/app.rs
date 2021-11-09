@@ -50,6 +50,7 @@ pub fn get_app() -> App<'static, 'static> {
                 .about("Get a value")
                 .setting(AppSettings::SubcommandRequiredElseHelp)
                 .subcommand(SubCommand::with_name("speeds").about("Get the fans speeds"))
+                .subcommand(SubCommand::with_name("target-speeds").about("Get the target speeds"))
                 .subcommand(SubCommand::with_name("temps").about("Get the temperatures"))
                 .subcommand(SubCommand::with_name("config").about("Get the current config"))
                 .subcommand(SubCommand::with_name("auto").about("Get auto-handle state"))
