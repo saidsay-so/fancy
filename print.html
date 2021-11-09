@@ -76,7 +76,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="models.html"><strong aria-hidden="true">2.</strong> Supported Models</a></li><li class="chapter-item expanded "><a href="debug.html"><strong aria-hidden="true">3.</strong> Debugging</a></li><li class="chapter-item expanded "><a href="service/index.html"><strong aria-hidden="true">4.</strong> Service</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="service/configuration.html"><strong aria-hidden="true">4.1.</strong> Configuration</a></li></ol></li><li class="chapter-item expanded "><a href="fan-configuration.html"><strong aria-hidden="true">5.</strong> Fan Configuration</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="models.html"><strong aria-hidden="true">2.</strong> Supported Models</a></li><li class="chapter-item expanded "><a href="debug.html"><strong aria-hidden="true">3.</strong> Debugging</a></li><li class="chapter-item expanded "><a href="service/index.html"><strong aria-hidden="true">4.</strong> Service</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="service/configuration.html"><strong aria-hidden="true">4.1.</strong> Configuration</a></li></ol></li><li class="chapter-item expanded "><a href="fan-configuration.html"><strong aria-hidden="true">5.</strong> Fan Configuration</a></li><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Man files</li><li class="chapter-item expanded "><a href="man/fancy.1.html"><strong aria-hidden="true">6.</strong> CLI</a></li><li class="chapter-item expanded "><a href="man/fancyd.8.html"><strong aria-hidden="true">7.</strong> Service</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -480,6 +480,57 @@ It will soon be possible to add them from other locations.</p>
 (which means XML and JSON). It is possible to add support for virtually
 every format, if there is enough demand for it (and a Serde package!).
 Open an issue if you think that it would be <strong>really useful</strong> to add another format.</p>
+<div style="break-before: page; page-break-before: always;"></div><p>% fancy(1) | Fancy CLI</p>
+<h1 id="name"><a class="header" href="#name">NAME</a></h1>
+<p>fancy - Fancy CLI</p>
+<h1 id="synopsis"><a class="header" href="#synopsis">SYNOPSIS</a></h1>
+<p><code>fancy get [speeds | temps | config | auto | status]</code></p>
+<p><code>fancy set [-f FAN_SPEED [FAN_SPEEDS ...] | -a] [-c CONFIGURATION]</code></p>
+<p><code>fancy list [--recommended]</code></p>
+<h1 id="description"><a class="header" href="#description">DESCRIPTION</a></h1>
+<p>fancy is the CLI of <em>fancy(7)</em>,
+a set of software which allows to control laptop fans.</p>
+<h1 id="options"><a class="header" href="#options">OPTIONS</a></h1>
+<h4 id="set"><a class="header" href="#set">SET</a></h4>
+<p><code>-f, --fans-speeds FAN_SPEEDS...</code></p>
+<p>: Set fans speeds by percentage, between 0 and 100</p>
+<p><code>-c, --config CONFIGURATION</code></p>
+<p>: Set the configuration used by the daemon</p>
+<p><code>-a, --auto</code>
+: Let the daemon automatically choose the speed, according to the temperature</p>
+<p><code>-m, --manual</code>
+: Apply the defined target speeds while the temperature is not critical
+(meaning when the computer starts to burn your legs).</p>
+<h4 id="get"><a class="header" href="#get">GET</a></h4>
+<p><code>fancy get speeds</code></p>
+<p>: Get fans speeds</p>
+<p><code>fancy get target-speeds</code></p>
+<p>: Get fans target speeds</p>
+<p><code>fancy get temps</code></p>
+<p>: Get temperatures</p>
+<p><code>fancy get config</code></p>
+<p>: Get current configuration</p>
+<p><code>fancy get auto</code></p>
+<p>: Get automatic speed management state</p>
+<p><code>fancy get status</code></p>
+<p>: Get summary</p>
+<h4 id="list"><a class="header" href="#list">LIST</a></h4>
+<p>List all available configurations</p>
+<p><code>--recommended</code></p>
+<p>: List only recommended configurations</p>
+<h1 id="bugs"><a class="header" href="#bugs">BUGS</a></h1>
+<p>Bugs can be reported at https://github.com/MusiKid/fancy</p>
+<div style="break-before: page; page-break-before: always;"></div><p>% fancyd(8) | Fancy Daemon</p>
+<h1 id="name-1"><a class="header" href="#name-1">NAME</a></h1>
+<p>fancyd - Fancy service daemon</p>
+<h1 id="synopsis-1"><a class="header" href="#synopsis-1">SYNOPSIS</a></h1>
+<p><code>fancyd</code></p>
+<h1 id="description-1"><a class="header" href="#description-1">DESCRIPTION</a></h1>
+<p>fancyd is the service daemon of <em>fancy(7)</em>,
+a set of software which allows to control laptop fans.
+It should not be run manually!</p>
+<h1 id="bugs-1"><a class="header" href="#bugs-1">BUGS</a></h1>
+<p>Bugs can be reported at https://github.com/MusiKid/fancy</p>
 
                     </main>
 
