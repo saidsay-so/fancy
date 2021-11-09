@@ -1,0 +1,1 @@
+../../../cli/extra/fancy.1.md

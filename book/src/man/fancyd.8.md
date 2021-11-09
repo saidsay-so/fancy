@@ -1,0 +1,1 @@
+../../../service/extra/fancyd.8.md
