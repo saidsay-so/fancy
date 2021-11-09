@@ -1,5 +1,5 @@
 [workspace]
-members = ["service", "cli", "nbfc"]
+members = ["service", "cli", "nbfc", "prober"]
 
 [profile.release]
 lto = true
