@@ -63,6 +63,6 @@ and a CLI to send commands.}
 %endif
 
 %changelog
-{{ git_dir_changelog }}
+{{{ git_dir_changelog }}}
 
 # vim: ft=spec :

@@ -8,4 +8,14 @@ git_version() {
 
   output "$latest_tag"
 }
+
+git_changelog() {
+  local format=" - Initial release
+* %(taggerdate:format:%a %b %d %Y) %(taggername) %(taggeremail) - %(tag)-1
+"
+  local result=$(git for-each-ref --format="$format" 'refs/tags/v*'| sed 's/v\([[:digit:]]\)/\1/g')
+  local changelog=$(tac <<< $result)
+
+  output "$changelog"
+}
 # vim: syntax=sh :
