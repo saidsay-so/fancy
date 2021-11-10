@@ -14,7 +14,7 @@ AssertPathExists=|/sys/kernel/debug/ec/ec0/io
 Type=dbus
 BusName=com.musikid.fancy
 
-ExecStart=/usr/bin/fancyd
+ExecStart=fancyd
 Restart=on-failure
 TimeoutStopSec=100
 
