@@ -1,6 +1,6 @@
 [package]
 name = "fancy-service"
-version = "0.7.2"
+version = "0.7.3"
 authors = ["Musikid <musikid@outlook.com>"]
 edition = "2021"
 description = """This package provides the service for Fancy, a set of software to control laptop fans."""

@@ -1,6 +1,6 @@
 # Maintainer: Musikid <musikid@outlook.com>
 pkgname=fancy
-pkgver=0.7.2
+pkgver=0.7.3
 pkgrel=1
 pkgdesc='Set of software which allows you to control your laptop fans.
 It includes a service daemon to allow accessing to the embedded controller
