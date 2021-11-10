@@ -1,5 +1,5 @@
 git_version() {
-  local latest_tag="$(cached latest_tag)"
+  local latest_tag="${OUTPUT[git_version]}"
 
   if [[ -z "$latest_tag" ]]; then
     latest_tag="$(git describe --tags --abbrev=0)"
