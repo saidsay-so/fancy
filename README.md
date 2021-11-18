@@ -20,6 +20,10 @@ It includes a service daemon to allow accessing to the [EC](https://en.wikipedia
 and controlling it through D-Bus, a CLI to send commands and a GUI (WIP).
 It works only on Linux and Windows support is not planned<sup>[1](#linux-only)</sup>.
 
+## Warning
+
+This project is currently being heavily refactored. If you want a more stable software, check out [nbfc-linux](https://github.com/nbfc-linux/nbfc-linux).
+
 ## Compatibility
 
 You can check if your computer model is supported by checking if a configuration exists in
