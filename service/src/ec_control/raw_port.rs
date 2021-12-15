@@ -1,9 +1,10 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
-use super::RW;
+use async_std::io::{Error, Read, Seek, SeekFrom, Write};
+use async_std::io::prelude::*;
 
-use std::io::{Error, Read, Seek, SeekFrom, Write};
+use super::RW;
 
 #[derive(Copy, Clone, PartialEq)]
 enum BufferEmpty {
@@ -26,7 +27,7 @@ type Result<T = ()> = std::result::Result<T, Error>;
 #[derive(Debug)]
 pub(crate) struct RawPort<T: RW> {
     inner: T,
-    pos: u8,
+    pub(super) pos: u8,
 }
 
 impl<T: RW> From<T> for RawPort<T> {
@@ -39,14 +40,14 @@ impl<T: RW> RawPort<T> {
     /// Low-level wait function before reading/writing to `/dev/port`.
     ///
     /// It waits for input/output buffer to be empty and return an error on timeout.
-    fn raw_port_wait(&mut self, buffer_type: BufferEmpty) -> Result {
+    async fn raw_port_wait(&mut self, buffer_type: BufferEmpty) -> Result {
         let mut retries = RAW_PORT_TIMEOUT;
         while retries > 0 {
             retries -= 1;
 
             let mut value = [0u8; 1];
-            self.inner.seek(COMMAND_PORT)?;
-            self.inner.read_exact(&mut value)?;
+            self.inner.seek(COMMAND_PORT).await?;
+            self.inner.read_exact(&mut value).await?;
 
             let mut value = value[0];
             // Invert the value for output buffer.
@@ -63,84 +64,43 @@ impl<T: RW> RawPort<T> {
     }
 
     /// Read variant of [`raw_port_wait`](#method.raw_port_wait).
-    fn raw_port_wait_read(&mut self) -> Result {
-        self.raw_port_wait(BufferEmpty::OutputBuffer)
+    async fn raw_port_wait_read(&mut self) -> Result {
+        self.raw_port_wait(BufferEmpty::OutputBuffer).await
     }
 
     /// Write variant of [`raw_port_wait`](#method.raw_port_wait).
-    fn raw_port_wait_write(&mut self) -> Result {
-        self.raw_port_wait(BufferEmpty::InputBuffer)
+    async fn raw_port_wait_write(&mut self) -> Result {
+        self.raw_port_wait(BufferEmpty::InputBuffer).await
     }
 
     /// Write data (a query) to a port.
-    fn raw_port_query(&mut self, port: SeekFrom, query: u8) -> Result {
-        self.raw_port_wait_write()?;
-        self.inner.seek(port)?;
-        self.inner.write_all(&[query])
+    async fn raw_port_query(&mut self, port: SeekFrom, query: u8) -> Result {
+        self.raw_port_wait_write().await?;
+        self.inner.seek(port).await?;
+        self.inner.write_all(&[query]).await
     }
 
     /// Read a byte from the EC at `offset`.
-    fn ec_read_byte(&mut self, offset: u8) -> Result<u8> {
-        self.raw_port_query(COMMAND_PORT, EC_COMMAND_READ)?;
-        self.raw_port_query(DATA_PORT, offset)?;
+    pub(super) async fn ec_read_byte(&mut self, offset: u8) -> Result<u8> {
+        self.raw_port_query(COMMAND_PORT, EC_COMMAND_READ).await?;
+        self.raw_port_query(DATA_PORT, offset).await?;
 
-        self.raw_port_wait_read()?;
-        self.raw_port_wait_write()?;
+        self.raw_port_wait_read().await?;
+        self.raw_port_wait_write().await?;
 
         let mut byte = [0u8; 1];
-        self.inner.seek(DATA_PORT)?;
-        self.inner.read_exact(&mut byte)?;
+        self.inner.seek(DATA_PORT).await?;
+        self.inner.read_exact(&mut byte).await?;
 
         Ok(byte[0])
     }
 
     /// Write a byte to the EC at `offset`.
-    fn ec_write_byte(&mut self, offset: u8, byte: u8) -> Result {
-        self.raw_port_query(COMMAND_PORT, EC_COMMAND_WRITE)?;
-        self.raw_port_query(DATA_PORT, offset)?;
+    pub(super) async fn ec_write_byte(&mut self, offset: u8, byte: u8) -> Result {
+        self.raw_port_query(COMMAND_PORT, EC_COMMAND_WRITE).await?;
+        self.raw_port_query(DATA_PORT, offset).await?;
 
-        self.raw_port_query(DATA_PORT, byte)
-    }
-}
-
-impl<T: RW> Write for RawPort<T> {
-    fn write(&mut self, buf: &[u8]) -> Result<usize> {
-        for byte in buf {
-            //TODO: Writing to /dev/port can sometimes be capricious
-            self.ec_write_byte(self.pos, *byte)?;
-            self.pos += 1;
-        }
-        Ok(buf.len())
-    }
-
-    fn flush(&mut self) -> Result<()> {
-        Ok(())
-    }
-}
-
-impl<T: RW> Read for RawPort<T> {
-    fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
-        for byte in buf.iter_mut() {
-            //TODO: Reading from /dev/port can sometimes be capricious
-            *byte = self.ec_read_byte(self.pos)?;
-            self.pos += 1;
-        }
-        Ok(buf.len())
-    }
-}
-
-impl<T: RW> Seek for RawPort<T> {
-    fn seek(&mut self, pos: SeekFrom) -> Result<u64> {
-        match pos {
-            SeekFrom::Start(pos) => {
-                self.pos = pos as u8;
-            }
-            _ => {
-                return Err(Error::from(std::io::ErrorKind::InvalidInput));
-            }
-        }
-
-        Ok(self.pos.into())
+        self.raw_port_query(DATA_PORT, byte).await
     }
 }
 
@@ -184,7 +144,7 @@ mod tests {
 
     impl Write for BufferTest {
         fn write(&mut self, buf: &[u8]) -> Result<usize> {
-            assert!(buf.len() == 1);
+            assert_eq!(buf.len(), 1);
             if self.pos == DATA_PORT_UINT && self.register.is_none() {
                 self.register = Some(buf[0]);
             } else if let Some(register) = self.register {
@@ -202,7 +162,7 @@ mod tests {
 
     impl Read for BufferTest {
         fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
-            assert!(buf.len() == 1);
+            assert_eq!(buf.len(), 1);
             buf[0] = if self.pos == COMMAND_PORT_UINT {
                 let input_status = if self.full_input {
                     BufferEmpty::InputBuffer as u8
@@ -285,7 +245,7 @@ mod tests {
             excepted_value
         );
 
-        assert!(buffer.reads.len() == 3);
+        assert_eq!(buffer.reads.len(), 3);
 
         assert!(buffer.reads.iter().all(|e| e.0 == COMMAND_PORT_UINT));
 
@@ -317,7 +277,7 @@ mod tests {
         assert_eq!(value, excepted_value);
 
         //TODO: Check the reads/writes
-        assert!(buffer.reads.len() == 5);
+        assert_eq!(buffer.reads.len(), 5);
 
         assert_eq!(
             *buffer.writes.iter().skip(1).next().unwrap(),

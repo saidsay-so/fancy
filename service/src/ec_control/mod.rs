@@ -5,12 +5,12 @@ mod ec_manager;
 mod raw_port;
 mod read;
 mod write;
-use std::io::{Read, Seek, Write};
+mod ec_rw;
+use async_std::io::{Read, Seek, Write};
 
-type RcWrapper<T> = std::rc::Rc<std::cell::RefCell<T>>;
+type ArcWrapper<T> = std::sync::Arc<async_std::sync::Mutex<T>>;
 
 pub(crate) use ec_manager::{ECError, ECManager};
 
-pub(crate) trait RW: Read + Write + Seek + std::fmt::Debug {}
-impl<T: Read + Write + Seek + std::fmt::Debug> RW for T {}
+pub(crate) use ec_rw::*;
 pub(crate) use raw_port::RawPort;

@@ -1,12 +1,14 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+use async_std::io::{Error, Read, Seek, SeekFrom};
+use async_std::io::prelude::*;
 use log::debug;
 
-use std::io::{Error, Read, Seek, SeekFrom};
-
-use super::RcWrapper;
+use crate::ec_control::EcRead;
 use crate::nbfc::*;
+
+use super::ArcWrapper;
 
 type Result<T> = std::result::Result<T, Error>;
 
@@ -21,15 +23,15 @@ struct FanReadConfig {
 
 #[derive(Debug)]
 /// A structure to manage reads from the EC.
-pub(crate) struct ECReader<R: Read + Seek> {
+pub(crate) struct ECReader<R: EcRead> {
     read_words: bool,
-    ec_dev: RcWrapper<R>,
+    ec_dev: ArcWrapper<R>,
     fans_read_config: Vec<FanReadConfig>,
 }
 
-impl<R: Read + Seek> ECReader<R> {
+impl<R: EcRead> ECReader<R> {
     /// Initialize a reader.
-    pub fn new(ec_dev: RcWrapper<R>) -> Self {
+    pub fn new(ec_dev: ArcWrapper<R>) -> Self {
         ECReader {
             read_words: false,
             ec_dev,
@@ -68,18 +70,18 @@ impl<R: Read + Seek> ECReader<R> {
     }
 
     /// Read the speed value for the fan specified at `fan_index`.
-    pub fn read_speed_percent(&self, fan_index: usize) -> Result<f64> {
+    pub async fn read_speed_percent(&self, fan_index: usize) -> Result<f64> {
         let fan = &self.fans_read_config[fan_index];
         let read_off = SeekFrom::Start(fan.read_register as u64);
-        let speed = self.read_value(read_off)?;
+        let speed = self.read_value(read_off).await?;
 
         let percentage: f64 = if let Some(speed_percent) =
-            fan.read_percent_overrides.as_ref().and_then(|f| {
-                f.iter()
-                    .filter(|e| e.fan_speed_value == speed)
-                    .map(|e| e.fan_speed_percentage)
-                    .next()
-            }) {
+        fan.read_percent_overrides.as_ref().and_then(|f| {
+            f.iter()
+                .filter(|e| e.fan_speed_value == speed)
+                .map(|e| e.fan_speed_percentage)
+                .next()
+        }) {
             speed_percent.into()
         } else {
             ((speed as f64 - fan.min_speed_read as f64)
@@ -91,18 +93,16 @@ impl<R: Read + Seek> ECReader<R> {
     }
 
     /// Low-level read function.
-    // XXX: The function returns an u16 even if just a u8 is needed
-    fn read_value(&self, read_off: SeekFrom) -> Result<u16> {
-        // XXX: The buffer takes 2 bytes even if just one is needed
+    async fn read_value(&self, read_off: SeekFrom) -> Result<u16> {
         let mut buf = [0u8; 2];
-        let mut dev = (*self.ec_dev).borrow_mut();
+        let mut dev = self.ec_dev.lock().await;
 
-        dev.seek(read_off)?;
-        dev.read_exact(if self.read_words {
+        dev.read_bytes(read_off, if self.read_words {
             &mut buf[..]
         } else {
             &mut buf[..=0]
-        })?;
+        })
+            .await?;
 
         debug!("Reading at offset {:?} the value {:?}", read_off, &buf);
 
@@ -113,16 +113,22 @@ impl<R: Read + Seek> ECReader<R> {
         }
     }
 }
+
 #[cfg(test)]
 mod tests {
-    use super::*;
+
+    use async_std::io::{Cursor, Write};
+    use async_std::sync::Arc;
+    use async_std::sync::Mutex;
     use once_cell::sync::Lazy;
     use rand::Rng;
-    use std::cell::RefCell;
-    use std::io::{Cursor, Write};
-    use std::rc::Rc;
+
+    use super::*;
+    use super::EcRead;
 
     static CONFIGS_PARSED: Lazy<Vec<FanControlConfigV2>> = Lazy::new(|| {
+        use std::io::prelude::*;
+
         std::fs::read_dir("nbfc_configs/Configs")
             .unwrap()
             .filter_map(|e| e.ok())
@@ -144,8 +150,8 @@ mod tests {
     fn refresh() {
         CONFIGS_PARSED.iter().for_each(|c| {
             let ec = Cursor::new(vec![0; 256]);
-            let ec = Rc::new(RefCell::new(ec));
-            let mut reader = ECReader::new(Rc::clone(&ec));
+            let ec = Arc::new(Mutex::new(ec));
+            let mut reader = ECReader::new(Arc::clone(&ec));
             reader.refresh_config(c.read_write_words, &c.fan_configurations);
 
             assert_eq!(reader.read_words, c.read_write_words);
@@ -199,8 +205,8 @@ mod tests {
         CONFIGS_PARSED.iter().for_each(|c| {
             let mut rng = rand::thread_rng();
             let ec = Cursor::new(vec![0; 256]);
-            let ec = Rc::new(RefCell::new(ec));
-            let mut reader = ECReader::new(Rc::clone(&ec));
+            let ec = Arc::new(Mutex::new(ec));
+            let mut reader = ECReader::new(Arc::clone(&ec));
             reader.refresh_config(c.read_write_words, &c.fan_configurations);
             let mut i = 0;
 
@@ -224,15 +230,15 @@ mod tests {
 
                 for write_value in [min_speed_read, max_speed_read, random_value].iter() {
                     let excepted_value = if let Some(v) =
-                        fan.fan_speed_percentage_overrides.as_ref().and_then(|e| {
-                            e.iter()
-                                .filter(|e| {
-                                    e.target_operation == Some(OverrideTargetOperation::ReadWrite)
-                                        || e.target_operation == Some(OverrideTargetOperation::Read)
-                                })
-                                .filter(|e| e.fan_speed_value == *write_value)
-                                .next()
-                        }) {
+                    fan.fan_speed_percentage_overrides.as_ref().and_then(|e| {
+                        e.iter()
+                            .filter(|e| {
+                                e.target_operation == Some(OverrideTargetOperation::ReadWrite)
+                                    || e.target_operation == Some(OverrideTargetOperation::Read)
+                            })
+                            .filter(|e| e.fan_speed_value == *write_value)
+                            .next()
+                    }) {
                         v.fan_speed_percentage as f64
                     } else {
                         ((*write_value as f64 - min_speed_read as f64)
@@ -241,7 +247,7 @@ mod tests {
                     };
 
                     write(
-                        Rc::clone(&ec),
+                        Arc::clone(&ec),
                         fan.read_register.into(),
                         &write_value.to_le_bytes(),
                     );
@@ -260,8 +266,8 @@ mod tests {
     fn read_overrides() {
         CONFIGS_PARSED.iter().for_each(|c| {
             let ec = Cursor::new(vec![0; 256]);
-            let ec = Rc::new(RefCell::new(ec));
-            let mut reader = ECReader::new(Rc::clone(&ec));
+            let ec = Arc::new(Mutex::new(ec));
+            let mut reader = ECReader::new(Arc::clone(&ec));
             reader.refresh_config(c.read_write_words, &c.fan_configurations);
             let mut i = 0;
 
@@ -272,7 +278,7 @@ mod tests {
                             || e.target_operation == Some(OverrideTargetOperation::Read)
                     }) {
                         write(
-                            Rc::clone(&ec),
+                            Arc::clone(&ec),
                             fan.read_register as u64,
                             &override_s.fan_speed_value.to_le_bytes(),
                         );
@@ -287,7 +293,7 @@ mod tests {
         });
     }
 
-    fn write(ec: RcWrapper<Cursor<Vec<u8>>>, pos: u64, value: &[u8]) {
+    fn write(ec: ArcWrapper<Cursor<Vec<u8>>>, pos: u64, value: &[u8]) {
         let mut ec = (*ec).borrow_mut();
         ec.set_position(pos);
         ec.write(value).unwrap();

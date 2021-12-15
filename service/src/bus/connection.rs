@@ -126,7 +126,7 @@ mod tests {
     use super::*;
     use std::cell::RefCell;
 
-    #[test]
+    #[rstest]
     fn getters() {
         let dummy_fans_speeds = vec![50., 35., 23.];
         let dummy_target_fans_speeds = vec![90., 85., 75.];
@@ -159,7 +159,7 @@ mod tests {
         assert_eq!(state.fans_names().unwrap(), vec!["dummy".to_string()]);
     }
 
-    #[test]
+    #[rstest]
     fn setters() {
         let dummy_target_fans_speeds = vec![90., 85., 75.];
         // let dummy_config = String::from("Dummy config");
@@ -181,7 +181,7 @@ mod tests {
         assert_eq!(*state.auto.borrow(), true);
     }
 
-    #[test]
+    #[rstest]
     fn set_target_fans_speeds() {
         let state = State {
             target_fans_speeds: RefCell::from(vec![0., 0., 0.]),
@@ -202,7 +202,7 @@ mod tests {
         assert!(state.set_target_fans_speeds(invalid_number_speeds).is_err());
     }
 
-    #[test]
+    #[rstest]
     fn out_of_bounds_target_speeds() {
         let state = State {
             ..Default::default()
@@ -212,7 +212,7 @@ mod tests {
         assert!(state.set_target_fans_speeds(dummy_target_speeds).is_err());
     }
 
-    //   #[test]
+    //   #[rstest]
     //   fn connecting() {
     //       use dbus::blocking::stdintf::org_freedesktop_dbus::Properties;
     //       use std::sync::Rc;
@@ -236,7 +236,7 @@ mod tests {
     //       t.join().unwrap();
     //   }
     //
-    //   #[test]
+    //   #[rstest]
     //   fn test_client() {
     //       use dbus::blocking::stdintf::org_freedesktop_dbus::Properties;
     //       use std::sync::Rc;

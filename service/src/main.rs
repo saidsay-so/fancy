@@ -2,6 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+use std::time::Duration;
+
+use async_std::fs::OpenOptions;
+use async_std::path::Path;
+use async_std::rc::Rc;
+use async_std::sync::{
+    Arc,
+    atomic::{AtomicBool, Ordering}, Mutex,
+};
 use dbus::arg::Variant;
 use dbus::blocking::LocalConnection;
 use dbus::channel::Sender;
@@ -9,19 +18,19 @@ use dbus::ffidisp::stdintf::org_freedesktop_dbus::PropertiesPropertiesChanged;
 use dbus::message::SignalArgs;
 use dbus::strings::{BusName, Path as DBusPath};
 use log::{debug, error, info};
-use nbfc_config as nbfc;
 use once_cell::sync::Lazy;
 use signal_hook::{consts::SIGTERM, flag::register};
 use snafu::{ResultExt, Snafu};
 
-use std::fs::OpenOptions;
-use std::path::Path;
-use std::rc::Rc;
-use std::sync::{
-    atomic::{AtomicBool, Ordering},
-    Arc, Mutex,
-};
-use std::time::Duration;
+use bus::connection::create_dbus_conn;
+use config::service::{ECAccessMode, ServiceConfig, TempComputeMethod};
+use constants::{BUS_NAME_STR, CONTROL_CONFIGS_DIR_PATH, OBJ_PATH_STR};
+use ec_control::{ECManager, RawPort, RW};
+use nbfc_config as nbfc;
+use state::State;
+use temp::Temperatures;
+
+use crate::ec_control::EcRW;
 
 mod bus;
 mod config;
@@ -29,13 +38,6 @@ mod constants;
 mod ec_control;
 mod state;
 mod temp;
-
-use bus::connection::create_dbus_conn;
-use config::service::{ECAccessMode, ServiceConfig, TempComputeMethod};
-use constants::{BUS_NAME_STR, CONTROL_CONFIGS_DIR_PATH, OBJ_PATH_STR};
-use ec_control::{ECManager, RawPort, RW};
-use state::State;
-use temp::Temperatures;
 
 const CRITICAL_INTERVAL: u8 = 10;
 
@@ -103,19 +105,16 @@ fn main() -> Result<()> {
         .context(ServiceConfigLoad {})?;
 
     // We have to check if it's /dev/port because we have to "wrap" the file in this case.
-    let is_raw_port = service_config.ec_access_mode == ECAccessMode::RawPort;
-    let dev_path = service_config.ec_access_mode.to_path().clone();
-    let ec_dev = OpenOptions::new()
-        .read(true)
-        .write(true)
-        .open(dev_path)
-        .context(OpenDev { dev_path })?;
-
-    // XXX: Sorry...
-    let ec_dev = if is_raw_port {
-        Box::from(RawPort::from(ec_dev)) as Box<dyn RW>
-    } else {
-        Box::from(ec_dev) as Box<dyn RW>
+    let ec_dev = {
+        let file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(service_config.ec_access_mode.to_path())
+            .context(OpenDev { dev_path })?;
+        match service_config.ec_access_mode {
+            ECAccessMode::RawPort => RawPort::from(file),
+            ECAccessMode::AcpiEC | ECAccessMode::ECSys => file,
+        }
     };
 
     let state = Rc::from(State::from(service_config));
@@ -271,7 +270,7 @@ fn get_fan_config(
         .context(ControlConfigLoad {})
 }
 
-fn main_loop<T: RW>(
+fn main_loop<T: EcRW>(
     ec_manager: Rc<Mutex<ECManager<T>>>,
     dbus_conn: LocalConnection,
     state: Rc<State>,
