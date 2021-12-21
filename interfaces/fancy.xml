@@ -9,8 +9,8 @@
     <property name="TargetFansSpeeds" type="ad" access="readwrite"></property>
     <property name="PollInterval" type="t" access="read"></property>
     <method name="SetTargetFanSpeed">
-      <arg name="Index" direction="in" type="y" />
-      <arg name="Speed" direction="in" type="d" />
+      <arg name="Index" type="y" />
+      <arg name="Speed" type="d" />
     </method>
     <property name="FansNames" type="as" access="read"></property>
     <property name="Config" type="s" access="readwrite"></property>

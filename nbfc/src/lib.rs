@@ -8,7 +8,7 @@
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 #[serde(from = "String")]
 pub enum RegisterWriteMode {
@@ -33,7 +33,7 @@ impl Default for RegisterWriteMode {
     }
 }
 
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 #[serde(from = "String")]
 pub enum RegisterWriteOccasion {
@@ -50,7 +50,7 @@ impl From<String> for RegisterWriteOccasion {
     }
 }
 
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 #[serde(from = "String")]
 pub enum OverrideTargetOperation {
@@ -385,7 +385,7 @@ impl From<XmlNbfcServiceSettings> for NbfcServiceSettings {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CheckControlConfigError {
     FanConfigurationsNotEmpty,
     MaxFanSpeedThresholdRequired,

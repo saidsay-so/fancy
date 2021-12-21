@@ -1,40 +1,95 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
-use async_std::sync::{Arc, Mutex, RwLock};
-use snafu::{ResultExt, Snafu};
-use zbus::{dbus_interface, ObjectServer, SignalContext};
-
-use std::cell::RefCell;
 use std::cmp::Ordering;
-use std::rc::Rc;
 use std::time::Duration;
+
+use async_std::channel::{self, Receiver, Sender};
+use async_std::future;
+use async_std::sync::{Arc, Mutex};
+use snafu::{ResultExt, Snafu};
+use zbus::zvariant::OwnedObjectPath;
+use zbus::{dbus_interface, Connection};
+
 use crate::ec_control::EcRW;
+use crate::nbfc::*;
 
 use super::read::ECReader;
 use super::write::ECWriter;
-use super::RW;
-use crate::nbfc::*;
+
+const CRITICAL_INTERVAL: u8 = 10;
+const INFINITE_DURATION: Duration = Duration::from_secs(u64::MAX);
 
 #[derive(Debug, Snafu)]
-pub(crate) enum ECError {
+pub(crate) enum EcManagerError {
     #[snafu(display("An I/O error occured with the writer: {}", source))]
     Writer { source: std::io::Error },
 
     #[snafu(display("An I/O error occured with the reader: {}", source))]
     Reader { source: std::io::Error },
+
+    #[snafu(display("Failed to receive message: {}", source))]
+    RecvEvent {
+        source: async_std::channel::RecvError,
+    },
+
+    #[snafu(display("Error while modifying object server: {}", source))]
+    Dbus { source: zbus::Error },
 }
 
-type Result<T = ()> = std::result::Result<T, ECError>;
+type Result<T = ()> = std::result::Result<T, EcManagerError>;
 
 /// Holds information on a fan.
 #[derive(Debug)]
-pub(crate) struct Fan {
+struct Fan {
     pub name: String,
+    pub index: usize,
+    pub ev_sender: EventSender,
     pub thresholds: Vec<TemperatureThreshold>,
     pub current_threshold: usize,
-    pub fan_speed: Arc<RwLock<f64>>,
-    pub target_speed: Arc<RwLock<f64>>,
+    pub auto: bool,
+    pub fan_speed: f64,
+    pub target_speed: f64,
+}
+
+impl Fan {
+    /// Refresh the index of the current fan threshold according to the temperature (if necessary).
+    /// Returns None if the threshold didn't need change, else the speed.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the temperature cannot be converted to `u8`.
+    /// Panics if there is no threshold.
+    pub fn refresh_fan_threshold(&mut self, temp: f64) -> Option<f64> {
+        let temp = temp as u8;
+        let thresholds = &self.thresholds;
+        let current = self.current_threshold();
+
+        self.current_threshold = if temp >= thresholds.last().unwrap().up_threshold {
+            thresholds.len() - 1
+        } else if temp >= current.down_threshold && temp <= current.up_threshold {
+            return None;
+        } else if matches!(thresholds.iter().find(|t| t.down_threshold != 0), Some(thr) if temp <= thr.down_threshold)
+            || thresholds.len() == 1
+        {
+            0
+        } else if let Ok(i) = thresholds.binary_search_by(|el| match el {
+            _t if _t.down_threshold > temp => Ordering::Greater,
+            _t if _t.up_threshold < temp => Ordering::Less,
+            _ => Ordering::Equal,
+        }) {
+            i
+        } else {
+            return None;
+        };
+
+        Some(self.current_threshold().fan_speed.into())
+    }
+
+    //TODO: Maybe turn as property?
+    fn current_threshold(&self) -> TemperatureThreshold {
+        self.thresholds[self.current_threshold].clone()
+    }
 }
 
 #[dbus_interface(name = "com.musikid.fancy.Fan")]
@@ -46,17 +101,37 @@ impl Fan {
 
     #[dbus_interface(property, name = "FanSpeed")]
     async fn fan_speed(&self) -> f64 {
-        *self.fan_speed.read().await
+        //TODO: Send only in immediate mode
+        self.ev_sender
+            .send_event(Event::Manager(ManagerEvent::QuerySpeed(self.index)))
+            .await;
+        self.fan_speed
+    }
+
+    #[dbus_interface(property, name = "Auto")]
+    fn auto(&self) -> bool {
+        self.auto
+    }
+
+    #[dbus_interface(property, name = "Auto")]
+    async fn set_auto(&mut self, auto: bool) {
+        self.auto = auto;
+        self.ev_sender
+            .send_event(Event::Manager(ManagerEvent::Auto(self.index)))
+            .await;
     }
 
     #[dbus_interface(property, name = "TargetSpeed")]
-    async fn target_speed(&self) -> f64 {
-        *self.target_speed.read().await
+    fn target_speed(&self) -> f64 {
+        self.target_speed
     }
 
     #[dbus_interface(property, name = "TargetSpeed")]
     async fn set_target_speed(&mut self, target: f64) {
-        *self.target_speed.write().await = target;
+        self.target_speed = target;
+        self.ev_sender
+            .send_event(Event::Manager(ManagerEvent::TargetSpeed(self.index)))
+            .await;
     }
 
     // #[dbus_interface(property, name = "CurrentThreshold")]
@@ -65,55 +140,163 @@ impl Fan {
     // }
 }
 
+#[derive(Clone, Debug)]
+struct FansInfo {
+    count: usize,
+    paths: Vec<OwnedObjectPath>,
+}
+
+#[dbus_interface(name = "com.musikid.fancy.Fans")]
+impl FansInfo {
+    #[dbus_interface(property, name = "Count")]
+    fn count(&self) -> u64 {
+        self.count as u64
+    }
+
+    #[dbus_interface(property, name = "Paths")]
+    fn paths(&self) -> Vec<OwnedObjectPath> {
+        self.paths.clone()
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct EventSender(Sender<Event>);
+
+impl EventSender {
+    pub async fn send_event(&self, ev: Event) {
+        self.0.send(ev).await.unwrap()
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub(crate) enum ManagerEvent {
+    TargetSpeed(usize),
+    Auto(usize),
+    QuerySpeed(usize),
+}
+
+#[derive(Debug, PartialEq)]
+pub(crate) enum Event {
+    Manager(ManagerEvent),
+    External(ExternalEvent),
+}
+
+/// Events external to the manager
+#[derive(Debug, PartialEq)]
+pub(crate) enum ExternalEvent {
+    TempChange(f64),
+    RefreshConfig(FanControlConfigV2),
+    Shutdown,
+}
+
 /// Manages accesses to the EC.
 #[derive(Debug)]
 pub(crate) struct ECManager<T: EcRW> {
-    pub poll_interval: Duration,
-    pub fan_configs: Vec<Fan>,
-    pub critical_temperature: u8,
+    conn: Arc<Connection>,
+    fans_info: FansInfo,
+    /// Interval at which information are refreshed.
+    /// `Duration::ZERO` means that information is updated when needed.
+    poll_interval: Duration,
+    immediate: bool,
+    critical_temperature: u8,
+    current_temperature: f64,
+    ev_sender: Sender<Event>,
+    ev_receiver: Receiver<Event>,
+    critical: bool,
     reader: ECReader<T>,
     writer: ECWriter<T>,
 }
 
 impl<T: EcRW> ECManager<T> {
-    pub fn new(ec_device: T) -> Self {
+    pub fn new(ec_device: T, conn: Arc<Connection>) -> Self {
         let ec_device = Arc::from(Mutex::from(ec_device));
+        let (ev_sender, ev_receiver) = channel::unbounded();
 
         ECManager {
-            poll_interval: Duration::ZERO,
-            fan_configs: Vec::new(),
+            conn,
+            poll_interval: Duration::from_secs(u64::MAX),
+            fans_info: FansInfo {
+                count: 0,
+                paths: Vec::new(),
+            },
+            immediate: false,
+            ev_receiver,
+            ev_sender,
             critical_temperature: 0,
+            current_temperature: 100.0,
+            critical: true,
             writer: ECWriter::new(Arc::clone(&ec_device)),
             reader: ECReader::new(Arc::clone(&ec_device)),
         }
     }
 
+    pub fn create_sender(&self) -> EventSender {
+        EventSender(self.ev_sender.clone())
+    }
+
     /// Refresh the fan(s) configuration and initialize the writer according to this config.
-    pub async fn refresh_control_config(&mut self, c: FanControlConfigV2) -> Result {
-        self.fan_configs = c
+    async fn refresh_control_config(&mut self, c: FanControlConfigV2) -> Result {
+        const FANS_PATH: &str = "/com/musikid/fancy/fans";
+
+        let obj = self.conn.object_server();
+
+        // We don't return an error if the interface wasn't instantiated
+        obj.remove::<FansInfo, _>(FANS_PATH)
+            .await
+            .or_else(|e| match e {
+                zbus::Error::InterfaceNotFound => Ok(false),
+                _ => Err(e),
+            })
+            .context(Dbus {})?;
+
+        let fans: Vec<Fan> = c
             .fan_configurations
             .iter()
-            .scan(0, |acc, f| {
-                *acc += 1;
+            .scan(0, |index, f| {
+                *index += 1;
+                let mut thresholds = f.temperature_thresholds.to_owned();
+                thresholds.sort();
                 Some(Fan {
                     name: f
                         .fan_display_name
                         .to_owned()
-                        .unwrap_or(format!("Fan #{}", acc)),
-                    thresholds: f.temperature_thresholds.to_owned(),
+                        .unwrap_or_else(|| format!("Fan #{}", index)),
+                    index: *index - 1,
+                    thresholds,
+                    ev_sender: self.create_sender(),
+                    auto: true,
                     current_threshold: 0,
-                    fan_speed: Arc::from(RwLock::from(0.0)),
-                    target_speed: Arc::from(RwLock::from(0.0)),
+                    fan_speed: 0.0,
+                    target_speed: 100.0,
                 })
             })
             .collect();
+        let count = fans.len();
+
+        let mut paths = Vec::new();
+
+        for (fan, i) in fans.into_iter().zip(0..) {
+            let path = format!("/com/musikid/fancy/fans/{}", i);
+            paths.push(OwnedObjectPath::try_from(&*path).unwrap());
+            obj.remove::<Fan, _>(&*path)
+                .await
+                .or_else(|e| match e {
+                    zbus::Error::InterfaceNotFound => Ok(false),
+                    _ => Err(e),
+                })
+                .context(Dbus {})?;
+            obj.at(path, fan).await.context(Dbus {})?;
+        }
+
+        self.fans_info = FansInfo { count, paths };
+
+        obj.at(FANS_PATH, self.fans_info.clone())
+            .await
+            .context(Dbus {})?;
 
         self.critical_temperature = c.critical_temperature;
+        self.critical = true;
         self.poll_interval = Duration::from_millis(c.ec_poll_interval);
-
-        self.fan_configs
-            .iter_mut()
-            .for_each(|c| c.thresholds.sort());
 
         self.reader
             .refresh_config(c.read_write_words, &c.fan_configurations);
@@ -128,135 +311,324 @@ impl<T: EcRW> ECManager<T> {
             .context(Writer {})
     }
 
-    /// Refresh the index of the current fan threshold according to the temperature (if necessary).
-    /// Returns false if the threshold didn't need change.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the temperature cannot be converted to `u8`.
-    /// Panics if the thresholds has no elements.
-    pub fn refresh_fan_threshold(&mut self, temp: f64, fan_index: usize) -> bool {
-        let temp = temp as u8;
-        let fan_config = &mut self.fan_configs[fan_index];
-        let thresholds = &fan_config.thresholds;
-        let current = &mut fan_config.current_threshold;
+    pub async fn event_handler(&mut self) -> Result {
+        loop {
+            let timeout = if self.immediate {
+                INFINITE_DURATION
+            } else {
+                self.poll_interval
+            };
 
-        if temp >= thresholds.last().unwrap().up_threshold {
-            *current = thresholds.len() - 1;
-        } else if temp >= thresholds[*current].down_threshold
-            && temp <= thresholds[*current].up_threshold
-        {
-            return false;
-        } else if matches!(thresholds.iter().find(|t| t.down_threshold != 0), Some(thr) if temp <= thr.down_threshold)
-            || thresholds.len() == 1
-        {
-            *current = 0;
-        } else if let Ok(i) = thresholds.binary_search_by(|el| match el {
-            _t if _t.down_threshold > temp => Ordering::Greater,
-            _t if _t.up_threshold < temp => Ordering::Less,
-            _ => Ordering::Equal,
-        }) {
-            *current = i;
+            if let Ok(ev_res) = future::timeout(timeout, self.ev_receiver.recv()).await {
+                match ev_res.context(RecvEvent {})? {
+                    Event::Manager(ManagerEvent::Auto(i))
+                    | Event::Manager(ManagerEvent::TargetSpeed(i)) => {
+                        self.write_fan_speed(i).await?
+                    }
+                    Event::Manager(ManagerEvent::QuerySpeed(i)) => self.read_fan_speed(i).await?,
+                    //
+                    Event::External(ExternalEvent::RefreshConfig(config)) => {
+                        self.refresh_control_config(config).await?
+                    }
+                    Event::External(ExternalEvent::TempChange(temp)) => {
+                        self.update_temp(temp);
+                        self.write_speeds().await?;
+                    }
+                    Event::External(ExternalEvent::Shutdown) => {
+                        self.reset_ec(false).await?;
+                        break Ok(());
+                    }
+                }
+            }
+
+            // Timeout with poll interval, so we read/write speeds
+
+            self.read_speeds().await?;
+            self.write_speeds().await?;
+        }
+    }
+
+    async fn read_speeds(&self) -> Result {
+        for i in 0..self.fans_info.count {
+            self.read_fan_speed(i).await?;
         }
 
-        true
+        Ok(())
+    }
+
+    async fn write_speeds(&self) -> Result {
+        for i in 0..self.fans_info.count {
+            self.write_fan_speed(i).await?;
+        }
+
+        Ok(())
+    }
+
+    pub async fn target_speeds(&self) -> Result<Vec<f64>> {
+        let paths = &self.fans_info.paths;
+        let mut speeds = Vec::with_capacity(self.fans_info.count);
+
+        for fan_path in paths.iter() {
+            let fan_iface_ref = self
+                .conn
+                .object_server()
+                .interface::<_, Fan>(fan_path)
+                .await
+                .context(Dbus)?;
+            let fan = fan_iface_ref.get().await;
+            speeds.push(fan.target_speed);
+        }
+
+        Ok(speeds)
+    }
+
+    fn update_temp(&mut self, temp: f64) {
+        self.critical = if self.critical {
+            self.critical_temperature.saturating_sub(temp as u8) <= CRITICAL_INTERVAL
+        } else {
+            temp as u8 >= self.critical_temperature
+        };
+
+        self.current_temperature = temp;
     }
 
     /// Write the speed percent to the EC for the fan specified by `fan_index`.
-    pub async fn write_fan_speed(&mut self, fan_index: usize, speed_percent: f64) -> Result {
-        self.writer
-            .write_speed_percent(fan_index, speed_percent)
-            .await
-            .context(Writer {})
+    async fn write_fan_speed(&self, fan_index: usize) -> Result {
+        let speed = {
+            let fan_iface_ref = self
+                .conn
+                .object_server()
+                .interface::<_, Fan>(&*self.fans_info.paths[fan_index])
+                .await
+                .context(Dbus)?;
+            let mut fan = fan_iface_ref.get_mut().await;
+
+            if self.critical {
+                Some(100.0)
+            } else if fan.auto {
+                fan.refresh_fan_threshold(self.current_temperature)
+            } else {
+                // We want to write the speed only if it has changed.
+                let speed = fan.target_speed;
+                ((fan.fan_speed - speed).abs() > f64::EPSILON).then(|| speed)
+            }
+        };
+
+        if let Some(speed) = speed {
+            self.writer
+                .write_speed_percent(fan_index, speed)
+                .await
+                .context(Writer {})?;
+
+            if self.immediate {
+                self.read_fan_speed(fan_index).await?;
+            }
+        }
+
+        Ok(())
     }
 
     /// Reset the EC, including non-required registers when `reset_all` is true.
-    pub async fn reset_ec(&mut self, reset_all: bool) -> Result {
+    async fn reset_ec(&self, reset_all: bool) -> Result {
         self.writer.reset(reset_all).await.context(Writer {})
     }
 
     /// Read the speed percent from the EC for the fan specified by `fan_index`.
-    pub async fn read_fan_speed(&mut self, fan_index: usize) -> Result<f64> {
-        self.reader
+    async fn read_fan_speed(&self, fan_index: usize) -> Result {
+        let speed = self
+            .reader
             .read_speed_percent(fan_index)
             .await
-            .context(Reader {})
+            .context(Reader {})?;
+        let iface_ref = self
+            .conn
+            .object_server()
+            .interface::<_, Fan>(self.fans_info.paths[fan_index].clone())
+            .await
+            .context(Dbus {})?;
+        let mut fan = iface_ref.get_mut().await;
+
+        fan.fan_speed = speed;
+        fan.fan_speed_changed(iface_ref.signal_context())
+            .await
+            .context(Dbus {})
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::fixtures::parsed_configs;
     use async_std::{
-        io::{Cursor, Read, Seek},
-        task::block_on,
+        io::Cursor,
+        task::{self, block_on},
     };
-    use once_cell::sync::Lazy;
+    use rayon::prelude::*;
+    use rstest::rstest;
+    use smol::stream::StreamExt;
+    use std::sync::Arc;
+    use zbus::MessageStream;
 
-    static CONFIGS_PARSED: Lazy<Vec<FanControlConfigV2>> = Lazy::new(|| {
-        use std::io::Read;
-
-        std::fs::read_dir("nbfc_configs/Configs")
-            .unwrap()
-            .filter_map(|e| e.ok())
-            .map(|e| std::fs::File::open(e.path()).unwrap())
-            .map(|mut e| {
-                let mut buf = String::new();
-                e.read_to_string(&mut buf).unwrap();
-                buf
-            })
-            .map(|e| {
-                quick_xml::de::from_str::<XmlFanControlConfigV2>(&e)
-                    .unwrap()
-                    .into()
-            })
-            .collect()
-    });
-
-    #[test]
-    fn refresh_config() {
+    #[rstest]
+    fn refresh_config(parsed_configs: &Vec<FanControlConfigV2>) {
         use is_sorted::IsSorted;
-        CONFIGS_PARSED.iter().for_each(|c| {
+
+        parsed_configs.par_iter().for_each(|c| {
             block_on(async {
+                let conn = Arc::from(zbus::Connection::session().await.unwrap());
                 let ec = Cursor::new(vec![0u8; 256]);
 
-                let mut manager = ECManager::new(ec);
+                let mut manager = ECManager::new(ec, Arc::clone(&conn));
 
                 manager.refresh_control_config(c.clone()).await.unwrap();
 
-                assert!(manager.critical_temperature == c.critical_temperature as u8);
-                assert!(manager
-                    .fan_configs
-                    .iter_mut()
-                    .all(|f| { IsSorted::is_sorted(&mut f.thresholds.iter()) }));
-                assert!(manager.fan_configs.iter().all(|f| f.current_threshold == 0));
+                assert_eq!(manager.critical_temperature, c.critical_temperature);
+                for fan_path in manager.fans_info.paths {
+                    let iface_ref = conn
+                        .object_server()
+                        .interface::<_, Fan>(fan_path)
+                        .await
+                        .unwrap();
+                    let iface = iface_ref.get_mut().await;
+                    assert!(IsSorted::is_sorted(&mut iface.thresholds.iter()));
+                    assert_eq!(iface.current_threshold, 0);
+                }
+
+                // Connection
+                let obj = conn
+                    .object_server()
+                    .interface::<_, FansInfo>("/com/musikid/fancy/fans")
+                    .await
+                    .unwrap();
+                let fans_info = obj.get().await;
+                let expected_paths: Vec<OwnedObjectPath> = (0..c.fan_configurations.len())
+                    .map(|i| {
+                        OwnedObjectPath::try_from(format!("/com/musikid/fancy/fans/{}", i)).unwrap()
+                    })
+                    .collect();
+                assert_eq!(c.fan_configurations.len(), fans_info.count() as usize);
+                assert_eq!(expected_paths, fans_info.paths());
             })
         });
     }
 
-    #[test]
-    fn select_threshold() {
-        CONFIGS_PARSED.iter().for_each(|c| {
+    #[rstest]
+    fn events_and_signals(parsed_configs: &Vec<FanControlConfigV2>) {
+        parsed_configs
+            .par_iter()
+            .zip(0..parsed_configs.len())
+            .for_each(|(c, i)| {
+                block_on(async {
+                    let conn = Arc::from(zbus::Connection::session().await.unwrap());
+                    let ec = Cursor::new(vec![0u8; 256]);
+
+                    let mut manager = ECManager::new(ec, Arc::clone(&conn));
+                    manager.immediate = true;
+                    let service_name = format!("com.musikid.fancy.test{}", i);
+
+                    manager.refresh_control_config(c.clone()).await.unwrap();
+
+                    conn.request_name(service_name.clone()).await.unwrap();
+
+                    let paths = manager.fans_info.paths.clone();
+
+                    for (fan_path, i) in paths.into_iter().zip(0..) {
+                        {
+                            let obj = conn
+                                .object_server()
+                                .interface::<_, Fan>(fan_path.clone())
+                                .await
+                                .unwrap();
+                            let mut fan = obj.get_mut().await;
+
+                            // Target speed
+                            fan.set_target_speed(100.0).await;
+                            assert_eq!(
+                                Event::Manager(ManagerEvent::TargetSpeed(i)),
+                                manager.ev_receiver.recv().await.unwrap()
+                            );
+                            assert_eq!(fan.target_speed, 100.0);
+
+                            fan.set_auto(false).await;
+                            assert_eq!(
+                                Event::Manager(ManagerEvent::Auto(i)),
+                                manager.ev_receiver.recv().await.unwrap()
+                            );
+                            assert_eq!(fan.auto, false);
+                        }
+
+                        manager.write_fan_speed(i).await.unwrap();
+                        assert_eq!(
+                            Event::Manager(ManagerEvent::QuerySpeed(i)),
+                            manager.ev_receiver.recv().await.unwrap()
+                        );
+
+                        let (confirm_tx, conf_rx) = channel::bounded(1);
+
+                        let match_rule = format!(
+                            "type='signal',sender='{}',member='PropertiesChanged',path='{}'",
+                            &*service_name,
+                            fan_path.as_str()
+                        );
+                        let monitor_conn = Connection::session().await.unwrap();
+                        monitor_conn
+                            .call_method(
+                                Some("org.freedesktop.DBus"),
+                                "/org/freedesktop/DBus",
+                                Some("org.freedesktop.DBus.Monitoring"),
+                                "BecomeMonitor",
+                                &(&[match_rule] as &[_], 0u32),
+                            )
+                            .await
+                            .unwrap();
+                        let mut monitor_stream = MessageStream::from(monitor_conn);
+                        task::spawn(async move {
+                            let res = monitor_stream.try_next().await;
+                            if let Err(e) = res {
+                                panic!("{}", e);
+                            }
+                            confirm_tx.send(true).await.unwrap();
+                        });
+
+                        manager.read_fan_speed(i).await.unwrap();
+
+                        assert!(conf_rx.recv().await.unwrap());
+
+                        assert_eq!(
+                            Event::Manager(ManagerEvent::QuerySpeed(i)),
+                            manager.ev_receiver.recv().await.unwrap()
+                        );
+                    }
+                });
+            })
+    }
+
+    #[rstest]
+    fn select_threshold(parsed_configs: &Vec<FanControlConfigV2>) {
+        parsed_configs.par_iter().for_each(|c| {
             block_on(async {
                 let ec = Cursor::new(vec![0u8; 256]);
+                let conn = Arc::from(zbus::Connection::session().await.unwrap());
 
-                let mut manager = ECManager::new(ec);
+                let mut manager = ECManager::new(ec, Arc::clone(&conn));
 
                 manager.refresh_control_config(c.clone()).await.unwrap();
 
                 for i in 0..c.fan_configurations.len() {
-                    let thresholds = &c.fan_configurations[i].temperature_thresholds;
+                    /*           let thresholds = &c.fan_configurations[i].temperature_thresholds;*/
 
-                    let very_high_temperature = 90.0;
-                    manager.refresh_fan_threshold(very_high_temperature, i);
-                    assert!(manager.fan_configs[i].current_threshold == thresholds.len() - 1);
+                    /*let very_high_temperature = 120.0;*/
+                    /*manager.fan_configs[i].refresh_fan_threshold(very_high_temperature);*/
+                    /*assert_eq!(*/
+                    /*manager.fan_configs[i].current_threshold.load(Relaxed),*/
+                    /*thresholds.len() - 1*/
+                    /*);*/
 
-                    let very_low_temperature = 20.0;
-                    manager.refresh_fan_threshold(very_low_temperature, i);
-                    assert!(
-                        manager.fan_configs[i].current_threshold == 0
-                            || manager.fan_configs[i].current_threshold == 1
-                    );
+                    /*let very_low_temperature = 20.0;*/
+                    /*manager.fan_configs[i].refresh_fan_threshold(very_low_temperature);*/
+                    /*assert!(*/
+                    /*(0..=1).contains(&manager.fan_configs[i].current_threshold.load(Relaxed))*/
+                    /*);*/
 
                     // TODO: Find a way to test for other thresholds
                     // let mut rng = rand::thread_rng();

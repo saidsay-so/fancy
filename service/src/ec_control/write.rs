@@ -1,9 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
-use async_std::io::{Error, Seek, SeekFrom, Write, WriteExt};
-use async_std::prelude::*;
-use log::debug;
+use async_std::io::{Error, SeekFrom};
 
 use crate::ec_control::EcWrite;
 use crate::nbfc::*;
@@ -18,14 +16,14 @@ struct FanWriteConfig {
     reset_value: Option<u16>,
     max_speed: u16,
     min_speed: u16,
-    write_percent_overrides: Option<Vec<FanSpeedPercentageOverride>>,
+    write_percent_overrides: Vec<FanSpeedPercentageOverride>,
 }
 
 #[derive(Debug)]
 /// Manages writes to the EC.
 pub(crate) struct ECWriter<W: EcWrite> {
-    on_write_reg_confs: Option<Vec<RegisterWriteConfiguration>>,
-    init_reg_confs: Option<Vec<RegisterWriteConfiguration>>,
+    on_write_reg_confs: Vec<RegisterWriteConfiguration>,
+    init_reg_confs: Vec<RegisterWriteConfiguration>,
     fans_write_config: Vec<FanWriteConfig>,
     write_words: bool,
     ec_dev: ArcWrapper<W>,
@@ -37,8 +35,8 @@ impl<W: EcWrite> ECWriter<W> {
     /// Initialize a new writer.
     pub fn new(ec_dev: ArcWrapper<W>) -> Self {
         ECWriter {
-            on_write_reg_confs: None,
-            init_reg_confs: None,
+            on_write_reg_confs: Vec::new(),
+            init_reg_confs: Vec::new(),
             fans_write_config: Vec::new(),
             write_words: false,
             ec_dev,
@@ -53,19 +51,19 @@ impl<W: EcWrite> ECWriter<W> {
         reg_confs: Option<Vec<RegisterWriteConfiguration>>,
         fan_configs: &[FanConfiguration],
     ) -> Result {
-        self.on_write_reg_confs = reg_confs.as_ref().map(|e| {
-            e.iter()
+        if let Some(reg_confs) = reg_confs {
+            self.on_write_reg_confs = reg_confs
+                .iter()
                 .filter(|r| r.write_occasion == Some(RegisterWriteOccasion::OnWriteFanSpeed))
                 .cloned()
-                .collect()
-        });
+                .collect();
 
-        self.init_reg_confs = reg_confs.as_ref().map(|e| {
-            e.iter()
+            self.init_reg_confs = reg_confs
+                .iter()
                 .filter(|r| r.write_occasion == Some(RegisterWriteOccasion::OnInitialization))
                 .cloned()
-                .collect()
-        });
+                .collect();
+        }
 
         self.write_words = write_words;
 
@@ -77,15 +75,19 @@ impl<W: EcWrite> ECWriter<W> {
                 reset_value: fan.fan_speed_reset_value,
                 min_speed: fan.min_speed_value,
                 max_speed: fan.max_speed_value,
-                write_percent_overrides: fan.fan_speed_percentage_overrides.as_ref().map(|f| {
-                    f.iter()
-                        .filter(|e| {
-                            e.target_operation == Some(OverrideTargetOperation::Write)
-                                || e.target_operation == Some(OverrideTargetOperation::ReadWrite)
-                        })
-                        .cloned()
-                        .collect()
-                }),
+                write_percent_overrides: fan.fan_speed_percentage_overrides.as_ref().map_or_else(
+                    Vec::new,
+                    |f| {
+                        f.iter()
+                            .filter(|e| {
+                                e.target_operation == Some(OverrideTargetOperation::Write)
+                                    || e.target_operation
+                                        == Some(OverrideTargetOperation::ReadWrite)
+                            })
+                            .cloned()
+                            .collect()
+                    },
+                ),
             })
             .collect();
 
@@ -93,13 +95,11 @@ impl<W: EcWrite> ECWriter<W> {
     }
 
     /// Function to call before starting to write. It initialize the EC controller so it can be used.
-    async fn init_write(&mut self) -> Result {
-        if let Some(reg_confs) = &self.init_reg_confs {
-            for reg_conf in reg_confs.iter() {
-                let write_off = SeekFrom::Start(reg_conf.register as u64);
-                self.write_value(false, write_off, &reg_conf.value.to_le_bytes())
-                    .await?
-            }
+    async fn init_write(&self) -> Result {
+        for reg_conf in self.init_reg_confs.iter() {
+            let write_off = SeekFrom::Start(reg_conf.register as u64);
+            self.write_value(false, write_off, &reg_conf.value.to_le_bytes())
+                .await?;
         }
 
         for c in &self.fans_write_config {
@@ -114,27 +114,23 @@ impl<W: EcWrite> ECWriter<W> {
     }
 
     /// Reset the EC. Resets all the registers (even when it's not required) if `reset_all` is true.
-    pub async fn reset(&mut self, reset_all: bool) -> Result {
-        if let Some(reg_confs) = &self.init_reg_confs {
-            for reg_conf in reg_confs.iter() {
-                if reset_all || reg_conf.reset_required {
-                    let write_off = SeekFrom::Start(reg_conf.register as u64);
-                    if let Some(value) = reg_conf.reset_value {
-                        self.write_value(false, write_off, &value.to_le_bytes())
-                            .await?;
-                    }
+    pub async fn reset(&self, reset_all: bool) -> Result {
+        for reg_conf in self.init_reg_confs.iter() {
+            if reset_all || reg_conf.reset_required {
+                let write_off = SeekFrom::Start(reg_conf.register as u64);
+                if let Some(value) = reg_conf.reset_value {
+                    self.write_value(false, write_off, &value.to_le_bytes())
+                        .await?;
                 }
             }
         }
 
-        if let Some(reg_confs) = &self.on_write_reg_confs {
-            for reg_conf in reg_confs.iter() {
-                if reset_all || reg_conf.reset_required {
-                    let write_off = SeekFrom::Start(reg_conf.register as u64);
-                    if let Some(value) = reg_conf.reset_value {
-                        self.write_value(false, write_off, &value.to_le_bytes())
-                            .await?;
-                    }
+        for reg_conf in self.on_write_reg_confs.iter() {
+            if reset_all || reg_conf.reset_required {
+                let write_off = SeekFrom::Start(reg_conf.register as u64);
+                if let Some(value) = reg_conf.reset_value {
+                    self.write_value(false, write_off, &value.to_le_bytes())
+                        .await?;
                 }
             }
         }
@@ -153,22 +149,20 @@ impl<W: EcWrite> ECWriter<W> {
     }
 
     /// Write the `speed_percent` to the EC for the fan specified by `fan_index`.
-    pub async fn write_speed_percent(&mut self, fan_index: usize, speed_percent: f64) -> Result {
-        if let Some(reg_confs) = &self.on_write_reg_confs {
-            for reg_conf in reg_confs.iter() {
-                let write_off = SeekFrom::Start(reg_conf.register as u64);
-                self.write_value(false, write_off, &reg_conf.value.to_le_bytes())
-                    .await?;
-            }
+    pub async fn write_speed_percent(&self, fan_index: usize, speed_percent: f64) -> Result {
+        for reg_conf in self.on_write_reg_confs.iter() {
+            let write_off = SeekFrom::Start(reg_conf.register as u64);
+            self.write_value(false, write_off, &reg_conf.value.to_le_bytes())
+                .await?;
         }
 
         let fan = &self.fans_write_config[fan_index];
-        let speed = if let Some(speed_value) = fan.write_percent_overrides.as_ref().and_then(|f| {
-            f.iter()
-                .filter(|e| (e.fan_speed_percentage as f64 - speed_percent).abs() < f64::EPSILON)
-                .map(|e| e.fan_speed_value)
-                .next()
-        }) {
+        let speed = if let Some(speed_value) = fan
+            .write_percent_overrides
+            .iter()
+            .find(|e| (e.fan_speed_percentage as f64 - speed_percent).abs() < f64::EPSILON)
+            .map(|e| e.fan_speed_value)
+        {
             speed_value.to_le_bytes()
         } else {
             ((fan.min_speed as f64
@@ -183,49 +177,27 @@ impl<W: EcWrite> ECWriter<W> {
 
     /// Low-level write function.
     async fn write_value(&self, write_word: bool, write_off: SeekFrom, value: &[u8]) -> Result {
-        debug!(
-            "Writing {:?} to offset {:?}",
-            if write_word { &value } else { &value[..=0] },
-            write_off
-        );
-
         let mut dev = self.ec_dev.lock().await;
 
-        dev.write_bytes(write_off, if write_word { &value } else { &value[..=0] }).await
+        dev.write_bytes(write_off, if write_word { &value } else { &value[..=0] })
+            .await
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use async_std::io::{Cursor, Read};
+    use crate::fixtures::parsed_configs;
+    use async_std::io::Cursor;
     use async_std::sync::{Arc, Mutex};
-    use once_cell::sync::Lazy;
+    use rayon::prelude::*;
+    use rstest::rstest;
     use smol::block_on;
 
     use super::*;
 
-    static CONFIGS_PARSED: Lazy<Vec<FanControlConfigV2>> = Lazy::new(|| {
-        use std::io::Read;
-        std::fs::read_dir("nbfc_configs/Configs")
-            .unwrap()
-            .filter_map(|e| e.ok())
-            .map(|e| std::fs::File::open(e.path()).unwrap())
-            .map(|mut e| {
-                let mut buf = String::new();
-                e.read_to_string(&mut buf).unwrap();
-                buf
-            })
-            .map(|e| {
-                quick_xml::de::from_str::<XmlFanControlConfigV2>(&e)
-                    .unwrap()
-                    .into()
-            })
-            .collect()
-    });
-
-    #[test]
-    fn refresh() {
-        CONFIGS_PARSED.iter().for_each(|c| {
+    #[rstest]
+    fn refresh(parsed_configs: &Vec<FanControlConfigV2>) {
+        parsed_configs.par_iter().for_each(|c| {
             block_on(async {
                 let ec = Cursor::new(vec![0; 256]);
                 let ec = Arc::new(Mutex::new(ec));
@@ -239,72 +211,68 @@ mod tests {
                     .await
                     .unwrap();
 
-                if let Some(ref on_w_confs) = writer.on_write_reg_confs {
-                    assert_eq!(
-                        on_w_confs.len(),
-                        c.register_write_configurations
-                            .as_ref()
-                            .unwrap()
+                assert_eq!(
+                    writer.on_write_reg_confs,
+                    c.register_write_configurations
+                        .as_ref()
+                        .map_or(Vec::new(), |c| c
                             .iter()
+                            .cloned()
                             .filter(|c| c.write_occasion
                                 == Some(RegisterWriteOccasion::OnWriteFanSpeed))
-                            .count()
-                    );
-                }
+                            .collect::<Vec<_>>())
+                );
 
-                if let Some(ref on_i_confs) = writer.init_reg_confs {
-                    assert_eq!(
-                        on_i_confs.len(),
-                        c.register_write_configurations
-                            .as_ref()
-                            .unwrap()
+                assert_eq!(
+                    writer.init_reg_confs,
+                    c.register_write_configurations
+                        .as_ref()
+                        .map_or(Vec::new(), |c| c
                             .iter()
+                            .cloned()
                             .filter(|c| c.write_occasion
                                 == Some(RegisterWriteOccasion::OnInitialization))
-                            .count()
-                    );
-                }
+                            .collect::<Vec<_>>())
+                );
 
                 assert_eq!(writer.fans_write_config.len(), c.fan_configurations.len());
 
-                let mut i = 0;
-                writer.fans_write_config.iter().for_each(|f| {
-                    assert_eq!(f.reset_required, c.fan_configurations[i].reset_required);
-                    assert_eq!(f.write_register, c.fan_configurations[i].write_register);
-                    assert_eq!(f.reset_value, c.fan_configurations[i].fan_speed_reset_value);
-                    assert_eq!(f.min_speed, c.fan_configurations[i].min_speed_value);
-                    assert_eq!(f.max_speed, c.fan_configurations[i].max_speed_value);
+                for (f, expected_f) in writer
+                    .fans_write_config
+                    .iter()
+                    .zip(c.fan_configurations.iter())
+                {
+                    assert_eq!(f.reset_required, expected_f.reset_required);
+                    assert_eq!(f.write_register, expected_f.write_register);
+                    assert_eq!(f.reset_value, expected_f.fan_speed_reset_value);
+                    assert_eq!(f.min_speed, expected_f.min_speed_value);
+                    assert_eq!(f.max_speed, expected_f.max_speed_value);
 
-                    if let Some(ref overrides) = f.write_percent_overrides {
-                        let excepted_overrides = c.fan_configurations[i]
-                            .fan_speed_percentage_overrides
-                            .as_ref()
-                            .unwrap();
-                        assert_eq!(
-                            overrides.len(),
-                            excepted_overrides
-                                .iter()
-                                .filter(|o| o.target_operation
-                                    == Some(OverrideTargetOperation::ReadWrite)
-                                    || o.target_operation == Some(OverrideTargetOperation::Write))
-                                .count()
-                        );
-
-                        overrides.iter().for_each(|o| {
-                            assert!(excepted_overrides.iter().any(|e| e == o));
+                    let excepted_overrides = expected_f
+                        .fan_speed_percentage_overrides
+                        .as_ref()
+                        .map_or(Vec::new(), |o| {
+                            o.iter()
+                                .cloned()
+                                .filter(|o| {
+                                    o.target_operation == Some(OverrideTargetOperation::ReadWrite)
+                                        || o.target_operation
+                                            == Some(OverrideTargetOperation::Write)
+                                })
+                                .collect::<Vec<_>>()
                         });
-                    }
-                    i += 1;
-                });
+
+                    assert_eq!(f.write_percent_overrides.clone(), excepted_overrides);
+                }
 
                 assert_eq!(writer.write_words, c.read_write_words);
             })
         });
     }
 
-    #[test]
-    fn reset_only_required() {
-        CONFIGS_PARSED.iter().for_each(|c| {
+    #[rstest]
+    fn reset_only_required(parsed_configs: &Vec<FanControlConfigV2>) {
+        parsed_configs.par_iter().for_each(|c| {
             block_on(async {
                 let ec = Cursor::new(vec![0; 256]);
                 let ec = Arc::new(Mutex::new(ec));
@@ -318,13 +286,18 @@ mod tests {
                     .await
                     .unwrap();
 
-                let mut_ec = *ec.lock().await.get_mut();
-                mut_ec.iter_mut().map(|x| *x = 0).count();
+                {
+                    let ec_lock = &mut *ec.lock().await;
+                    let buffer = ec_lock.get_mut();
+                    let _ = std::mem::replace(buffer, vec![0; 256]);
+                }
+
                 writer.reset(false).await.unwrap();
 
-                if let Some(reg_confs) = c.register_write_configurations.as_ref() {
-                    let ec = ec.lock().await;
+                let ec_lock = &mut *ec.lock().await;
+                let buffer = ec_lock.get_ref();
 
+                if let Some(reg_confs) = c.register_write_configurations.as_ref() {
                     for reg_conf in reg_confs.iter() {
                         let write_off = reg_conf.register as usize;
                         let excepted_value = if reg_conf.reset_required {
@@ -333,7 +306,7 @@ mod tests {
                             0
                         };
 
-                        let value = ec.get_ref()[write_off];
+                        let value = buffer[write_off];
                         assert_eq!(excepted_value, value);
                     }
                 }
@@ -342,12 +315,10 @@ mod tests {
                     if fan.reset_required {
                         let write_off = fan.write_register as usize;
                         let excepted_value = &fan.fan_speed_reset_value.unwrap().to_le_bytes();
-
-                        let fake_ec = *ec.lock().await.get_ref();
                         let value = if c.read_write_words {
-                            &fake_ec[write_off..=write_off + 1]
+                            &buffer[write_off..=write_off + 1]
                         } else {
-                            &fake_ec[write_off..=write_off]
+                            &buffer[write_off..=write_off]
                         };
                         assert_eq!(
                             if c.read_write_words {
@@ -363,9 +334,9 @@ mod tests {
         });
     }
 
-    #[test]
-    fn reset_all() {
-        CONFIGS_PARSED.iter().for_each(|c| {
+    #[rstest]
+    fn reset_all(parsed_configs: &Vec<FanControlConfigV2>) {
+        parsed_configs.par_iter().for_each(|c| {
             block_on(async {
                 let ec = Cursor::new(vec![0; 256]);
                 let ec = Arc::new(Mutex::new(ec));
@@ -379,18 +350,23 @@ mod tests {
                     .await
                     .unwrap();
 
-                let mut_ec = ec.lock().await.get_mut();
-                mut_ec.iter_mut().map(|x| *x = 0).count();
+                {
+                    let ec_lock = &mut *ec.lock().await;
+                    let buffer = ec_lock.get_mut();
+                    let _ = std::mem::replace(buffer, vec![0; 256]);
+                }
+
                 writer.reset(true).await.unwrap();
 
-                if let Some(reg_confs) = c.register_write_configurations.as_ref() {
-                    let ec = ec.lock().await;
+                let ec_lock = &mut *ec.lock().await;
+                let buffer = ec_lock.get_ref();
 
+                if let Some(reg_confs) = c.register_write_configurations.as_ref() {
                     for reg_conf in reg_confs.iter().filter(|e| e.reset_value.is_some()) {
                         let write_off = reg_conf.register as usize;
                         let excepted_value = reg_conf.reset_value.unwrap();
 
-                        let value = ec.get_ref()[write_off];
+                        let value = buffer[write_off];
                         assert_eq!(excepted_value, value);
                     }
 
@@ -400,9 +376,9 @@ mod tests {
                             let excepted_value = &fan.fan_speed_reset_value.unwrap().to_le_bytes();
 
                             let value = if c.read_write_words {
-                                &ec.get_ref()[write_off..=write_off + 1]
+                                &buffer[write_off..=write_off + 1]
                             } else {
-                                &ec.get_ref()[write_off..=write_off]
+                                &buffer[write_off..=write_off]
                             };
                             assert_eq!(
                                 if c.read_write_words {
@@ -419,12 +395,13 @@ mod tests {
         });
     }
 
-    #[test]
-    fn init_write() {
-        CONFIGS_PARSED.iter().for_each(|c| {
+    #[rstest]
+    fn init_write(parsed_configs: &Vec<FanControlConfigV2>) {
+        parsed_configs.par_iter().for_each(|c| {
             block_on(async {
-                let mut ec = Cursor::new(vec![0; 256]);
-                let mut writer = ECWriter::new(Arc::new(Mutex::new(&mut ec)));
+                let ec = Cursor::new(vec![0; 256]);
+                let ec = Arc::new(Mutex::new(ec));
+                let mut writer = ECWriter::new(Arc::clone(&ec));
                 writer
                     .refresh_config(
                         c.read_write_words,
@@ -433,6 +410,9 @@ mod tests {
                     )
                     .await
                     .unwrap();
+
+                let ec_lock = &*ec.lock().await;
+                let buffer = ec_lock.get_ref();
 
                 if let Some(reg_confs) = c.register_write_configurations.as_ref() {
                     for reg_conf in reg_confs.iter().filter(|e| {
@@ -441,7 +421,7 @@ mod tests {
                         let write_off = reg_conf.register as usize;
                         let excepted_value = reg_conf.value;
 
-                        let value = ec.get_ref()[write_off];
+                        let value = buffer[write_off];
                         assert_eq!(excepted_value, value);
                     }
 
@@ -451,9 +431,9 @@ mod tests {
                             let excepted_value = &fan.fan_speed_reset_value.unwrap().to_le_bytes();
 
                             let value = if c.read_write_words {
-                                &ec.get_ref()[write_off..=write_off + 1]
+                                &buffer[write_off..=write_off + 1]
                             } else {
-                                &ec.get_ref()[write_off..=write_off]
+                                &buffer[write_off..=write_off]
                             };
                             assert_eq!(
                                 if c.read_write_words {
@@ -470,9 +450,9 @@ mod tests {
         });
     }
 
-    #[test]
-    fn write_overrides() {
-        CONFIGS_PARSED.iter().for_each(|c| {
+    #[rstest]
+    fn write_overrides(parsed_configs: &Vec<FanControlConfigV2>) {
+        parsed_configs.par_iter().for_each(|c| {
             block_on(async {
                 let ec = Cursor::new(vec![0; 256]);
                 let ec = Arc::new(Mutex::new(ec));
@@ -485,9 +465,8 @@ mod tests {
                     )
                     .await
                     .unwrap();
-                let mut i = 0;
 
-                for fan in &c.fan_configurations {
+                for (fan, i) in c.fan_configurations.iter().zip(0..) {
                     if let Some(fan_override) = fan.fan_speed_percentage_overrides.as_ref() {
                         for override_s in fan_override.iter().filter(|e| {
                             e.target_operation == Some(OverrideTargetOperation::ReadWrite)
@@ -498,37 +477,36 @@ mod tests {
                                 .await
                                 .unwrap();
 
-                            let write_off = fan.write_register as u64;
-                            let excepted_value = override_s.fan_speed_value;
+                            let ec_lock = ec.lock().await;
+                            let buffer = ec_lock.get_ref();
+
+                            let write_off = fan.write_register as usize;
+                            let buf = override_s.fan_speed_value.to_le_bytes();
+                            let excepted_value = if c.read_write_words {
+                                &buf[..]
+                            } else {
+                                &buf[..=0]
+                            };
 
                             let value = {
-                                let mut ec = *ec.lock().await;
                                 if c.read_write_words {
-                                    let mut buf = [0; 2];
-                                    ec.set_position(write_off);
-                                    ec.read(&mut buf).await.unwrap();
-                                    u16::from_le_bytes(buf)
+                                    &buffer[write_off..=write_off + 1]
                                 } else {
-                                    let mut buf = [0; 1];
-                                    ec.set_position(write_off);
-                                    ec.read(&mut buf).await.unwrap();
-                                    buf[0] as u16
+                                    &buffer[write_off..write_off + 1]
                                 }
                             };
 
                             assert_eq!(excepted_value, value);
                         }
                     }
-
-                    i += 1;
                 }
             })
         });
     }
 
-    #[test]
-    fn on_write_confs() {
-        CONFIGS_PARSED.iter().for_each(|c| {
+    #[rstest]
+    fn on_write_confs(parsed_configs: &Vec<FanControlConfigV2>) {
+        parsed_configs.par_iter().for_each(|c| {
             block_on(async {
                 let ec = Cursor::new(vec![0; 256]);
                 let ec = Arc::new(Mutex::new(ec));
@@ -544,6 +522,9 @@ mod tests {
 
                 writer.write_speed_percent(0, 0.0).await.unwrap();
 
+                let ec_lock = ec.lock().await;
+                let buffer = ec_lock.get_ref();
+
                 if let Some(reg_confs) = c.register_write_configurations.as_ref() {
                     for reg_conf in reg_confs.iter().filter(|e| {
                         e.write_occasion == Some(RegisterWriteOccasion::OnWriteFanSpeed)
@@ -551,7 +532,7 @@ mod tests {
                         let write_off = reg_conf.register as usize;
                         let excepted_value = reg_conf.value;
 
-                        let value = ec.lock().await.get_ref()[write_off];
+                        let value = buffer[write_off];
                         assert_eq!(excepted_value, value);
                     }
                 }
@@ -559,9 +540,9 @@ mod tests {
         });
     }
 
-    #[test]
-    fn write_good_offset() {
-        CONFIGS_PARSED.iter().for_each(|c| {
+    #[rstest]
+    fn write_good_offset(parsed_configs: &Vec<FanControlConfigV2>) {
+        parsed_configs.par_iter().for_each(|c| {
             block_on(async {
                 let ec = Cursor::new(vec![0; 256]);
                 let ec = Arc::new(Mutex::new(ec));
@@ -576,47 +557,44 @@ mod tests {
                     .unwrap();
 
                 let speed_percent = 0.0;
-                let mut i = 0;
 
-                for fan in &c.fan_configurations {
+                for (fan, i) in c.fan_configurations.iter().zip(0..) {
                     writer.write_speed_percent(i, speed_percent).await.unwrap();
-                    let write_off = fan.write_register as u64;
-                    let value = if c.read_write_words {
-                        let mut buf = [0; 2];
-                        let mut ec = ec.lock().await;
-                        ec.set_position(write_off);
-                        ec.read(&mut buf).await.unwrap();
-                        u16::from_le_bytes(buf)
-                    } else {
-                        let mut buf = [0; 1];
-                        let mut ec = (*ec).lock().await;
-                        ec.set_position(write_off);
-                        ec.read(&mut buf).await.unwrap();
-                        buf[0] as u16
+
+                    let ec_lock = ec.lock().await;
+                    let buffer = ec_lock.get_ref();
+
+                    let write_off = fan.write_register as usize;
+                    let value = {
+                        if c.read_write_words {
+                            let buf = &buffer[write_off..=write_off + 1];
+                            u16::from_le_bytes(buf.try_into().unwrap())
+                        } else {
+                            buffer[write_off] as u16
+                        }
                     };
 
                     let excepted_value = if let Some(v) =
-                    fan.fan_speed_percentage_overrides.as_ref().and_then(|e| {
-                        e.iter()
-                            .filter(|e| {
-                                e.target_operation == Some(OverrideTargetOperation::ReadWrite)
-                                    || e.target_operation
-                                    == Some(OverrideTargetOperation::Write)
-                            })
-                            .filter(|e| e.fan_speed_percentage as f64 == speed_percent)
-                            .next()
-                    }) {
+                        fan.fan_speed_percentage_overrides.as_ref().and_then(|e| {
+                            e.iter()
+                                .filter(|e| {
+                                    e.target_operation == Some(OverrideTargetOperation::ReadWrite)
+                                        || e.target_operation
+                                            == Some(OverrideTargetOperation::Write)
+                                })
+                                .filter(|e| e.fan_speed_percentage as f64 == speed_percent)
+                                .next()
+                        }) {
                         v.fan_speed_value
                     } else {
                         (fan.min_speed_value as f64
                             + (((fan.max_speed_value as f64 - fan.min_speed_value as f64)
-                            * speed_percent)
-                            / 100.0))
+                                * speed_percent)
+                                / 100.0))
                             .round() as u16
                     };
 
                     assert_eq!(value, excepted_value);
-                    i += 1;
                 }
             })
         });

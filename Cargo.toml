@@ -3,5 +3,5 @@ members = ["service", "cli", "nbfc"]
 
 [profile.release]
 lto = true
-opt-level = 3
+opt-level = "s"
 codegen-units = 1
