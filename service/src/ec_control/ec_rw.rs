@@ -105,7 +105,7 @@ pub enum EcAccessMode {
 //TODO: Does it make sense?
 impl Default for EcAccessMode {
     fn default() -> Self {
-        EcAccessMode::ECSys
+        EcAccessMode::AcpiEC
     }
 }
 
