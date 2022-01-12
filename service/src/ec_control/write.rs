@@ -466,7 +466,7 @@ mod tests {
                     .await
                     .unwrap();
 
-                for (fan, i) in c.fan_configurations.iter().zip(0..) {
+                for (i, fan) in c.fan_configurations.iter().enumerate() {
                     if let Some(fan_override) = fan.fan_speed_percentage_overrides.as_ref() {
                         for override_s in fan_override.iter().filter(|e| {
                             e.target_operation == Some(OverrideTargetOperation::ReadWrite)
@@ -558,7 +558,7 @@ mod tests {
 
                 let speed_percent = 0.0;
 
-                for (fan, i) in c.fan_configurations.iter().zip(0..) {
+                for (i, fan) in c.fan_configurations.iter().enumerate() {
                     writer.write_speed_percent(i, speed_percent).await.unwrap();
 
                     let ec_lock = ec.lock().await;

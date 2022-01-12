@@ -194,7 +194,7 @@ mod tests {
                 let mut reader = ECReader::new(Arc::clone(&ec));
                 reader.refresh_config(c.read_write_words, &c.fan_configurations);
 
-                for (fan, i) in c.fan_configurations.iter().zip(0..) {
+                for (i, fan) in c.fan_configurations.iter().enumerate() {
                     let min_speed_read = if fan.independent_read_min_max_values {
                         fan.min_speed_value_read
                     } else {
@@ -254,7 +254,7 @@ mod tests {
                 let mut reader = ECReader::new(Arc::clone(&ec));
                 reader.refresh_config(c.read_write_words, &c.fan_configurations);
 
-                for (fan, i) in c.fan_configurations.iter().zip(0..) {
+                for (i, fan) in c.fan_configurations.iter().enumerate() {
                     if let Some(fan_override) = fan.fan_speed_percentage_overrides.as_ref() {
                         for override_s in fan_override.iter().filter(|e| {
                             e.target_operation == Some(OverrideTargetOperation::ReadWrite)

@@ -275,7 +275,7 @@ impl<T: EcRW> ECManager<T> {
 
         let mut paths = Vec::new();
 
-        for (fan, i) in fans.into_iter().zip(0..) {
+        for (i, fan) in fans.into_iter().enumerate() {
             let path = format!("/com/musikid/fancy/fans/{}", i);
             paths.push(OwnedObjectPath::try_from(&*path).unwrap());
             obj.remove::<Fan, _>(&*path)
@@ -312,6 +312,19 @@ impl<T: EcRW> ECManager<T> {
     }
 
     pub async fn event_handler(&mut self) -> Result {
+        if self.fans_info.count == 0 {
+            loop {
+                match self.ev_receiver.recv().await.context(RecvEvent)? {
+                    Event::External(ExternalEvent::RefreshConfig(config)) => {
+                        self.refresh_control_config(config).await?;
+                        break;
+                    }
+                    Event::External(ExternalEvent::Shutdown) => return Ok(()),
+                    _ => {}
+                }
+            }
+        }
+
         loop {
             let timeout = if self.immediate {
                 INFINITE_DURATION
@@ -323,12 +336,12 @@ impl<T: EcRW> ECManager<T> {
                 match ev_res.context(RecvEvent {})? {
                     Event::Manager(ManagerEvent::Auto(i))
                     | Event::Manager(ManagerEvent::TargetSpeed(i)) => {
-                        self.write_fan_speed(i).await?
+                        self.write_fan_speed(i).await?;
                     }
                     Event::Manager(ManagerEvent::QuerySpeed(i)) => self.read_fan_speed(i).await?,
-                    //
+                    // External events
                     Event::External(ExternalEvent::RefreshConfig(config)) => {
-                        self.refresh_control_config(config).await?
+                        self.refresh_control_config(config).await?;
                     }
                     Event::External(ExternalEvent::TempChange(temp)) => {
                         self.update_temp(temp);
@@ -513,94 +526,91 @@ mod tests {
     }
 
     #[rstest]
-    fn events_and_signals(parsed_configs: &Vec<FanControlConfigV2>) {
-        parsed_configs
-            .par_iter()
-            .zip(0..parsed_configs.len())
-            .for_each(|(c, i)| {
-                block_on(async {
-                    let conn = Arc::from(zbus::Connection::session().await.unwrap());
-                    let ec = Cursor::new(vec![0u8; 256]);
+    fn emit_events(parsed_configs: &Vec<FanControlConfigV2>) {
+        parsed_configs.par_iter().enumerate().for_each(|(i, c)| {
+            block_on(async {
+                let conn = Arc::from(zbus::Connection::session().await.unwrap());
+                let ec = Cursor::new(vec![0u8; 256]);
 
-                    let mut manager = ECManager::new(ec, Arc::clone(&conn));
-                    manager.immediate = true;
-                    let service_name = format!("com.musikid.fancy.test{}", i);
+                let mut manager = ECManager::new(ec, Arc::clone(&conn));
+                manager.immediate = true;
+                let service_name = format!("com.musikid.fancy.test{}", i);
 
-                    manager.refresh_control_config(c.clone()).await.unwrap();
+                manager.refresh_control_config(c.clone()).await.unwrap();
 
-                    conn.request_name(service_name.clone()).await.unwrap();
+                conn.request_name(service_name.clone()).await.unwrap();
 
-                    let paths = manager.fans_info.paths.clone();
+                let paths = manager.fans_info.paths.clone();
 
-                    for (fan_path, i) in paths.into_iter().zip(0..) {
-                        {
-                            let obj = conn
-                                .object_server()
-                                .interface::<_, Fan>(fan_path.clone())
-                                .await
-                                .unwrap();
-                            let mut fan = obj.get_mut().await;
-
-                            // Target speed
-                            fan.set_target_speed(100.0).await;
-                            assert_eq!(
-                                Event::Manager(ManagerEvent::TargetSpeed(i)),
-                                manager.ev_receiver.recv().await.unwrap()
-                            );
-                            assert_eq!(fan.target_speed, 100.0);
-
-                            fan.set_auto(false).await;
-                            assert_eq!(
-                                Event::Manager(ManagerEvent::Auto(i)),
-                                manager.ev_receiver.recv().await.unwrap()
-                            );
-                            assert_eq!(fan.auto, false);
-                        }
-
-                        manager.write_fan_speed(i).await.unwrap();
-                        assert_eq!(
-                            Event::Manager(ManagerEvent::QuerySpeed(i)),
-                            manager.ev_receiver.recv().await.unwrap()
-                        );
-
-                        let (confirm_tx, conf_rx) = channel::bounded(1);
-
-                        let match_rule = format!(
-                            "type='signal',sender='{}',member='PropertiesChanged',path='{}'",
-                            &*service_name,
-                            fan_path.as_str()
-                        );
-                        let monitor_conn = Connection::session().await.unwrap();
-                        monitor_conn
-                            .call_method(
-                                Some("org.freedesktop.DBus"),
-                                "/org/freedesktop/DBus",
-                                Some("org.freedesktop.DBus.Monitoring"),
-                                "BecomeMonitor",
-                                &(&[match_rule] as &[_], 0u32),
-                            )
+                for (i, fan_path) in paths.into_iter().enumerate() {
+                    {
+                        let obj = conn
+                            .object_server()
+                            .interface::<_, Fan>(fan_path.clone())
                             .await
                             .unwrap();
-                        let mut monitor_stream = MessageStream::from(monitor_conn);
-                        task::spawn(async move {
-                            let res = monitor_stream.try_next().await;
-                            if let Err(e) = res {
-                                panic!("{}", e);
-                            }
-                            confirm_tx.send(true).await.unwrap();
-                        });
+                        let mut fan = obj.get_mut().await;
 
-                        manager.read_fan_speed(i).await.unwrap();
-
-                        assert!(conf_rx.recv().await.unwrap());
-
+                        // Target speed
+                        fan.set_target_speed(100.0).await;
                         assert_eq!(
-                            Event::Manager(ManagerEvent::QuerySpeed(i)),
+                            Event::Manager(ManagerEvent::TargetSpeed(i)),
                             manager.ev_receiver.recv().await.unwrap()
                         );
+                        assert_eq!(fan.target_speed, 100.0);
+
+                        fan.set_auto(false).await;
+                        assert_eq!(
+                            Event::Manager(ManagerEvent::Auto(i)),
+                            manager.ev_receiver.recv().await.unwrap()
+                        );
+                        assert_eq!(fan.auto, false);
                     }
-                });
-            })
+
+                    manager.write_fan_speed(i).await.unwrap();
+                    assert_eq!(
+                        Event::Manager(ManagerEvent::QuerySpeed(i)),
+                        manager.ev_receiver.recv().await.unwrap()
+                    );
+
+                    let (confirm_tx, conf_rx) = channel::bounded(1);
+
+                    let match_rule = format!(
+                        "type='signal',sender='{}',member='PropertiesChanged',path='{}'",
+                        &*service_name,
+                        fan_path.as_str()
+                    );
+                    let monitor_conn = Connection::session().await.unwrap();
+                    monitor_conn
+                        .call_method(
+                            Some("org.freedesktop.DBus"),
+                            "/org/freedesktop/DBus",
+                            Some("org.freedesktop.DBus.Monitoring"),
+                            "BecomeMonitor",
+                            &(&[match_rule] as &[_], 0u32),
+                        )
+                        .await
+                        .unwrap();
+                    let mut monitor_stream = MessageStream::from(monitor_conn);
+                    task::spawn(async move {
+                        let res = monitor_stream.try_next().await;
+                        if let Err(e) = res {
+                            panic!("{}", e);
+                        }
+                        confirm_tx.send(true).await.unwrap();
+                    });
+
+                    manager.read_fan_speed(i).await.unwrap();
+
+                    assert!(conf_rx.recv().await.unwrap());
+
+                    assert_eq!(
+                        Event::Manager(ManagerEvent::QuerySpeed(i)),
+                        manager.ev_receiver.recv().await.unwrap()
+                    );
+                }
+            });
+        })
     }
 
     #[rstest]
