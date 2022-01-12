@@ -6,6 +6,7 @@ use std::time::Duration;
 
 use async_std::future;
 use async_std::{channel, sync::Arc, task};
+use config::Config;
 use futures::{try_join, StreamExt, TryFutureExt};
 use loader::Loader;
 use once_cell::sync::Lazy;
@@ -41,15 +42,6 @@ enum ServiceError {
         source: ec_control::EcManagerError,
     },
 
-    /*#[snafu(display("{}", source))]
-    ServiceConfigLoad {
-        source: config::service::ServiceConfigLoadError,
-    },
-
-    #[snafu(display("{}", source))]
-    ControlConfigLoad {
-        source: config::nbfc_control::ControlConfigLoadError,
-    },*/
     #[snafu(display("{}", source))]
     Sensor {
         source: temp::SensorError,
@@ -83,7 +75,7 @@ enum ServiceError {
 #[async_std::main]
 async fn main() -> Result<()> {
     //TODO: Check errors
-    let mut config = config::Config::load_config()
+    let mut config = Config::load_config()
         .await
         .unwrap_or_else(|_| config::Config::default());
 
@@ -102,6 +94,7 @@ async fn main() -> Result<()> {
         .or_else(|_| EcAccess::try_default())
         .await
         .context(OpenDev {})?;
+    let mode = ec_device.mode();
 
     let mut signals = Signals::new(&[SIGHUP, SIGTERM, SIGINT, SIGQUIT]).context(Signal)?;
     let (shutdown_tx, shutdown_rx) = channel::bounded(1);
@@ -124,7 +117,6 @@ async fn main() -> Result<()> {
     });
 
     let mut manager = ECManager::new(ec_device, Arc::clone(&conn));
-    let event_sender = manager.create_sender();
 
     let loader = Loader::new(manager.create_sender()).await;
     conn.object_server()
@@ -133,18 +125,8 @@ async fn main() -> Result<()> {
         .context(DBus)?;
 
     let shutdown_recv = shutdown_rx.clone();
-    let manager_task = task::spawn(async move {
-        // We need to send the shutdown signal to the event loop
-        try_join!(
-            async { manager.event_handler().await.context(ECIO) },
-            async { shutdown_recv.recv().await.context(ShutdownChannelRecv) }
-        )?;
-
-        manager.target_speeds().await.context(ECIO)
-    });
-
-    let shutdown_recv = shutdown_rx.clone();
     //TODO: Set interval?
+    let ev_sender = manager.create_sender();
     let temps_task = task::spawn(async move {
         loop {
             match future::timeout(Duration::from_millis(100), shutdown_recv.recv()).await {
@@ -153,9 +135,10 @@ async fn main() -> Result<()> {
                         break Ok::<_, ServiceError>(());
                     }
                 }
+                // Loop timeout
                 Err(_) => {
                     let temp = temps.get_temp().await.context(Sensor {})?;
-                    event_sender
+                    ev_sender
                         .send_event(Event::External(ExternalEvent::TempChange(temp)))
                         .await
                 }
@@ -163,10 +146,27 @@ async fn main() -> Result<()> {
         }
     });
 
+    let shutdown_recv = shutdown_rx.clone();
+    let ev_sender = manager.create_sender();
+    let manager_task = task::spawn(async move {
+        // We need to send the shutdown signal to the event loop
+        task::spawn(async move {
+            shutdown_recv.recv().await.context(ShutdownChannelRecv)?;
+            ev_sender
+                .send_event(Event::External(ExternalEvent::Shutdown))
+                .await;
+            Ok::<_, ServiceError>(())
+        });
+
+        manager.event_handler().await.context(ECIO)?;
+        manager.target_speeds().await.context(ECIO)
+    });
+
     signal_handler.await?;
     let target_speeds = manager_task.await?;
     temps_task.await?;
 
+    // Save the configuration
     let loader_ref = conn
         .object_server()
         .interface::<_, Loader>("/com/musikid/fancy/loader")
@@ -180,7 +180,7 @@ async fn main() -> Result<()> {
     if !target_speeds.is_empty() {
         config.fan_config.target_speeds = target_speeds;
     }
-    //config.core.ec_access_mode = ec_device.mode();
+    config.core.ec_access_mode = mode;
 
     config.save_config().await.context(ConfigErr)?;
 
