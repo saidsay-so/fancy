@@ -247,7 +247,7 @@ impl<T: EcRW> ECManager<T> {
                 zbus::Error::InterfaceNotFound => Ok(false),
                 _ => Err(e),
             })
-            .context(Dbus {})?;
+            .context(DbusSnafu {})?;
 
         let fans: Vec<Fan> = c
             .fan_configurations
@@ -284,15 +284,15 @@ impl<T: EcRW> ECManager<T> {
                     zbus::Error::InterfaceNotFound => Ok(false),
                     _ => Err(e),
                 })
-                .context(Dbus {})?;
-            obj.at(path, fan).await.context(Dbus {})?;
+                .context(DbusSnafu {})?;
+            obj.at(path, fan).await.context(DbusSnafu {})?;
         }
 
         self.fans_info = FansInfo { count, paths };
 
         obj.at(FANS_PATH, self.fans_info.clone())
             .await
-            .context(Dbus {})?;
+            .context(DbusSnafu {})?;
 
         self.critical_temperature = c.critical_temperature;
         self.critical = true;
@@ -308,13 +308,13 @@ impl<T: EcRW> ECManager<T> {
                 &c.fan_configurations,
             )
             .await
-            .context(Writer {})
+            .context(WriterSnafu {})
     }
 
     pub async fn event_handler(&mut self) -> Result {
         if self.fans_info.count == 0 {
             loop {
-                match self.ev_receiver.recv().await.context(RecvEvent)? {
+                match self.ev_receiver.recv().await.context(RecvEventSnafu)? {
                     Event::External(ExternalEvent::RefreshConfig(config)) => {
                         self.refresh_control_config(config).await?;
                         break;
@@ -333,7 +333,7 @@ impl<T: EcRW> ECManager<T> {
             };
 
             if let Ok(ev_res) = future::timeout(timeout, self.ev_receiver.recv()).await {
-                match ev_res.context(RecvEvent {})? {
+                match ev_res.context(RecvEventSnafu {})? {
                     Event::Manager(ManagerEvent::Auto(i))
                     | Event::Manager(ManagerEvent::TargetSpeed(i)) => {
                         self.write_fan_speed(i).await?;
@@ -387,7 +387,7 @@ impl<T: EcRW> ECManager<T> {
                 .object_server()
                 .interface::<_, Fan>(fan_path)
                 .await
-                .context(Dbus)?;
+                .context(DbusSnafu)?;
             let fan = fan_iface_ref.get().await;
             speeds.push(fan.target_speed);
         }
@@ -413,7 +413,7 @@ impl<T: EcRW> ECManager<T> {
                 .object_server()
                 .interface::<_, Fan>(&*self.fans_info.paths[fan_index])
                 .await
-                .context(Dbus)?;
+                .context(DbusSnafu)?;
             let mut fan = fan_iface_ref.get_mut().await;
 
             if self.critical {
@@ -431,7 +431,7 @@ impl<T: EcRW> ECManager<T> {
             self.writer
                 .write_speed_percent(fan_index, speed)
                 .await
-                .context(Writer {})?;
+                .context(WriterSnafu {})?;
 
             if self.immediate {
                 self.read_fan_speed(fan_index).await?;
@@ -443,7 +443,7 @@ impl<T: EcRW> ECManager<T> {
 
     /// Reset the EC, including non-required registers when `reset_all` is true.
     async fn reset_ec(&self, reset_all: bool) -> Result {
-        self.writer.reset(reset_all).await.context(Writer {})
+        self.writer.reset(reset_all).await.context(WriterSnafu {})
     }
 
     /// Read the speed percent from the EC for the fan specified by `fan_index`.
@@ -452,19 +452,19 @@ impl<T: EcRW> ECManager<T> {
             .reader
             .read_speed_percent(fan_index)
             .await
-            .context(Reader {})?;
+            .context(ReaderSnafu {})?;
         let iface_ref = self
             .conn
             .object_server()
             .interface::<_, Fan>(self.fans_info.paths[fan_index].clone())
             .await
-            .context(Dbus {})?;
+            .context(DbusSnafu {})?;
         let mut fan = iface_ref.get_mut().await;
 
         fan.fan_speed = speed;
         fan.fan_speed_changed(iface_ref.signal_context())
             .await
-            .context(Dbus {})
+            .context(DbusSnafu {})
     }
 }
 

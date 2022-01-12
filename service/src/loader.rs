@@ -63,13 +63,13 @@ type FormatDeserializer = fn(&str) -> Result<FanControlConfigV2>;
 
 fn xml_loader(s: &str) -> Result<FanControlConfigV2> {
     let raw_xml_config =
-        quick_xml::de::from_str::<XmlFanControlConfigV2>(s).context(InvalidXml {})?;
+        quick_xml::de::from_str::<XmlFanControlConfigV2>(s).context(InvalidXmlSnafu {})?;
 
     Ok(raw_xml_config.into())
 }
 
 fn json_loader(s: &str) -> Result<FanControlConfigV2> {
-    serde_json::de::from_str(s).context(InvalidJson {})
+    serde_json::de::from_str(s).context(InvalidJsonSnafu {})
 }
 
 const SUPPORTED_EXTENSIONS: OrderedMap<&str, FormatDeserializer> = phf_ordered_map! {
@@ -96,7 +96,7 @@ impl Loader {
     async fn refresh_available(&mut self) -> Result<()> {
         self.configs = read_dir(DEFAULT_PATH)
             .await
-            .context(Refresh {})?
+            .context(RefreshSnafu {})?
             .filter_map(|entry| entry.ok())
             .filter_map(|file| {
                 file.path()
@@ -114,7 +114,7 @@ impl Loader {
             self.refresh_available().await?;
             ensure!(
                 self.configs.contains(config_name),
-                UnavailableConfig {
+                UnavailableConfigSnafu {
                     config: config_name.to_owned()
                 }
             );
@@ -130,7 +130,7 @@ impl Loader {
                 continue;
             }
 
-            let buf = fs::read_to_string(path).await.context(ReadString {
+            let buf = fs::read_to_string(path).await.context(ReadStringSnafu {
                 config: config_name.clone(),
             })?;
 

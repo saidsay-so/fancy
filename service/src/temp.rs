@@ -103,7 +103,7 @@ impl Sensor<File> {
         let path = hwmon_entry_path.as_ref();
         let name = read_to_string(path.join("name"))
             .await
-            .context(SensorErr {})?;
+            .context(SensorErrSnafu {})?;
         let inputs = read_dir(path)
             .try_flatten_stream()
             .try_filter_map(|f| {
@@ -128,7 +128,7 @@ impl Sensor<File> {
             })
             .try_collect()
             .await
-            .context(HwMonOpen {})?;
+            .context(HwMonOpenSnafu {})?;
 
         Ok(Sensor::new(name, inputs))
     }
@@ -187,7 +187,7 @@ impl Temperatures<File> {
     pub async fn new(filter: SensorsFilter) -> Result<Self, SensorError> {
         let sensors = read_dir(SYSFS_HWMON_PATH)
             .try_flatten_stream()
-            .map(|res| res.context(SensorErr {}))
+            .map(|res| res.context(SensorErrSnafu {}))
             .try_filter_map(move |f| {
                 let filter = filter.clone();
                 async move {
@@ -201,7 +201,7 @@ impl Temperatures<File> {
                         root_hwmon_path.join(TEMP_PREFIX.to_string() + "1" + INPUT_SUFFIX);
                     let name = read_to_string(root_hwmon_path.join("name"))
                         .await
-                        .context(SensorErr {})?;
+                        .context(SensorErrSnafu {})?;
 
                     Ok(
                         if first_temp_path.exists().await
@@ -218,7 +218,7 @@ impl Temperatures<File> {
             .try_collect::<Vec<_>>()
             .await?;
 
-        ensure!(!sensors.is_empty(), NoCPUSensorFound {});
+        ensure!(!sensors.is_empty(), NoCPUSensorFoundSnafu {});
 
         Ok(Self { sensors })
     }
@@ -240,7 +240,7 @@ impl Temperatures<File> {
             .collect::<FuturesUnordered<_>>()
             .try_fold(0.0, |sum, value| future::ok(sum + value))
             .await
-            .context(SensorErr {})
+            .context(SensorErrSnafu {})
         /*}
         };*/
     }

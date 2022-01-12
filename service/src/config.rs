@@ -32,13 +32,13 @@ pub struct Config {
 
 impl Config {
     pub async fn load_config() -> Result<Self, ConfigError> {
-        let config = read_to_string(DEFAULT_CONFIG_PATH).await.context(Load)?;
-        toml::from_str(&config).context(DeserializeErr {})
+        let config = read_to_string(DEFAULT_CONFIG_PATH).await.context(LoadSnafu)?;
+        toml::from_str(&config).context(DeserializeErrSnafu {})
     }
 
     pub async fn save_config(&self) -> Result<(), ConfigError> {
-        let config = toml::to_string(&self).context(SerializeErr)?;
-        write(DEFAULT_CONFIG_PATH, config).await.context(Save)
+        let config = toml::to_string(&self).context(SerializeErrSnafu)?;
+        write(DEFAULT_CONFIG_PATH, config).await.context(SaveSnafu)
     }
 }
 

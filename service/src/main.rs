@@ -79,24 +79,24 @@ async fn main() -> Result<()> {
         .await
         .unwrap_or_else(|_| config::Config::default());
 
-    let conn = zbus::Connection::system().await.context(DBus {})?;
+    let conn = zbus::Connection::system().await.context(DBusSnafu {})?;
     conn.request_name("com.musikid.fancy")
         .await
-        .context(DBus {})?;
+        .context(DBusSnafu {})?;
     let conn = Arc::from(conn);
 
     let mut temps = Temperatures::new(config.sensors.only.clone())
         .await
-        .context(Sensor {})?;
+        .context(SensorSnafu {})?;
 
     //TODO: Check errors
     let ec_device = EcAccess::from_mode(config.core.ec_access_mode)
         .or_else(|_| EcAccess::try_default())
         .await
-        .context(OpenDev {})?;
+        .context(OpenDevSnafu {})?;
     let mode = ec_device.mode();
 
-    let mut signals = Signals::new(&[SIGHUP, SIGTERM, SIGINT, SIGQUIT]).context(Signal)?;
+    let mut signals = Signals::new(&[SIGHUP, SIGTERM, SIGINT, SIGQUIT]).context(SignalSnafu)?;
     let (shutdown_tx, shutdown_rx) = channel::bounded(1);
     let sig_handle = signals.handle();
     let signal_handler = task::spawn(async move {
@@ -105,7 +105,7 @@ async fn main() -> Result<()> {
                 //TODO: Reload configuration?
                 SIGHUP => {}
                 SIGTERM | SIGINT | SIGQUIT => {
-                    shutdown_tx.send(true).await.context(ShutdownChannelSend)?;
+                    shutdown_tx.send(true).await.context(ShutdownChannelSendSnafu)?;
                     sig_handle.close();
                     break;
                 }
@@ -122,7 +122,7 @@ async fn main() -> Result<()> {
     conn.object_server()
         .at("/com/musikid/fancy/loader", loader)
         .await
-        .context(DBus)?;
+        .context(DBusSnafu)?;
 
     let shutdown_recv = shutdown_rx.clone();
     //TODO: Set interval?
@@ -131,13 +131,13 @@ async fn main() -> Result<()> {
         loop {
             match future::timeout(Duration::from_millis(100), shutdown_recv.recv()).await {
                 Ok(res) => {
-                    if res.context(ShutdownChannelRecv)? {
+                    if res.context(ShutdownChannelRecvSnafu)? {
                         break Ok::<_, ServiceError>(());
                     }
                 }
                 // Loop timeout
                 Err(_) => {
-                    let temp = temps.get_temp().await.context(Sensor {})?;
+                    let temp = temps.get_temp().await.context(SensorSnafu {})?;
                     ev_sender
                         .send_event(Event::External(ExternalEvent::TempChange(temp)))
                         .await
@@ -151,15 +151,15 @@ async fn main() -> Result<()> {
     let manager_task = task::spawn(async move {
         // We need to send the shutdown signal to the event loop
         task::spawn(async move {
-            shutdown_recv.recv().await.context(ShutdownChannelRecv)?;
+            shutdown_recv.recv().await.context(ShutdownChannelRecvSnafu)?;
             ev_sender
                 .send_event(Event::External(ExternalEvent::Shutdown))
                 .await;
             Ok::<_, ServiceError>(())
         });
 
-        manager.event_handler().await.context(ECIO)?;
-        manager.target_speeds().await.context(ECIO)
+        manager.event_handler().await.context(ECIOSnafu)?;
+        manager.target_speeds().await.context(ECIOSnafu)
     });
 
     signal_handler.await?;
@@ -171,7 +171,7 @@ async fn main() -> Result<()> {
         .object_server()
         .interface::<_, Loader>("/com/musikid/fancy/loader")
         .await
-        .context(DBus)?;
+        .context(DBusSnafu)?;
     let loader = loader_ref.get().await;
 
     if let Some(fan_config) = loader.current_config.as_ref().map(|t| t.0.clone()) {
@@ -182,7 +182,7 @@ async fn main() -> Result<()> {
     }
     config.core.ec_access_mode = mode;
 
-    config.save_config().await.context(ConfigErr)?;
+    config.save_config().await.context(ConfigErrSnafu)?;
 
     Ok(())
 }
