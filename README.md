@@ -22,7 +22,7 @@ It works only on Linux and Windows support is not planned<sup>[1](#linux-only)</
 
 ## Warning
 
-This project is currently being heavily refactored. If you want a more stable software, check out [nbfc-linux](https://github.com/nbfc-linux/nbfc-linux).
+This project is deprecated in favor of the more stable and complete [nbfc-linux](https://github.com/nbfc-linux/nbfc-linux).
 
 ## Compatibility
 
