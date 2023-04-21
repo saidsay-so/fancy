@@ -23,6 +23,8 @@ It works only on Linux and Windows support is not planned<sup>[1](#linux-only)</
 ## Warning
 
 This project is deprecated in favor of the more stable and complete [nbfc-linux](https://github.com/nbfc-linux/nbfc-linux).
+I originally created this project beacuse of the flaws of the original NBFC on Linux, but since then nbfc-linux has 
+filled the missing gaps. Please check it out instead if you need a fan controller.
 
 ## Compatibility
 
